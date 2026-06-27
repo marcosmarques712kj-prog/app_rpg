@@ -111,6 +111,7 @@ function carregarPersonagem() {
   if (!d.classeEspec) d.classeEspec = '';
   if (!d.origemId) d.origemId = '';
   if (!d.origemPericiasEscolhidas) d.origemPericiasEscolhidas = [];
+  if (!d.classePericiasAtivas) d.classePericiasAtivas = [];
   if (!d.grimorio) d.grimorio = { ultimaCombo: { aspecto: '', verbo: '', mod: '', manifestacao: '', circulo: 1 }, magiasSalvas: [] };
   // Migração: combos antigos não tinham o campo 'manifestacao'
   if (d.grimorio.ultimaCombo && d.grimorio.ultimaCombo.manifestacao === undefined) {
@@ -154,16 +155,31 @@ function getPisoAtrib(attrId, d) {
   return Math.max(ATRIB_BASE, ATRIB_BASE + bonus);
 }
 
-// Aplica raça escolhida: sobe automaticamente qualquer atributo que
-// esteja abaixo do novo piso (sem nunca BAIXAR um valor que o jogador
-// já tinha subido manualmente).
+// Aplica raça escolhida: remove o bônus da raça anterior e aplica o da nova.
+// - Subtrai o attrBonus da sub-raça antiga de cada atributo (sem descer abaixo do ATRIB_BASE)
+// - Sobe qualquer atributo que esteja abaixo do novo piso racial
 function aplicarRaca(familiaId, subracaId) {
   const d = PERSONAGEM.dados;
+
+  // 1. Desconta o bônus da raça que estava ativa antes da troca
+  const subAnterior = getSubraca(d.racaFamilia, d.racaSubraca);
+  if (subAnterior && subAnterior.attrBonus) {
+    ATRIBUTOS_ETH.forEach(a => {
+      const bonusAntigo = subAnterior.attrBonus[a.id] || 0;
+      if (bonusAntigo > 0) {
+        const atual = parseInt(d.attrs[a.id]) || ATRIB_BASE;
+        d.attrs[a.id] = Math.max(ATRIB_BASE, atual - bonusAntigo);
+      }
+    });
+  }
+
+  // 2. Grava a nova raça
   d.racaFamilia = familiaId;
   d.racaSubraca = subracaId;
   const sub = getSubraca(familiaId, subracaId);
   d.raca = sub ? sub.nome : ''; // mantém label legível p/ compatibilidade
 
+  // 3. Sobe atributos que ficaram abaixo do novo piso racial
   ATRIBUTOS_ETH.forEach(a => {
     const piso = getPisoAtrib(a.id, d);
     const atual = parseInt(d.attrs[a.id]) || ATRIB_BASE;
@@ -663,19 +679,23 @@ function editarHab(campo, i, sub, val) {
 function renderPericias() {
   const d = PERSONAGEM.dados;
   const profB = parseInt(d.profBonus || 2);
+  const protegidas = getPericiasProtegidas(); // calculado uma vez, fora do loop
 
   function linhaPericia(p) {
     const base = getAtrib(p.attr);
     const isProficiente = !!(d.profs[p.id]);
+    const isProtegida = protegidas.has(p.id);
     const total = base + (isProficiente ? profB : 0);
     const focoHTML = p.temFoco ? `
       <input type="text" class="skill-foco-input" placeholder="Foco (ex: Alquimia)"
         value="${esc(d.focos[p.id] || '')}"
         oninput="atualizarFoco('${p.id}',this.value)">` : '';
+    const checkboxAttr = isProtegida
+      ? `disabled title="Concedida por classe ou antecedente"`
+      : `onchange="toggleProf('${p.id}',this.checked)"`;
     return `
-    <div class="skill-row ${p.temFoco?'tem-foco':''} ${isProficiente?'is-prof':''}">
-      <input type="checkbox" class="skill-check" ${isProficiente?'checked':''}
-        onchange="toggleProf('${p.id}',this.checked)">
+    <div class="skill-row ${p.temFoco?'tem-foco':''} ${isProficiente?'is-prof':''} ${isProtegida?'is-protegida':''}">
+      <input type="checkbox" class="skill-check" ${isProficiente?'checked':''} ${checkboxAttr}>
       <span class="skill-name">${p.nome}</span>
       <span class="skill-attr-tag">${p.attr.toUpperCase()}</span>
       <span class="skill-val">${total}</span>
@@ -707,6 +727,13 @@ function renderPericias() {
 }
 
 function toggleProf(id, val) {
+  const protegidas = getPericiasProtegidas();
+  if (!val && protegidas.has(id)) {
+    // Perícia concedida por classe ou antecedente: não pode ser desmarcada manualmente.
+    // Re-renderiza para desfazer o estado visual do checkbox no navegador.
+    renderPericias();
+    return;
+  }
   PERSONAGEM.dados.profs[id] = val;
   renderPericias();
   agendarSalvar();
@@ -1563,6 +1590,21 @@ function montarEstruturaAbas() {
 
 function init() {
   if (!carregarPersonagem()) return;
+
+  // Reaplicar perícias de classe ao carregar personagem salvo.
+  // Garante que o estado visual de perícias seja correto mesmo em personagens
+  // já existentes que nunca passaram pela nova lógica de classePericiasAtivas.
+  const d = PERSONAGEM.dados;
+  if (!d.classePericiasAtivas) d.classePericiasAtivas = [];
+  if (d.classeBase && d.classeEspec && typeof classesRPG !== 'undefined') {
+    const base = classesRPG[d.classeBase];
+    const espec = base && (base.especializacoes || {})[d.classeEspec];
+    if (espec) {
+      (espec.pericias || []).forEach(id => { d.profs[id] = true; });
+      d.classePericiasAtivas = [...(espec.pericias || [])];
+    }
+  }
+
   montarEstruturaAbas();
   document.getElementById('f_nome').value = PERSONAGEM.nome || '';
   renderPrincipal();
@@ -1593,6 +1635,41 @@ window.addEventListener('beforeunload', () => { if (_saveTimeout) salvarAgora();
 
 init();
 
+// Retorna um Set com todos os IDs de perícias que não podem ser desmarcadas
+// manualmente (concedidas por classe ou antecedente/origem).
+function getPericiasProtegidas() {
+  const d = PERSONAGEM.dados;
+  const protegidas = new Set();
+  (d.classePericiasAtivas || []).forEach(id => protegidas.add(id));
+  (d.origemPericiasEscolhidas || []).forEach(id => protegidas.add(id));
+  return protegidas;
+}
+
+// Remove de d.profs todas as perícias que vieram exclusivamente da classe
+// (não remove se a mesma perícia também foi escolhida via antecedente).
+function removerPericiasDeClasse() {
+  const d = PERSONAGEM.dados;
+  (d.classePericiasAtivas || []).forEach(id => {
+    const origemTem = (d.origemPericiasEscolhidas || []).includes(id);
+    if (!origemTem) delete d.profs[id];
+  });
+  d.classePericiasAtivas = [];
+}
+
+// Lê o array pericias[] da especialização escolhida e marca em d.profs.
+function aplicarPericiasDeClasse(classeBaseId, classeEspecId) {
+  if (!classeBaseId || !classeEspecId || typeof classesRPG === 'undefined') return;
+  const base = classesRPG[classeBaseId];
+  if (!base) return;
+  const espec = (base.especializacoes || {})[classeEspecId];
+  if (!espec) return;
+
+  const d = PERSONAGEM.dados;
+  const pericias = espec.pericias || [];
+  pericias.forEach(id => { d.profs[id] = true; });
+  d.classePericiasAtivas = [...pericias];
+}
+
 // Novas Funções Lógicas de Classe e Especialização
 function listarClassesBase() {
   if (typeof classesRPG === 'undefined') return [];
@@ -1606,14 +1683,21 @@ function listarEspecializacoes(classeBaseId) {
 }
 
 function onMudarClasseBase(val) {
-  PERSONAGEM.dados.classeBase = val;
-  PERSONAGEM.dados.classeEspec = '';
+  const d = PERSONAGEM.dados;
+  removerPericiasDeClasse();
+  d.classeBase = val;
+  d.classeEspec = '';
   agendarSalvar();
   renderPrincipal();
+  renderPericias();
 }
 
 function aplicarEspecializacao(val) {
-  PERSONAGEM.dados.classeEspec = val;
+  const d = PERSONAGEM.dados;
+  removerPericiasDeClasse();
+  d.classeEspec = val;
+  if (val) aplicarPericiasDeClasse(d.classeBase, val);
   agendarSalvar();
   renderPrincipal();
+  renderPericias();
 }

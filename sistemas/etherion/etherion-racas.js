@@ -234,7 +234,7 @@ const RACAS_DB = {
         nome: 'Grotans Solares',
         aliases: ['orc solar'],
         citacao: 'A iluminação do Deus do Sol é uma provação física constante.',
-        attrBonus: { for: 2, con: 2 },
+        attrBonus: { for: 2, con: 1 },
         // 'Sangue Frio' reduz deslocamento à metade apenas em frio extremo/escuridão —
         // é condicional, não um modificador fixo aplicável sempre. Não convertido em número.
         bonusCA: 0,
@@ -253,7 +253,7 @@ const RACAS_DB = {
         nome: 'Grotans dos Trovões',
         aliases: ['orc do trovao'],
         citacao: 'Lutam pela glória dos céus e adoram as tempestades.',
-        attrBonus: { agi: 2, for: 1, pre: 1 },
+        attrBonus: { agi: 2, pre: 1 },
         // Sem bônus passivo numérico de CA/Deslocamento (Vantagem na Iniciativa não é
         // um valor fixo somável nessas duas fórmulas).
         bonusCA: 0,
@@ -279,7 +279,7 @@ const RACAS_DB = {
         nome: 'Drakar',
         aliases: ['draconato'],
         citacao: 'Herdeiros diretos das escamas e do poder brutal dos Quatro Dragões.',
-        attrBonus: { for: 2, pre: 2 },
+        attrBonus: { for: 2, pre: 1 },
         // '+2 de Defesa Natural permanente' (resistências) → bônus fixo de CA.
         bonusCA: 2,
         deslocamentoBonus: 0,
@@ -330,7 +330,7 @@ const RACAS_DB = {
         nome: 'Feyrin',
         aliases: ['duende'],
         citacao: 'Dizem que um Feyrin só morre se for totalmente esquecido.',
-        attrBonus: { agi: 2, int: 2 },
+        attrBonus: { agi: 2, int: 1 },
         // 'Passo de Fungo' (furtividade em floresta) e 'Transposição de Raízes' (ação bônus,
         // teleporte 6m) são situacionais, sem valor fixo de CA ou deslocamento permanente.
         bonusCA: 0,
