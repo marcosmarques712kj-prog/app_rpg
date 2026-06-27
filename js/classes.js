@@ -486,3 +486,7 @@ const classesRPG = {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = classesRPG;
 }
+// Garante visibilidade global quando carregado via <script> no browser
+if (typeof window !== 'undefined') {
+  window.classesRPG = classesRPG;
+}

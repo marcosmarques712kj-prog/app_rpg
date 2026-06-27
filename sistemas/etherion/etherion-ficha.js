@@ -109,6 +109,33 @@ function carregarPersonagem() {
   if (!d.notas) d.notas = '';
   if (!d.classeBase) d.classeBase = '';
   if (!d.classeEspec) d.classeEspec = '';
+
+  // Migração: versões antigas podiam salvar d.classeBase como nome legível
+  // (ex: 'Vanguarda') em vez da chave do objeto (ex: 'vanguarda').
+  // Aqui normalizamos para a chave, que é o que listarClassesBase() e
+  // listarEspecializacoes() esperam.
+  if (d.classeBase && typeof classesRPG !== 'undefined') {
+    const idDireto = classesRPG[d.classeBase]; // já é uma chave válida?
+    if (!idDireto) {
+      // Tenta casar pelo nome (case-insensitive)
+      const idEncontrado = Object.keys(classesRPG).find(k =>
+        classesRPG[k].nome.toLowerCase() === d.classeBase.toLowerCase()
+      );
+      if (idEncontrado) d.classeBase = idEncontrado;
+    }
+  }
+  if (d.classeBase && d.classeEspec && typeof classesRPG !== 'undefined') {
+    const base = classesRPG[d.classeBase];
+    const especs = base ? (base.especializacoes || {}) : {};
+    const idDireto = especs[d.classeEspec]; // já é uma chave válida?
+    if (!idDireto) {
+      // Tenta casar pelo nome (case-insensitive)
+      const idEncontrado = Object.keys(especs).find(k =>
+        especs[k].nome.toLowerCase() === d.classeEspec.toLowerCase()
+      );
+      if (idEncontrado) d.classeEspec = idEncontrado;
+    }
+  }
   if (!d.origemId) d.origemId = '';
   if (!d.origemPericiasEscolhidas) d.origemPericiasEscolhidas = [];
   if (!d.classePericiasAtivas) d.classePericiasAtivas = [];
@@ -399,8 +426,7 @@ function renderPrincipal() {
     ? "border: 1px solid var(--blood-light); box-shadow: 0 0 8px rgba(122, 24, 24, 0.3); background: rgba(122, 24, 24, 0.03);" 
     : "border: 1px solid var(--gold); box-shadow: 0 0 8px rgba(201, 168, 76, 0.3); background: rgba(201, 168, 76, 0.02);";
 
-  // Extrair nomes dinâmicos dos seus arquivos
-  const opcoesClasses = typeof classesRPG !== 'undefined' ? Object.values(classesRPG).map(c => `<option value="${c.nome}">`).join('') : '';
+  // (opcoesClasses removido — selects de classe usam listarClassesBase() diretamente)
 
   document.getElementById('panel-principal').innerHTML = `
 <div class="box" style="margin-bottom:16px">
