@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forja das Eras</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cinzel+Decorative:wght@400;700&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/home-screen.css">
+</head>
+<body>
+
+<div id="particles"></div>
+
+<!-- ===== HEADER ===== -->
+<header class="header">
+  <div class="header-logo">
+    <svg class="logo-emblem" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="24,4 44,36 4,36" stroke="#8B6914" stroke-width="1.5" fill="none" opacity="0.6"/>
+      <polygon points="24,10 39,34 9,34" stroke="#C9A84C" stroke-width="1" fill="rgba(201,168,76,0.06)"/>
+      <circle cx="24" cy="26" r="7" stroke="#C9A84C" stroke-width="1.2" fill="none"/>
+      <circle cx="24" cy="26" r="3" fill="rgba(201,168,76,0.4)"/>
+      <line x1="24" y1="10" x2="24" y2="19" stroke="#C9A84C" stroke-width="1" opacity="0.7"/>
+      <line x1="24" y1="33" x2="24" y2="42" stroke="#C9A84C" stroke-width="1" opacity="0.5"/>
+      <line x1="9"  y1="34" x2="17" y2="29" stroke="#C9A84C" stroke-width="1" opacity="0.5"/>
+      <line x1="39" y1="34" x2="31" y2="29" stroke="#C9A84C" stroke-width="1" opacity="0.5"/>
+    </svg>
+    <div class="logo-text">
+      <span class="logo-title">Forja das Eras</span>
+      <span class="logo-subtitle">Sistema de Campanhas & Personagens</span>
+    </div>
+  </div>
+</header>
+
+<!-- ===== PRIMARY NAV ===== -->
+<nav class="primary-nav">
+  <button class="pnav-tab active" data-section="campanhas" onclick="switchSection('campanhas')">
+    ⚔ Campanhas <span class="pnav-count" id="count-campanhas">0</span>
+  </button>
+  <button class="pnav-tab" data-section="personagens" onclick="switchSection('personagens')">
+    🧙 Personagens <span class="pnav-count" id="count-personagens">0</span>
+  </button>
+  <button class="pnav-tab" data-section="sistemas" onclick="switchSection('sistemas')">
+    📖 Sistemas <span class="pnav-count" id="count-sistemas">0</span>
+  </button>
+  <button class="pnav-tab" data-section="livros" onclick="switchSection('livros')">
+    📚 Livros <span class="pnav-count" id="count-livros">0</span>
+  </button>
+</nav>
+
+<!-- ===== MAIN ===== -->
+<div class="page-wrap">
+
+  <!-- ========== CAMPANHAS ========== -->
+  <section class="section-panel active" id="sec-campanhas">
+
+    <div class="sec-header">
+      <div>
+        <div class="sec-title">Campanhas</div>
+        <div class="sec-desc">Cada campanha é ligada a um sistema e pode ter vários personagens.</div>
+      </div>
+      <button class="btn-gold" onclick="openModal('modalCampanha')">⚔ Nova Campanha</button>
+    </div>
+
+    <!-- Filtro rápido por sistema -->
+    <div class="filter-row" id="campFilter">
+      <button class="filter-chip active" data-filter="all" onclick="filterCamps('all')">Todas</button>
+    </div>
+
+    <div class="cards-grid" id="campGrid"></div>
+
+  </section>
+
+  <!-- ========== PERSONAGENS ========== -->
+  <section class="section-panel" id="sec-personagens">
+
+    <div class="sec-header">
+      <div>
+        <div class="sec-title">Personagens</div>
+        <div class="sec-desc">Personagens são globais — cada um carrega os dados do seu sistema.</div>
+      </div>
+      <button class="btn-gold" onclick="openModal('modalPersonagem')">✦ Novo Personagem</button>
+    </div>
+
+    <!-- Filtro por sistema -->
+    <div class="filter-row" id="charFilter">
+      <button class="filter-chip active" data-filter="all" onclick="filterChars('all')">Todos</button>
+    </div>
+
+    <div class="cards-grid chars-grid" id="charGrid"></div>
+
+  </section>
+
+  <!-- ========== SISTEMAS ========== -->
+  <section class="section-panel" id="sec-sistemas">
+
+    <div class="sec-header">
+      <div>
+        <div class="sec-title">Sistemas</div>
+        <div class="sec-desc">Os sistemas disponíveis na plataforma. Cada um tem sua própria ficha.</div>
+      </div>
+      <button class="btn-ghost" onclick="showToast('🔧 Sistemas personalizados em breve!', 'info')">+ Adicionar Sistema</button>
+    </div>
+
+    <div class="sistemas-grid" id="sistemasGrid"></div>
+
+  </section>
+
+  <!-- ========== LIVROS ========== -->
+  <section class="section-panel" id="sec-livros">
+
+    <div class="sec-header">
+      <div>
+        <div class="sec-title">Livros</div>
+        <div class="sec-desc">Escolha um sistema para ver os livros disponíveis.</div>
+      </div>
+    </div>
+    <div class="sistemas-grid" id="livrosSistemasGrid"></div>
+
+  </section>
+
+</div>
+
+<div class="modal-backdrop" id="modalCampanha">
+  <div class="modal">
+    <div class="corner tl"></div><div class="corner tr"></div>
+    <div class="corner bl"></div><div class="corner br"></div>
+    <div class="modal-header">
+      <span class="modal-title">⚔ NOVA CAMPANHA</span>
+      <button class="modal-close" onclick="closeModal('modalCampanha')">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        <div class="form-group">
+          <label style="display:block; font-size:11px; letter-spacing:1px; color:var(--gold); margin-bottom:4px;">NOME DA CAMPANHA</label>
+          <input type="text" id="nc_name" class="form-input" placeholder="Ex: A Maldição de Strahd">
+        </div>
+        <div class="form-group">
+          <label style="display:block; font-size:11px; letter-spacing:1px; color:var(--gold); margin-bottom:4px;">SISTEMA DE JOGO</label>
+          <select id="nc_system" class="form-input">
+            <option value="">Selecione o Sistema...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label style="display:block; font-size:11px; letter-spacing:1px; color:var(--gold); margin-bottom:4px;">JOGADORES (LIMITE)</label>
+          <input type="number" id="nc_players" class="form-input" value="4">
+        </div>
+        <div class="form-group">
+          <label style="display:block; font-size:11px; letter-spacing:1px; color:var(--gold); margin-bottom:4px;">PREMISSA</label>
+          <textarea id="nc_desc" class="form-input" rows="3"></textarea>
+        </div>
+        <div class="form-group">
+          <label style="display:block; font-size:11px; letter-spacing:1px; color:var(--gold); margin-bottom:4px;">BANNER DA CAMPANHA</label>
+          <div id="nc_banner_area" style="border:1px dashed rgba(201,168,76,0.3); padding:16px; text-align:center; cursor:pointer;" onclick="document.getElementById('nc_banner_file').click()">
+            <div id="nc_banner_placeholder" style="color:var(--parchment-dark); opacity:0.6; font-size:12px;">CLIQUE PARA ENVIAR ARQUIVO</div>
+            <img id="nc_banner_preview" style="width:100%; max-height:100px; object-fit:cover; display:none; border:1px solid var(--gold);">
+            <input type="file" id="nc_banner_file" accept="image/*" style="display:none;" onchange="previewCampBanner(event)">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalCampanha')">Cancelar</button>
+      <button class="btn btn-gold" onclick="criarCampanha()">+ Criar Campanha</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: NOVO PERSONAGEM ===== -->
+<div class="modal-backdrop" id="modalPersonagem">
+  <div class="modal">
+    <div class="corner tl"></div><div class="corner tr"></div>
+    <div class="corner bl"></div><div class="corner br"></div>
+    <div class="modal-header">
+      <span class="modal-title">🛡️ NOVO PERSONAGEM</span>
+      <button class="modal-close" onclick="closeModal('modalPersonagem')">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        <div style="display:flex; gap:16px;">
+          <div id="ch_photo_area" style="width:100px; height:100px; border-radius:50%; border:1px dashed rgba(201,168,76,0.3); cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center; position:relative; background:rgba(0,0,0,0.3); overflow:hidden;" onclick="document.getElementById('ch_photo_file').click()">
+            <span id="ch_photo_placeholder" style="font-size:24px; color:var(--parchment-dark); opacity:0.3;">👤</span>
+            <img id="ch_photo_preview" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:none; border:1px solid var(--gold);">
+            <input type="file" id="ch_photo_file" accept="image/*" style="display:none;" onchange="previewCharPhoto(event)">
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column; gap:12px;">
+            <div class="form-group">
+              <label style="display:block; font-size:11px; letter-spacing:1px; color:var(--gold); margin-bottom:4px;">NOME DO PERSONAGEM</label>
+              <input type="text" id="ch_name" class="form-input">
+            </div>
+            <div class="form-group">
+              <label style="display:block; font-size:11px; letter-spacing:1px; color:var(--gold); margin-bottom:4px;">SISTEMA</label>
+              <select id="ch_system" class="form-input" onchange="renderCamposExtras()">
+                <option value="">Selecione o Sistema...</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div id="ch_dynamic_fields" style="display:flex; flex-direction:column; gap:12px;">
+          <!-- Campos dinâmicos (Raça, Classe, etc) -->
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalPersonagem')">Cancelar</button>
+      <button class="btn btn-gold" onclick="criarPersonagem()">+ Criar Personagem</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: CONFIRMAR EXCLUSÃO DE PERSONAGEM ===== -->
+<div class="modal-backdrop" id="modalConfirmDelete">
+  <div class="modal modal-small">
+    <div class="corner tl"></div><div class="corner tr"></div>
+    <div class="corner bl"></div><div class="corner br"></div>
+    <div class="modal-header">
+      <span class="modal-title">⚠ APAGAR PERSONAGEM</span>
+      <button class="modal-close" onclick="cancelarDeletarPersonagem()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="det-desc" style="text-align:center">
+        Você tem certeza que deseja apagar o personagem<br>
+        <strong style="color:var(--gold)" id="del_char_nome">—</strong>?
+      </p>
+      <p class="det-desc" style="text-align:center;opacity:0.6;font-size:0.85em">
+        Esta ação não pode ser desfeita.
+      </p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="cancelarDeletarPersonagem()">Cancelar</button>
+      <button class="btn btn-blood" onclick="executarDeletarPersonagem()">🗑 Apagar Definitivamente</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL CROPPER ===== -->
+<div class="modal-backdrop" id="modalCropper">
+  <div class="modal" style="max-width: 500px;">
+    <div class="modal-header">
+      <span class="modal-title">📐 AJUSTAR IMAGEM</span>
+      <button class="modal-close" onclick="closeCropper()">×</button>
+    </div>
+    <div class="crop-modal-body" style="padding: 16px;">
+      <div class="crop-container" id="cropContainer" onmousedown="startDragCrop(event)" onmousemove="dragCrop(event)" onmouseup="endDragCrop(event)" onmouseleave="endDragCrop(event)">
+        <div class="crop-img-wrapper" id="cropImgWrapper">
+          <img id="cropImage" class="crop-image" src="" alt="Crop">
+        </div>
+        <div class="crop-mask" id="cropMask"></div>
+      </div>
+      <div class="crop-controls" style="margin-top: 16px; display: flex; align-items: center; gap: 12px;">
+        <span style="color:var(--parchment); font-size: 14px; font-family: 'Cinzel', serif;">Zoom:</span>
+        <input type="range" id="cropZoom" min="0.1" max="3" step="0.05" value="1" class="crop-slider" oninput="updateCropZoom()">
+      </div>
+    </div>
+    <div class="modal-footer" style="padding: 16px; display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid rgba(139,105,20,0.2);">
+      <button class="btn btn-ghost" onclick="closeCropper()">Cancelar</button>
+      <button class="btn btn-gold" onclick="confirmCrop()">✂️ Recortar e Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+// =============================================================
+// SISTEMAS REGISTRADOS
+// =============================================================
+const SISTEMAS = [
+  {
+    id: 'dnd5e',
+    nome: 'D&D 5e',
+    desc: 'Dungeons & Dragons 5ª Edição — o sistema de fantasia medieval mais jogado do mundo.',
+    icon: 'D&D',
+    img: 'assets/icons/dnd.png',
+    cor: '#C9A84C',
+    corBg: 'rgba(201,168,76,0.08)',
+    ficha: 'rpg-interface.html',
+    urlCampanha: 'sistemas/dnd/campanha-dnd.html',
+    campos: [
+      { id: 'cls', label: 'Classe', tipo: 'select', opcoes: ['Bárbaro','Bardo','Clérigo','Druida','Feiticeiro','Guerreiro','Ladino','Mago','Monge','Paladino','Ranger','Bruxo'] },
+      { id: 'race', label: 'Raça', tipo: 'select', opcoes: ['Humano','Elfo','Anão','Halfling','Gnomo','Meio-Orc','Meio-Elfo','Tiefling','Draconato','Outro'] },
+      { id: 'level', label: 'Nível', tipo: 'number', min: 1, max: 20, default: 1 },
+      { id: 'align', label: 'Alinhamento', tipo: 'select', opcoes: ['Leal Bom','Neutro Bom','Caótico Bom','Leal Neutro','Neutro','Caótico Neutro','Leal Mau','Neutro Mau','Caótico Mau'] }
+    ]
+  },
+  {
+    id: 'op',
+    nome: 'Ordem Paranormal',
+    desc: 'Horror investigativo com agentes que enfrentam o paranormal. NEX, rituais e sanidade.',
+    icon: 'OP',
+    img: 'assets/icons/op.png',
+    cor: '#1BBFB5',
+    corBg: 'rgba(27,191,181,0.08)',
+    ficha: 'sistemas/ordem_paranormal/rpg-op.html',
+    urlCampanha: 'sistemas/ordem_paranormal/campanha-op.html',
+    campos: [
+      { id: 'cls', label: 'Classe', tipo: 'select', opcoes: ['Combatente','Especialista','Ocultista'] },
+      { id: 'origem', label: 'Origem', tipo: 'select', opcoes: ['Acadêmico','Amnésico','Artista','Atleta','Criança Prodígio','Detetive','Enfermeiro','Engenheiro','Executivo','Jornalista','Líder Comunitário','Lutador','Médico','Militar','Ocultista','Policial','Refugiado','Religioso','Servidor Público','Técnico'] },
+      { id: 'nex', label: 'NEX Inicial (%)', tipo: 'number', min: 5, max: 95, default: 5 }
+    ]
+  },
+  {
+    id: 'tormenta',
+    nome: 'Tormenta 20',
+    desc: 'Fantasy épico brasileiro. Sistema d20 com raças e classes únicas do cenário de Arton.',
+    icon: 'T20',
+    img: 'assets/icons/tmt.png',
+    cor: '#C45A10',
+    corBg: 'rgba(196,90,16,0.08)',
+    ficha: 'rpg-interface.html',
+    urlCampanha: 'sistemas/tormenta/campanha-tormenta.html',
+    campos: [
+      { id: 'cls', label: 'Classe', tipo: 'select', opcoes: ['Arcanista','Bárbaro','Bardo','Bucaneiro','Caçador','Cavaleiro','Clérigo','Druida','Guerreiro','Inventor','Ladino','Lutador','Nobre','Paladino'] },
+      { id: 'race', label: 'Raça', tipo: 'select', opcoes: ['Humano','Elfo','Anão','Halfling','Gnomo','Goblin','Lefou','Minotauro','Qareen','Sereia/Tritão','Sílfide','Suraggel','Tigrino'] },
+      { id: 'level', label: 'Nível', tipo: 'number', min: 1, max: 20, default: 1 }
+    ]
+  },
+  {
+    id: 'etherion',
+    nome: 'Etherion',
+    desc: 'Sistema heroico de alto poder — aventura clássica, exploração de ruínas e vida de mercenários em um mundo mágico com horrores antigos.',
+    icon: 'ETH',
+    img: 'assets/icons/eth.png',
+    cor: '#9B6FD4',
+    corBg: 'rgba(155,111,212,0.08)',
+    ficha: 'sistemas/etherion/etherion-ficha.html',
+    urlCampanha: 'sistemas/etherion/etherion-seed.html',
+    campos: [
+      { id: 'cls',   label: 'Classe', tipo: 'select', opcoes: ['Guerreiro','Paladino','Ranger','Ladino','Mago','Feiticeiro','Clérigo','Druida','Bardo','Monge','Mercenário','Explorador','Outro'] },
+      { id: 'race',  label: 'Raça',   tipo: 'select', opcoes: ['Humano','Elfo','Elfo das Sombras','Anão','Halfling','Orken','Zirkin','Draconato','Tiefling','Aasimar','Feérico','Outro'] },
+      { id: 'level', label: 'Nível',  tipo: 'number', min: 1, max: 20, default: 1 }
+    ]
+  }
+];
+
+// =============================================================
+// DADOS (localStorage)
+// =============================================================
+function loadData(key, fallback) {
+  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
+  catch(e) { return fallback; }
+}
+function saveData(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) {}
+}
+
+let CAMPANHAS   = loadData('forja_campanhas',   []);
+let PERSONAGENS = loadData('forja_personagens', []);
+
+// seeds de demo se vazio
+if (!CAMPANHAS.length) {
+  CAMPANHAS = [
+    { id: uid(), nome: 'A Maldição de Valdermoon', sistema: 'dnd5e', jogadores: 4, sessoes: 12, status: 'active', desc: 'Heróis investigam uma maldição ancestral nas ruínas de uma cidade perdida.', personagens: [] },
+    { id: uid(), nome: 'Desaparecimentos em Curitiba', sistema: 'op', jogadores: 3, sessoes: 7, status: 'active', desc: 'Agentes da Ordem investigam desaparecimentos ligados a cultos paranormais no sul do Brasil.', personagens: [] }
+  ];
+  saveData('forja_campanhas', CAMPANHAS);
+}
+if (!PERSONAGENS.length) {
+  PERSONAGENS = [
+    { id: uid(), nome: 'Aldric Stoneheart', sistema: 'dnd5e', dados: { cls: 'Paladino', race: 'Humano', level: 8, align: 'Leal Bom' } },
+    { id: uid(), nome: 'Lyra Voss',         sistema: 'dnd5e', dados: { cls: 'Mago',    race: 'Elfo',   level: 7, align: 'Neutro Bom' } },
+    { id: uid(), nome: 'Agente Raízen',      sistema: 'op',    dados: { cls: 'Combatente', origem: 'Militar', nex: 30 } }
+  ];
+  saveData('forja_personagens', PERSONAGENS);
+}
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+// =============================================================
+// NAV
+// =============================================================
+function switchSection(id) {
+  document.querySelectorAll('.section-panel').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.pnav-tab').forEach(t => t.classList.toggle('active', t.dataset.section === id));
+  document.getElementById('sec-' + id).classList.add('active');
+}
+
+// =============================================================
+// HELPER SISTEMA
+// =============================================================
+function getSistema(id) { return SISTEMAS.find(s => s.id === id) || null; }
+
+// Monta o subtítulo "Classe · Raça" ou "Classe · Origem" do card de personagem.
+// Campos ainda não preenchidos (ficha não aberta/completada) aparecem como "—".
+// Usa os 'campos' do sistema pra descobrir dinamicamente quais são os 2 campos
+// de identidade (ex: cls+race no D&D, cls+origem no OP) — assim funciona pra
+// qualquer sistema novo sem precisar hardcodar nomes de campo.
+function subtituloChar(p, s) {
+  if (!s) return '— · —';
+  const d = p.dados || {};
+  // pega os campos do tipo select (identidade), exceto progressão (number)
+  const camposIdentidade = s.campos.filter(c => c.tipo === 'select').slice(0, 2);
+  if (!camposIdentidade.length) return '— · —';
+  return camposIdentidade
+    .map(c => (d[c.id] && d[c.id] !== '') ? d[c.id] : '—')
+    .join(' · ');
+}
+
+// Retorna o campo de "progressão" do sistema (nível, NEX, etc) — o primeiro
+// campo do tipo number que tenha um default definido.
+function campoProgressao(s) {
+  if (!s) return null;
+  return s.campos.find(c => c.tipo === 'number' && c.default !== undefined) || null;
+}
+
+// Dado um personagem, devolve { texto, valor, campoId } pro badge de nível/NEX,
+// já aplicando o valor padrão do sistema quando o personagem ainda não tem nada definido.
+function progressaoDoChar(p, s) {
+  const campo = campoProgressao(s);
+  if (!campo) return null;
+  const d = p.dados || {};
+  const valor = (d[campo.id] !== undefined && d[campo.id] !== null && d[campo.id] !== '')
+    ? d[campo.id]
+    : campo.default;
+  const ehPercentual = campo.id === 'nex';
+  return {
+    texto: ehPercentual ? `${valor}%` : `Nv ${valor}`,
+    valor, campoId: campo.id
+  };
+}
+
+function sysIcon(s, size = '1.4em') {
+  if (!s) return '✦';
+  if (s.img) return `<img src="${s.img}" alt="${s.nome}" style="width:${size};height:${size};object-fit:contain;display:inline-block;vertical-align:middle;">`;
+  return s.icon || '✦';
+}
+
+function sistemaBadge(id) {
+  const s = getSistema(id);
+  if (!s) return `<span class="sys-badge" style="color:#888;border-color:rgba(128,128,128,0.3)">${id}</span>`;
+  return `<span class="sys-badge" style="color:${s.cor};border-color:${s.cor}40;background:${s.corBg}">${sysIcon(s,'1em')} ${s.nome}</span>`;
+}
+
+// =============================================================
+// RENDERIZAR CAMPANHAS
+// =============================================================
+let campFilterAtivo = 'all';
+
+function renderCampanhas() {
+  const grid = document.getElementById('campGrid');
+  const filtradas = campFilterAtivo === 'all'
+    ? CAMPANHAS
+    : CAMPANHAS.filter(c => c.sistema === campFilterAtivo);
+
+  const statusMap = {
+    active: { cls: 'status-active', label: 'ATIVA' },
+    paused: { cls: 'status-paused', label: 'PAUSADA' },
+    done:   { cls: 'status-done',   label: 'CONCLUÍDA' }
+  };
+
+  grid.innerHTML = filtradas.map((c, i) => {
+    const s = getSistema(c.sistema);
+    const st = statusMap[c.status] || statusMap.active;
+    const chars = PERSONAGENS.filter(p => (c.personagens||[]).includes(p.id));
+    return `
+    <div class="camp-card fade-in" style="animation-delay:${i*0.06}s" onclick="abrirCampanha('${c.id}')">
+      <div class="camp-card-top" style="${c.banner ? `background:url('${c.banner}') center/cover no-repeat` : `background:${s ? `linear-gradient(135deg, ${s.corBg}, rgba(0,0,0,0))` : ''}`}">
+        ${c.banner ? `<div class="camp-banner-overlay"></div>` : ''}
+        <div class="camp-icon" style="position:relative;z-index:1">${s ? sysIcon(s,'2.2em') : '⚔'}</div>
+        <span class="camp-status ${st.cls}" style="position:relative;z-index:1">${st.label}</span>
+      </div>
+      <div class="camp-card-body">
+        <div class="camp-nome">${c.nome}</div>
+        <div class="camp-desc">${c.desc}</div>
+        <div class="camp-meta">
+          ${sistemaBadge(c.sistema)}
+          <span class="meta-chip">👥 ${c.jogadores} jogadores</span>
+          <span class="meta-chip">📖 ${c.sessoes} sessões</span>
+        </div>
+        ${chars.length ? `<div class="camp-chars-mini">${chars.slice(0,4).map(p=>`<div class="char-mini-dot" title="${p.nome}">${p.nome[0]}</div>`).join('')}${chars.length > 4 ? `<div class="char-mini-dot more">+${chars.length-4}</div>` : ''}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('') + `
+    <div class="new-card fade-in" onclick="openModal('modalCampanha')">
+      <div class="new-card-icon">⚔</div>
+      <div class="new-card-label">NOVA CAMPANHA</div>
+    </div>`;
+
+  document.getElementById('count-campanhas').textContent = CAMPANHAS.length;
+  atualizarFiltrosCamp();
+}
+
+function atualizarFiltrosCamp() {
+  const row = document.getElementById('campFilter');
+  const sistemasUsados = [...new Set(CAMPANHAS.map(c => c.sistema))];
+  row.innerHTML = `<button class="filter-chip ${campFilterAtivo==='all'?'active':''}" data-filter="all" onclick="filterCamps('all')">Todas</button>` +
+    sistemasUsados.map(sid => {
+      const s = getSistema(sid);
+      return `<button class="filter-chip ${campFilterAtivo===sid?'active':''}" data-filter="${sid}" onclick="filterCamps('${sid}')" style="${campFilterAtivo===sid?`border-color:${s?.cor};color:${s?.cor}`:''}">
+        ${s ? sysIcon(s,'1.1em')+' '+s.nome : sid}
+      </button>`;
+    }).join('');
+}
+
+function filterCamps(f) {
+  campFilterAtivo = f;
+  renderCampanhas();
+}
+
+// =============================================================
+// ABRIR CAMPANHA (detalhes)
+// =============================================================
+function abrirCampanha(id) {
+  const c = CAMPANHAS.find(x => x.id === id);
+  if (!c) return;
+  const s = getSistema(c.sistema);
+  if (s && s.urlCampanha) {
+    window.location.href = `${s.urlCampanha}?id=${c.id}`;
+  } else {
+    showToast('⚠ Painel de campanha não configurado para este sistema.', 'warning');
+  }
+}
+
+function charMiniCard(p, campId, nacamp) {
+  const s = getSistema(p.sistema);
+  const prog = progressaoDoChar(p, s);
+  const label = nacamp ? 'Remover' : 'Adicionar';
+  const fn = nacamp ? `removerCharDaCamp` : `adicionarCharNaCamp`;
+  return `
+  <div class="char-det-card">
+    <div class="char-det-icon" style="color:${s?.cor||'var(--gold)'}">${sysIcon(s,'1.8em')}</div>
+    <div class="char-det-info">
+      <div class="char-det-nome">${p.nome}</div>
+      <div class="char-det-sub">${p.dados?.cls || '—'}${prog ? ' · '+prog.texto : ''}</div>
+    </div>
+    <button class="char-det-btn ${nacamp?'btn-remove':'btn-add'}" onclick="${fn}('${campId}','${p.id}')">${label}</button>
+  </div>`;
+}
+
+function adicionarCharNaCamp(campId, charId) {
+  const c = CAMPANHAS.find(x => x.id === campId);
+  if (!c) return;
+  if (!c.personagens) c.personagens = [];
+  if (!c.personagens.includes(charId)) c.personagens.push(charId);
+  saveData('forja_campanhas', CAMPANHAS);
+  abrirCampanha(campId);
+  renderCampanhas();
+  showToast('✦ Personagem adicionado à campanha!', 'gold');
+}
+
+function removerCharDaCamp(campId, charId) {
+  const c = CAMPANHAS.find(x => x.id === campId);
+  if (!c) return;
+  c.personagens = (c.personagens||[]).filter(id => id !== charId);
+  saveData('forja_campanhas', CAMPANHAS);
+  abrirCampanha(campId);
+  renderCampanhas();
+  showToast('Personagem removido da campanha.', 'info');
+}
+
+// =============================================================
+// IMAGE UPLOAD — compressão automática via canvas
+// =============================================================
+function compressImage(file, maxW, maxH, quality, callback) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      let w = img.width, h = img.height;
+      if (w > maxW || h > maxH) {
+        const ratio = Math.min(maxW / w, maxH / h);
+        w = Math.round(w * ratio); h = Math.round(h * ratio);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      callback(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function handleImgUpload(inputId, previewId, placeholderId, callback) {
+  const file = document.getElementById(inputId).files[0];
+  if (!file) return;
+  compressImage(file, 800, 800, 0.8, base64 => {
+    const preview = document.getElementById(previewId);
+    const placeholder = document.getElementById(placeholderId);
+    preview.src = base64;
+    preview.style.display = 'block';
+    placeholder.style.display = 'none';
+    preview.closest('.img-upload-area').classList.add('has-image');
+    if (callback) callback(base64);
+  });
+}
+
+// Armazena temporariamente as imagens enquanto o modal está aberto
+let _pendingBanner = null;
+let _pendingPhoto  = null;
+
+// =============================================================
+// CROPPER LOGIC
+// =============================================================
+let currentCropType = null; 
+let cropImgOrigin = { width: 0, height: 0 };
+let cropTransform = { x: 0, y: 0, scale: 1 };
+let isDraggingCrop = false;
+let startDragPos = { x: 0, y: 0 };
+
+function constrainCrop() {
+  const container = document.getElementById('cropContainer');
+  const cx = container.clientWidth / 2;
+  const cy = container.clientHeight / 2;
+  let maskW = currentCropType === 'char' ? 200 : 300;
+  let maskH = currentCropType === 'char' ? 200 : 120;
+
+  let minScale = Math.max(maskW / cropImgOrigin.width, maskH / cropImgOrigin.height);
+  if (cropTransform.scale < minScale) {
+    cropTransform.scale = minScale;
+    document.getElementById('cropZoom').value = minScale;
+  }
+
+  const maskLeft = cx - maskW / 2;
+  const maskRight = cx + maskW / 2;
+  const maskTop = cy - maskH / 2;
+  const maskBottom = cy + maskH / 2;
+
+  const drawW = cropImgOrigin.width * cropTransform.scale;
+  const drawH = cropImgOrigin.height * cropTransform.scale;
+
+  if (cropTransform.x > maskLeft) cropTransform.x = maskLeft;
+  if (cropTransform.x + drawW < maskRight) cropTransform.x = maskRight - drawW;
+  if (cropTransform.y > maskTop) cropTransform.y = maskTop;
+  if (cropTransform.y + drawH < maskBottom) cropTransform.y = maskBottom - drawH;
+}
+
+function previewCampBanner(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  openCropperFromFile(file, 'banner');
+}
+function previewCharPhoto(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  openCropperFromFile(file, 'char');
+}
+
+function openCropperFromFile(file, type) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      document.getElementById('cropImage').src = e.target.result;
+      document.getElementById('cropImgWrapper').style.transformOrigin = '0 0';
+      cropImgOrigin = { width: img.width, height: img.height };
+      
+      currentCropType = type;
+      const mask = document.getElementById('cropMask');
+      if (type === 'char') {
+        mask.className = 'crop-mask round';
+      } else {
+        mask.className = 'crop-mask rect';
+      }
+      
+      let maskW = type === 'char' ? 200 : 300;
+      let maskH = type === 'char' ? 200 : 120;
+      let minScale = Math.max(maskW / img.width, maskH / img.height);
+      
+      document.getElementById('cropZoom').min = minScale;
+      document.getElementById('cropZoom').max = minScale * 5;
+      document.getElementById('cropZoom').value = minScale;
+      
+      cropTransform = { x: 0, y: 0, scale: minScale };
+      
+      document.getElementById('modalCropper').style.display = 'flex';
+      setTimeout(() => centerCropImage(), 50);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function closeCropper() {
+  document.getElementById('modalCropper').style.display = 'none';
+  document.getElementById('nc_banner_file').value = '';
+  document.getElementById('ch_photo_file').value = '';
+}
+
+function centerCropImage() {
+  const container = document.getElementById('cropContainer');
+  const cx = container.clientWidth / 2;
+  const cy = container.clientHeight / 2;
+  const imgW = cropImgOrigin.width * cropTransform.scale;
+  const imgH = cropImgOrigin.height * cropTransform.scale;
+  cropTransform.x = cx - imgW / 2;
+  cropTransform.y = cy - imgH / 2;
+  constrainCrop();
+  applyCropTransform();
+}
+
+function updateCropZoom() {
+  const newScale = parseFloat(document.getElementById('cropZoom').value);
+  const scaleRatio = newScale / cropTransform.scale;
+  const container = document.getElementById('cropContainer');
+  const cx = container.clientWidth / 2;
+  const cy = container.clientHeight / 2;
+  cropTransform.x = cx - (cx - cropTransform.x) * scaleRatio;
+  cropTransform.y = cy - (cy - cropTransform.y) * scaleRatio;
+  cropTransform.scale = newScale;
+  constrainCrop();
+  applyCropTransform();
+}
+
+function startDragCrop(e) {
+  isDraggingCrop = true;
+  startDragPos = { x: e.clientX, y: e.clientY };
+}
+function dragCrop(e) {
+  if (!isDraggingCrop) return;
+  const dx = e.clientX - startDragPos.x;
+  const dy = e.clientY - startDragPos.y;
+  cropTransform.x += dx;
+  cropTransform.y += dy;
+  startDragPos = { x: e.clientX, y: e.clientY };
+  constrainCrop();
+  applyCropTransform();
+}
+function endDragCrop(e) {
+  isDraggingCrop = false;
+}
+
+function applyCropTransform() {
+  const wrapper = document.getElementById('cropImgWrapper');
+  wrapper.style.transform = `translate(${cropTransform.x}px, ${cropTransform.y}px) scale(${cropTransform.scale})`;
+}
+
+function confirmCrop() {
+  const container = document.getElementById('cropContainer');
+  const cx = container.clientWidth / 2;
+  const cy = container.clientHeight / 2;
+  let maskW = currentCropType === 'char' ? 200 : 300;
+  let maskH = currentCropType === 'char' ? 200 : 120;
+  
+  const canvas = document.createElement('canvas');
+  canvas.width = maskW;
+  canvas.height = maskH;
+  const ctx = canvas.getContext('2d');
+  
+  const maskLeft = cx - maskW / 2;
+  const maskTop = cy - maskH / 2;
+  
+  const offsetX = maskLeft - cropTransform.x;
+  const offsetY = maskTop - cropTransform.y;
+  
+  const sx = offsetX / cropTransform.scale;
+  const sy = offsetY / cropTransform.scale;
+  const sWidth = maskW / cropTransform.scale;
+  const sHeight = maskH / cropTransform.scale;
+  
+  const imgElement = document.getElementById('cropImage');
+  ctx.drawImage(imgElement, sx, sy, sWidth, sHeight, 0, 0, maskW, maskH);
+  
+  const base64 = canvas.toDataURL('image/jpeg', 0.85);
+  
+  if (currentCropType === 'char') {
+    _pendingPhoto = base64;
+    document.getElementById('ch_photo_preview').src = base64;
+    document.getElementById('ch_photo_preview').style.display = 'block';
+    document.getElementById('ch_photo_preview').style.borderRadius = '50%';
+    document.getElementById('ch_photo_placeholder').style.display = 'none';
+  } else {
+    _pendingBanner = base64;
+    document.getElementById('nc_banner_preview').src = base64;
+    document.getElementById('nc_banner_preview').style.display = 'block';
+    document.getElementById('nc_banner_placeholder').style.display = 'none';
+  }
+  closeCropper();
+}
+
+// =============================================================
+// CRIAR CAMPANHA
+// =============================================================
+function criarCampanha() {
+  const nome    = document.getElementById('nc_name').value.trim();
+  const sistema = document.getElementById('nc_system').value;
+  const jogadores = document.getElementById('nc_players').value;
+  const desc    = document.getElementById('nc_desc').value.trim();
+
+  if (!nome || !sistema) { showToast('⚠ Preencha o nome e o sistema', 'warning'); return; }
+
+  CAMPANHAS.push({ id: uid(), nome, sistema, jogadores: parseInt(jogadores)||4, sessoes: 0, status: 'active', desc: desc || 'Uma nova campanha aguarda...', personagens: [], banner: _pendingBanner || null, criadaEm: Date.now(), ultimaSessao: null });
+  saveData('forja_campanhas', CAMPANHAS);
+  renderCampanhas();
+  closeModal('modalCampanha');
+  document.getElementById('nc_name').value = '';
+  document.getElementById('nc_desc').value = '';
+  document.getElementById('nc_system').value = '';
+  // reset banner upload
+  _pendingBanner = null;
+  const bp = document.getElementById('nc_banner_preview');
+  const bph = document.getElementById('nc_banner_placeholder');
+  if (bp) { bp.src=''; bp.style.display='none'; }
+  if (bph) bph.style.display='flex';
+  document.getElementById('nc_banner_area')?.classList.remove('has-image');
+  showToast(`⚔ Campanha "${nome}" criada!`, 'gold');
+}
+
+// =============================================================
+// RENDERIZAR PERSONAGENS
+// =============================================================
+let charFilterAtivo = 'all';
+
+function renderPersonagens() {
+  const grid = document.getElementById('charGrid');
+  const filtrados = charFilterAtivo === 'all'
+    ? PERSONAGENS
+    : PERSONAGENS.filter(p => p.sistema === charFilterAtivo);
+
+  grid.innerHTML = filtrados.map((p, i) => {
+    const s = getSistema(p.sistema);
+    const d = p.dados || {};
+    const prog = progressaoDoChar(p, s);
+    const campanhasDoChar = CAMPANHAS.filter(c => (c.personagens||[]).includes(p.id));
+    return `
+    <div class="char-card fade-in" style="animation-delay:${i*0.06}s" onclick="abrirPersonagem('${p.id}')">
+      <button class="char-delete-btn" title="Excluir personagem" onclick="event.stopPropagation(); confirmarDeletarPersonagem('${p.id}')">✕</button>
+      <div class="char-card-avatar" style="color:${s?.cor||'var(--gold)'}; border-color:${s?.cor||'var(--gold-dark)'}40; ${p.foto ? 'background:none;' : ''}">
+        ${p.foto
+          ? `<img src="${p.foto}" alt="${p.nome}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;">`
+          : sysIcon(s,'2.8em')}
+        ${prog ? `<div class="char-level-badge">${prog.texto}</div>` : ''}
+      </div>
+      <div class="char-nome">${p.nome}</div>
+      <div class="char-sub">${subtituloChar(p, s)}</div>
+      ${sistemaBadge(p.sistema)}
+      ${campanhasDoChar.length ? `<div class="char-camps-line">⚔ ${campanhasDoChar.map(c=>c.nome).join(', ')}</div>` : ''}
+    </div>`;
+  }).join('') + `
+    <div class="new-card fade-in" onclick="openModal('modalPersonagem')">
+      <div class="new-card-icon">✦</div>
+      <div class="new-card-label">NOVO PERSONAGEM</div>
+    </div>`;
+
+  document.getElementById('count-personagens').textContent = PERSONAGENS.length;
+  atualizarFiltrosChar();
+}
+
+function atualizarFiltrosChar() {
+  const row = document.getElementById('charFilter');
+  const sistemasUsados = [...new Set(PERSONAGENS.map(p => p.sistema))];
+  row.innerHTML = `<button class="filter-chip ${charFilterAtivo==='all'?'active':''}" onclick="filterChars('all')">Todos</button>` +
+    sistemasUsados.map(sid => {
+      const s = getSistema(sid);
+      return `<button class="filter-chip ${charFilterAtivo===sid?'active':''}" onclick="filterChars('${sid}')" style="${charFilterAtivo===sid && s ? `border-color:${s.cor};color:${s.cor}` : ''}">
+        ${s ? sysIcon(s,'1.1em')+' '+s.nome : sid}
+      </button>`;
+    }).join('');
+}
+
+function filterChars(f) {
+  charFilterAtivo = f;
+  renderPersonagens();
+}
+
+function abrirPersonagem(id) {
+  const p = PERSONAGENS.find(x => x.id === id);
+  if (!p) return;
+  const s = getSistema(p.sistema);
+  if (s?.ficha) window.location.href = `${s.ficha}?id=${p.id}`;
+  else showToast('⚠ Ficha não configurada para este sistema.', 'warning');
+}
+
+// =============================================================
+// CRIAR PERSONAGEM
+// =============================================================
+function criarPersonagem() {
+  const nome    = document.getElementById('ch_name').value.trim();
+  const sistema = document.getElementById('ch_system').value;
+  if (!nome || !sistema) { showToast('⚠ Preencha o nome e o sistema', 'warning'); return; }
+
+  const s = getSistema(sistema);
+  const novoId = uid();
+
+  // pré-popula com os valores padrão de cada campo (ex: nível 1, NEX 5%)
+  // pra a ficha nascer já sincronizada com o que aparece nesta tela.
+  const dadosIniciais = {};
+  (s?.campos || []).forEach(c => {
+    if (c.default !== undefined) dadosIniciais[c.id] = c.default;
+  });
+
+  PERSONAGENS.push({ id: novoId, nome, sistema, dados: dadosIniciais, foto: _pendingPhoto || null });
+  saveData('forja_personagens', PERSONAGENS);
+  renderPersonagens();
+  closeModal('modalPersonagem');
+  document.getElementById('ch_name').value = '';
+  document.getElementById('ch_system').value = '';
+  // reset photo upload
+  _pendingPhoto = null;
+  const pp = document.getElementById('ch_photo_preview');
+  const pph = document.getElementById('ch_photo_placeholder');
+  if (pp) { pp.src=''; pp.style.display='none'; }
+  if (pph) pph.style.display='flex';
+  document.getElementById('ch_photo_area')?.classList.remove('has-image');
+
+  if (s?.ficha) {
+    // navega direto pra ficha do personagem recém-criado, na mesma aba —
+    // o toast não teria tempo de aparecer antes da troca de página, então
+    // a própria transição já serve como confirmação visual aqui.
+    window.location.href = `${s.ficha}?id=${novoId}&nome=${encodeURIComponent(nome)}`;
+  } else {
+    showToast(`✦ ${nome} criado(a) com sucesso!`, 'gold');
+  }
+}
+
+// =============================================================
+// DELETAR PERSONAGEM
+// =============================================================
+let _charParaDeletar = null;
+
+function confirmarDeletarPersonagem(id) {
+  const p = PERSONAGENS.find(x => x.id === id);
+  if (!p) return;
+  _charParaDeletar = id;
+  document.getElementById('del_char_nome').textContent = p.nome;
+  openModal('modalConfirmDelete');
+}
+
+function cancelarDeletarPersonagem() {
+  _charParaDeletar = null;
+  closeModal('modalConfirmDelete');
+}
+
+function executarDeletarPersonagem() {
+  if (!_charParaDeletar) return;
+  const id = _charParaDeletar;
+  const p = PERSONAGENS.find(x => x.id === id);
+
+  PERSONAGENS = PERSONAGENS.filter(x => x.id !== id);
+  saveData('forja_personagens', PERSONAGENS);
+
+  // remove o personagem de qualquer campanha em que estivesse listado
+  CAMPANHAS.forEach(c => { c.personagens = (c.personagens||[]).filter(cid => cid !== id); });
+  saveData('forja_campanhas', CAMPANHAS);
+
+  _charParaDeletar = null;
+  closeModal('modalConfirmDelete');
+  renderPersonagens();
+  renderCampanhas();
+  showToast(`🗑 ${p ? p.nome : 'Personagem'} foi apagado.`, 'warning');
+}
+
+// =============================================================
+// RENDERIZAR SISTEMAS
+// =============================================================
+function renderSistemas() {
+  const grid = document.getElementById('sistemasGrid');
+  grid.innerHTML = SISTEMAS.map((s, i) => {
+    const camps = CAMPANHAS.filter(c => c.sistema === s.id).length;
+    const chars = PERSONAGENS.filter(p => p.sistema === s.id).length;
+    return `
+    <div class="sistema-card fade-in" style="animation-delay:${i*0.07}s; --sys-cor:${s.cor}">
+      <div class="sistema-icon" style="color:${s.cor}">${sysIcon(s,'3.5em')}</div>
+      <div class="sistema-nome">${s.nome}</div>
+      <div class="sistema-desc">${s.desc}</div>
+      <div class="sistema-stats">
+        <span>⚔ ${camps} campanha${camps!==1?'s':''}</span>
+        <span>🧙 ${chars} personagem${chars!==1?'s':''}</span>
+      </div>
+      <button class="sistema-btn" style="border-color:${s.cor}40;color:${s.cor}" onclick="window.location.href='livros/sistema-hub.html?sys=${s.id}'">
+        Ver Sistema →
+      </button>
+    </div>`;
+  }).join('') + `
+    <div class="sistema-card sistema-add fade-in" onclick="showToast('🔧 Em breve você poderá adicionar sistemas customizados!','info')">
+      <div class="sistema-icon" style="opacity:0.3">+</div>
+      <div class="sistema-nome" style="opacity:0.4">Adicionar Sistema</div>
+      <div class="sistema-desc" style="opacity:0.3">Importe ou configure um sistema personalizado.</div>
+    </div>`;
+
+  document.getElementById('count-sistemas').textContent = SISTEMAS.length;
+}
+
+// =============================================================
+// LIVROS — aqui dentro do home só existe o GRID DE MÓDULOS.
+// Ao clicar num módulo, navega para livros-sistema.html (página própria,
+// com sua própria top bar e seta de voltar pro home). O leitor de um
+// livro específico abre outra página ainda (livro-leitor.html), com seta
+// de voltar pra livros-sistema.html — assim cada nível tem seu próprio
+// "voltar" pro nível anterior, sem depender de troca de aba no home.
+// =============================================================
+let INDICE_LIVROS = null;   // só usado aqui pra mostrar a contagem no grid
+
+async function carregarIndiceLivros() {
+  try {
+    const resp = await fetch('assets/livros/livros-index.json');
+    if (!resp.ok) throw new Error('Índice não encontrado');
+    INDICE_LIVROS = await resp.json();
+  } catch (e) {
+    console.error('Falha ao carregar livros-index.json:', e);
+    INDICE_LIVROS = {};
+    SISTEMAS.forEach(s => INDICE_LIVROS[s.id] = []);
+  }
+  // mescla registros extras feitos via página livros-sistema.html (ver nota
+  // lá sobre a limitação do localStorage).
+  const extras = JSON.parse(localStorage.getItem('forja_livros_extras') || '{}');
+  Object.keys(extras).forEach(sid => {
+    if (!INDICE_LIVROS[sid]) INDICE_LIVROS[sid] = [];
+    extras[sid].forEach(entrada => {
+      const jaExiste = INDICE_LIVROS[sid].some(l => l.arquivo === entrada.arquivo);
+      if (!jaExiste) INDICE_LIVROS[sid].push(entrada);
+    });
+  });
+  renderLivrosSistemasGrid();
+}
+
+function renderLivrosSistemasGrid() {
+  const grid = document.getElementById('livrosSistemasGrid');
+  if (!grid) return;
+  const totalLivros = SISTEMAS.reduce((acc, s) => acc + (INDICE_LIVROS?.[s.id]?.length || 0), 0);
+  document.getElementById('count-livros').textContent = totalLivros;
+
+  grid.innerHTML = SISTEMAS.map((s, i) => {
+    const livros = INDICE_LIVROS?.[s.id] || [];
+    return `
+    <div class="sistema-card fade-in" style="animation-delay:${i*0.07}s; --sys-cor:${s.cor}" onclick="window.location.href='livros/livros-sistema.html?sys=${s.id}'">
+      <div class="sistema-icon" style="color:${s.cor}">${sysIcon(s,'3.5em')}</div>
+      <div class="sistema-nome">${s.nome}</div>
+      <div class="sistema-desc">${s.desc}</div>
+      <div class="sistema-stats">
+        <span>📚 ${livros.length} livro${livros.length !== 1 ? 's' : ''}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+
+function preencherSelectsSistema() {
+  ['nc_system', 'ch_system'].forEach(selId => {
+    const sel = document.getElementById(selId);
+    if (!sel) return;
+    SISTEMAS.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.id;
+      opt.textContent = s.icon + ' ' + s.nome;
+      sel.appendChild(opt);
+    });
+  });
+}
+
+// =============================================================
+// MODAIS
+// =============================================================
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.querySelectorAll('.modal-backdrop').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) closeModal(m.id); });
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.querySelectorAll('.modal-backdrop.open').forEach(m => closeModal(m.id));
+});
+
+// =============================================================
+// TOAST
+// =============================================================
+function showToast(msg, type = '') {
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.innerHTML = msg;
+  if (type === 'gold')    t.style.borderColor = 'var(--gold)';
+  if (type === 'warning') t.style.borderColor = 'var(--blood-light)';
+  c.appendChild(t);
+  setTimeout(() => {
+    t.style.opacity = '0'; t.style.transform = 'translateX(30px)';
+    t.style.transition = 'all 0.3s';
+    setTimeout(() => t.remove(), 300);
+  }, 2800);
+}
+
+// =============================================================
+// PARTICLES
+// =============================================================
+function initParticles() {
+  const container = document.getElementById('particles');
+  for (let i = 0; i < 20; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const dur = 10 + Math.random() * 14;
+    p.style.setProperty('--dur', dur + 's');
+    p.style.setProperty('--delay', (Math.random() * dur) + 's');
+    p.style.setProperty('--x', (Math.random() * 100) + '%');
+    p.style.width = p.style.height = Math.random() > 0.7 ? '3px' : '2px';
+    p.style.opacity = (0.2 + Math.random() * 0.35).toString();
+    container.appendChild(p);
+  }
+}
+
+// =============================================================
+// INIT
+// =============================================================
+function init() {
+  initParticles();
+  preencherSelectsSistema();
+  renderCampanhas();
+  renderPersonagens();
+  renderSistemas();
+  carregarIndiceLivros();
+}
+init();
+</script>
+</body>
+</html>

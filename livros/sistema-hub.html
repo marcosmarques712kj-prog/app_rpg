@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manual do Sistema — Forja das Eras</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cinzel+Decorative:wght@400;700&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/home-screen.css">
+<link rel="stylesheet" href="sistema-hub.css">
+</head>
+<body>
+
+<!-- ===== TOP BAR ===== -->
+<div class="hub-topbar">
+  <button class="hub-back" onclick="voltarParaHome()">← Voltar</button>
+  <div class="hub-identity">
+    <div class="hub-sys-icon" id="hubSysIcon"></div>
+    <div>
+      <span class="hub-sys-name" id="hubSysName">—</span>
+      <span class="hub-sys-desc" id="hubSysDesc"></span>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TABS ===== -->
+<nav class="hub-tabs" id="hubTabs">
+  <!-- injetado via JS -->
+</nav>
+
+<div class="hub-wrap" id="hubContent">
+  <!-- conteúdo injetado via JS após carregar o sistema -->
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="sistema-hub.js"></script>
+</body>
+</html>

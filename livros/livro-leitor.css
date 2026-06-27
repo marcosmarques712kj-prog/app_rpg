@@ -1,0 +1,140 @@
+:root {
+  --parchment:       #F2E8D5;
+  --parchment-dark:  #E0C89A;
+  --ink:             #1A0E00;
+  --gold:            #C9A84C;
+  --gold-light:      #E8C96D;
+  --gold-dark:       #8B6914;
+  --blood:           #7A1818;
+  --blood-light:     #A02020;
+  --arcane:          #1A2E5C;
+  --arcane-glow:     #4A6AAF;
+  --stone:           #0D0804;
+  --stone-mid:       #1C1208;
+  --stone-light:     #2A1C0C;
+  --ember:           #8B3A00;
+  --ember-light:     #C45A10;
+  --parchment-border:#B89055;
+  --success-light:   #4A9A4A;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'EB Garamond', Georgia, serif;
+  background: var(--stone);
+  color: var(--parchment);
+  min-height: 100vh;
+  overflow-x: hidden;
+  background-image:
+    radial-gradient(ellipse at 15% 30%, rgba(139,58,0,0.07) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 70%, rgba(26,46,92,0.09) 0%, transparent 50%);
+}
+
+/* ===== TOP BAR (idêntico ao padrão da ficha — rpg-interface.css) ===== */
+.sheet-topbar {
+  background: linear-gradient(180deg, #060300 0%, var(--stone-mid) 100%);
+  border-bottom: 1px solid var(--gold-dark);
+  padding: 0 28px;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 4px 32px rgba(0,0,0,0.9);
+  height: 60px;
+}
+.sheet-back {
+  font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 2px;
+  color: var(--parchment-dark); background: none; border: none;
+  cursor: pointer; opacity: 0.6; transition: opacity 0.2s;
+  display: flex; align-items: center; gap: 6px;
+}
+.sheet-back:hover { opacity: 1; color: var(--gold); }
+.sheet-identity { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; justify-content: center; }
+.sheet-titulo-livro {
+  font-family: 'Cinzel Decorative', serif; font-size: 18px; color: var(--gold);
+  letter-spacing: 1.5px; text-align: center; max-width: 420px;
+  text-shadow: 0 0 20px rgba(201,168,76,0.3);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.sheet-meta-livro {
+  font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 2px;
+  color: var(--parchment-dark); opacity: 0.5; white-space: nowrap;
+}
+
+/* ===== "TABS" da página (aqui usadas só pra breadcrumb visual) ===== */
+.sheet-tabs {
+  background: var(--stone-mid);
+  border-bottom: 1px solid rgba(139,105,20,0.35);
+  display: flex; align-items: center; padding: 0 28px; position: sticky; top: 60px; z-index: 99;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.5);
+  height: 42px;
+  font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 1.5px;
+  color: var(--parchment-dark); opacity: 0.7;
+}
+.sheet-tabs .crumb-sep { margin: 0 8px; opacity: 0.4; }
+.sheet-tabs .crumb-current { color: var(--gold); opacity: 1; }
+
+/* ===== PAGE WRAP ===== */
+.sheet-wrap { max-width: 1320px; margin: 0 auto; padding: 28px 28px 70px; }
+
+/* ===== LEITOR ===== */
+.leitor-wrap { display: grid; grid-template-columns: 280px 1fr; gap: 0; background: var(--stone-mid); border: 1px solid rgba(139,105,20,0.25); min-height: 70vh; }
+.leitor-sumario { border-right: 1px solid rgba(139,105,20,0.25); padding: 20px 0; overflow-y: auto; max-height: 80vh; }
+.leitor-sumario-titulo {
+  font-family: 'Cinzel', serif; font-size: 10px; letter-spacing: 2.5px;
+  color: var(--gold-dark); text-transform: uppercase; padding: 0 18px 12px;
+  border-bottom: 1px solid rgba(139,105,20,0.15); margin-bottom: 8px;
+}
+.sumario-item {
+  display: block; width: 100%; text-align: left; background: none; border: none;
+  font-family: 'EB Garamond', serif; font-size: 14px; color: var(--parchment-dark);
+  padding: 9px 18px; cursor: pointer; transition: all 0.15s; line-height: 1.4;
+  border-left: 2px solid transparent; opacity: 0.7;
+}
+.sumario-item:hover { opacity: 1; background: rgba(201,168,76,0.05); color: var(--gold-light); }
+.sumario-item.active { opacity: 1; color: var(--gold); border-left-color: var(--gold); background: rgba(201,168,76,0.08); }
+
+.leitor-conteudo { padding: 32px 44px; overflow-y: auto; max-height: 80vh; }
+.leitor-cap-titulo { font-family: 'Cinzel Decorative', serif; font-size: 20px; color: var(--gold); letter-spacing: 1px; margin-bottom: 6px; }
+.leitor-cap-pagina { font-family: 'Cinzel', serif; font-size: 10px; letter-spacing: 1.5px; color: var(--parchment-dark); opacity: 0.4; margin-bottom: 22px; }
+.leitor-texto { font-family: 'EB Garamond', serif; font-size: 17px; line-height: 1.85; color: var(--parchment); white-space: pre-wrap; }
+.leitor-texto mark { background: rgba(201,168,76,0.35); color: var(--gold-light); padding: 0 2px; }
+.leitor-nav-botoes { display: flex; justify-content: space-between; margin-top: 36px; padding-top: 20px; border-top: 1px solid rgba(139,105,20,0.15); }
+
+/* ===== BUSCA DENTRO DO LIVRO ===== */
+.leitor-busca-row { display: flex; gap: 8px; padding: 0 18px 16px; border-bottom: 1px solid rgba(139,105,20,0.15); margin-bottom: 8px; margin-top: 14px; }
+.leitor-busca-input {
+  flex: 1; background: rgba(0,0,0,0.3); border: 1px solid rgba(139,105,20,0.3);
+  color: var(--parchment); font-family: 'EB Garamond', serif; font-size: 13px;
+  padding: 7px 10px; outline: none;
+}
+.leitor-busca-resultados { padding: 0 18px; max-height: 30vh; overflow-y: auto; }
+.busca-resultado-item {
+  display: block; width: 100%; text-align: left; background: none; border: none;
+  font-family: 'EB Garamond', serif; font-size: 12.5px; color: var(--parchment-dark);
+  padding: 8px 0; cursor: pointer; border-bottom: 1px solid rgba(139,105,20,0.1);
+  line-height: 1.4; opacity: 0.85;
+}
+.busca-resultado-item:hover { color: var(--gold-light); }
+.busca-resultado-item .res-cap { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 1px; color: var(--gold-dark); display: block; margin-bottom: 3px; }
+.busca-resultado-item mark { background: rgba(201,168,76,0.35); color: var(--gold-light); padding: 0 1px; }
+.det-empty { font-family: 'EB Garamond', serif; font-size: 13px; font-style: italic; color: var(--parchment-dark); opacity: 0.45; padding: 0 18px; }
+
+/* ===== BOTÕES (reaproveitados) ===== */
+.btn { font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 2px; padding: 9px 20px; cursor: pointer; transition: all 0.2s; border: 1px solid; }
+.btn-ghost { background: none; border-color: rgba(139,105,20,0.3); color: var(--parchment-dark); }
+.btn-ghost:hover { border-color: var(--gold-dark); color: var(--gold); }
+.btn[disabled] { opacity: 0.3; cursor: default; }
+
+/* ===== TOAST (reaproveitado) ===== */
+.toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 300; display: flex; flex-direction: column; gap: 8px; }
+.toast { background: var(--stone-mid); border: 1px solid rgba(139,105,20,0.4); color: var(--parchment); font-family: 'Cinzel', serif; font-size: 12px; letter-spacing: 1px; padding: 12px 18px; box-shadow: 0 8px 32px rgba(0,0,0,0.7); animation: slideIn 0.3s ease; }
+@keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+
+.loading-msg { font-family: 'EB Garamond', serif; font-style: italic; color: var(--parchment-dark); opacity: 0.5; padding: 60px; text-align: center; }
+
+@media (max-width: 800px) {
+  .leitor-wrap { grid-template-columns: 1fr; }
+  .leitor-sumario { max-height: 220px; border-right: none; border-bottom: 1px solid rgba(139,105,20,0.25); }
+  .leitor-conteudo { padding: 24px 20px; max-height: none; }
+  .sheet-wrap { padding: 20px 16px 50px; }
+}

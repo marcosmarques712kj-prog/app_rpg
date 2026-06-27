@@ -1,0 +1,24 @@
+{
+  "id": "exemplo-guia-rapido",
+  "titulo": "Guia Rápido (Exemplo)",
+  "sistema": "dnd5e",
+  "tipo": "basico",
+  "totalPaginas": 3,
+  "capitulos": [
+    {
+      "titulo": "Como usar esta aba",
+      "conteudo": "Este é um livro de exemplo, gerado automaticamente para você ver como a leitura funciona antes de extrair seus PDFs reais.\n\nQuando você rodar o script extrair_livro.py em um PDF de verdade, ele vai gerar um JSON parecido com este, só que com o conteúdo real do livro dividido em capítulos.\n\nUse a busca no topo para encontrar qualquer palavra dentro do livro inteiro, e o sumário na lateral para navegar direto até a seção que você quer.",
+      "pagina_inicio": 1
+    },
+    {
+      "titulo": "Sobre a extração de PDFs",
+      "conteudo": "O script identifica títulos de capítulo observando o tamanho da fonte do texto no PDF original. Trechos com fonte bem maior que o corpo de texto normal, ou em negrito e isolados em uma linha curta, são tratados como títulos de seção.\n\nEssa detecção não é perfeita para todo tipo de diagramação, mas na grande maioria dos livros de RPG (que seguem um padrão visual de título grande + corpo de texto) funciona bem. Quando não funcionar perfeitamente, você pode editar o JSON gerado manualmente para ajustar os títulos de capítulo.",
+      "pagina_inicio": 2
+    },
+    {
+      "titulo": "Adicionando livros de campanha",
+      "conteudo": "Livros de campanha funcionam exatamente como livros básicos: você roda o mesmo script, só muda o parâmetro --tipo para campanha. Eles aparecem numa seção separada dentro do sistema, para não misturar com os livros de regras.",
+      "pagina_inicio": 3
+    }
+  ]
+}

@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Leitor — Forja das Eras</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cinzel+Decorative:wght@400;700&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="livro-leitor.css">
+</head>
+<body>
+
+<!-- ===== TOP BAR (mesmo padrão da ficha de personagem) ===== -->
+<div class="sheet-topbar">
+  <button class="sheet-back" onclick="voltarParaListaDoSistema()">← Voltar</button>
+  <div class="sheet-identity">
+    <span class="sheet-titulo-livro" id="topbarTitulo">Carregando...</span>
+  </div>
+  <span class="sheet-meta-livro" id="topbarMeta"></span>
+</div>
+
+<!-- ===== BREADCRUMB (no lugar das tabs, já que aqui não há abas) ===== -->
+<nav class="sheet-tabs">
+  <span class="crumb-link" style="cursor:pointer" onclick="window.location.href='../index.html'">📚 Livros</span>
+  <span class="crumb-sep">›</span>
+  <span class="crumb-link" style="cursor:pointer" onclick="voltarParaListaDoSistema()" id="tabsSistemaNome">—</span>
+  <span class="crumb-sep">›</span>
+  <span class="crumb-current" id="tabsLivroNome">—</span>
+</nav>
+
+<div class="sheet-wrap">
+  <div id="leitorContainer">
+    <div class="loading-msg">Abrindo o livro...</div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+// =============================================================
+// SISTEMAS — usado só pra exibir nome/ícone do sistema no breadcrumb.
+// Mantenha sincronizado com a lista em home-screen.html.
+// =============================================================
+const SISTEMAS_LABEL = {
+  dnd5e:    { nome: 'D&D 5e',           icon: '⚔' },
+  op:       { nome: 'Ordem Paranormal', icon: '👁' },
+  tormenta: { nome: 'Tormenta 20',      icon: '🔥' },
+  etherion: { nome: 'Etherion',         icon: '✦' }
+};
+
+function voltarParaListaDoSistema() {
+  const sys = getParamUrl('sys') || (livroAtualObj ? livroAtualObj.sistema : null);
+  window.location.href = sys ? `livros-sistema.html?sys=${encodeURIComponent(sys)}` : '../index.html';
+}
+
+// =============================================================
+// ESTADO
+// =============================================================
+let livroAtualObj = null;
+let capituloAtualIdx = 0;
+
+function getParamUrl(nome) {
+  return new URLSearchParams(window.location.search).get(nome);
+}
+
+// =============================================================
+// CARREGAR LIVRO
+// =============================================================
+async function init() {
+  const caminhoArquivo = getParamUrl('arquivo');
+  if (!caminhoArquivo) {
+    document.getElementById('leitorContainer').innerHTML = `<div class="loading-msg">⚠ Nenhum livro especificado.</div>`;
+    return;
+  }
+
+  // o caminho vem como "dnd5e/livro-do-jogador.json" — a primeira parte é o sistema
+  const sistemaId = caminhoArquivo.split('/')[0];
+  const sLabel = SISTEMAS_LABEL[sistemaId] || { nome: sistemaId, icon: '📖' };
+  document.getElementById('tabsSistemaNome').textContent = `${sLabel.icon} ${sLabel.nome}`;
+
+  try {
+    const resp = await fetch(`assets/livros/${caminhoArquivo}`);
+    if (!resp.ok) throw new Error('Arquivo não encontrado: ' + caminhoArquivo);
+    livroAtualObj = await resp.json();
+  } catch (e) {
+    console.error(e);
+    document.getElementById('leitorContainer').innerHTML = `<div class="loading-msg">⚠ Não consegui abrir este livro. Verifique se o arquivo "${caminhoArquivo}" existe em assets/livros/.</div>`;
+    document.getElementById('topbarTitulo').textContent = 'Erro ao abrir';
+    return;
+  }
+
+  document.getElementById('topbarTitulo').textContent = livroAtualObj.titulo;
+  document.getElementById('topbarMeta').textContent = `${livroAtualObj.totalPaginas || '?'} págs.`;
+  document.getElementById('tabsLivroNome').textContent = livroAtualObj.titulo;
+
+  capituloAtualIdx = 0;
+  renderLeitor();
+}
+
+function renderLeitor() {
+  const wrap = document.getElementById('leitorContainer');
+  wrap.innerHTML = `
+    <div class="leitor-wrap">
+      <aside class="leitor-sumario">
+        <div class="leitor-sumario-titulo">Sumário</div>
+        <div id="sumarioLista"></div>
+        <div class="leitor-busca-row">
+          <input type="text" class="leitor-busca-input" id="leitorBuscaInput" placeholder="Buscar no livro..." oninput="buscarNoLivro()">
+        </div>
+        <div class="leitor-busca-resultados" id="leitorBuscaResultados"></div>
+      </aside>
+      <main class="leitor-conteudo" id="leitorConteudo"></main>
+    </div>
+  `;
+  renderSumario();
+  renderCapitulo(capituloAtualIdx);
+}
+
+function renderSumario() {
+  document.getElementById('sumarioLista').innerHTML = livroAtualObj.capitulos.map((c, i) => `
+    <button class="sumario-item ${i === capituloAtualIdx ? 'active' : ''}" onclick="renderCapitulo(${i})">
+      ${c.titulo}
+    </button>`).join('');
+}
+
+function renderCapitulo(idx) {
+  capituloAtualIdx = idx;
+  const cap = livroAtualObj.capitulos[idx];
+  const conteudo = document.getElementById('leitorConteudo');
+  conteudo.innerHTML = `
+    <div class="leitor-cap-titulo">${cap.titulo}</div>
+    <div class="leitor-cap-pagina">${cap.pagina_inicio ? 'Página ' + cap.pagina_inicio : ''}</div>
+    <div class="leitor-texto">${escaparHtml(cap.conteudo)}</div>
+    <div class="leitor-nav-botoes">
+      <button class="btn btn-ghost" ${idx === 0 ? 'disabled' : ''} onclick="renderCapitulo(${idx - 1})">← Seção anterior</button>
+      <button class="btn btn-ghost" ${idx === livroAtualObj.capitulos.length - 1 ? 'disabled' : ''} onclick="renderCapitulo(${idx + 1})">Próxima seção →</button>
+    </div>
+  `;
+  document.querySelectorAll('.sumario-item').forEach((el, i) => el.classList.toggle('active', i === idx));
+  conteudo.scrollTop = 0;
+}
+
+function escaparHtml(texto) {
+  const div = document.createElement('div');
+  div.textContent = texto;
+  return div.innerHTML;
+}
+
+// =============================================================
+// BUSCA DENTRO DO LIVRO
+// =============================================================
+function buscarNoLivro() {
+  const termo = document.getElementById('leitorBuscaInput').value.trim();
+  const resultadosEl = document.getElementById('leitorBuscaResultados');
+  if (!termo || termo.length < 3) {
+    resultadosEl.innerHTML = termo ? `<div class="det-empty">Digite ao menos 3 letras.</div>` : '';
+    return;
+  }
+
+  const termoLower = termo.toLowerCase();
+  const ocorrencias = [];
+
+  livroAtualObj.capitulos.forEach((cap, idxCap) => {
+    const textoLower = cap.conteudo.toLowerCase();
+    let pos = textoLower.indexOf(termoLower);
+    let contagem = 0;
+    while (pos !== -1 && contagem < 3) {
+      const inicio = Math.max(0, pos - 50);
+      const fim = Math.min(cap.conteudo.length, pos + termo.length + 70);
+      let trecho = cap.conteudo.slice(inicio, fim);
+      if (inicio > 0) trecho = '…' + trecho;
+      if (fim < cap.conteudo.length) trecho = trecho + '…';
+      ocorrencias.push({ idxCap, tituloCap: cap.titulo, trecho });
+      pos = textoLower.indexOf(termoLower, pos + termo.length);
+      contagem++;
+    }
+  });
+
+  if (!ocorrencias.length) {
+    resultadosEl.innerHTML = `<div class="det-empty">Nada encontrado para "${termo}".</div>`;
+    return;
+  }
+
+  resultadosEl.innerHTML = ocorrencias.slice(0, 40).map(o => `
+    <button class="busca-resultado-item" onclick="renderCapitulo(${o.idxCap})">
+      <span class="res-cap">${o.tituloCap}</span>
+      ${marcarTermo(o.trecho, termo)}
+    </button>`).join('');
+}
+
+function marcarTermo(textoBruto, termo) {
+  const escapado = escaparHtml(textoBruto);
+  const termoEscapadoRegex = termo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${termoEscapadoRegex})`, 'gi');
+  return escapado.replace(regex, '<mark>$1</mark>');
+}
+
+// =============================================================
+// TOAST (mesmo padrão do resto do projeto)
+// =============================================================
+function showToast(msg, type = '') {
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.innerHTML = msg;
+  if (type === 'gold') t.style.borderColor = 'var(--gold)';
+  if (type === 'warning') t.style.borderColor = 'var(--blood-light)';
+  c.appendChild(t);
+  setTimeout(() => {
+    t.style.opacity = '0'; t.style.transform = 'translateX(30px)'; t.style.transition = 'all 0.3s';
+    setTimeout(() => t.remove(), 300);
+  }, 2800);
+}
+
+init();
+</script>
+</body>
+</html>

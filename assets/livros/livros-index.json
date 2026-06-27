@@ -1,0 +1,16 @@
+{
+  "_comentario": "Catalogo de livros. Cada chave de sistema tem uma lista de livros. Toda vez que voce roda o extrair_livro.py, ele imprime uma entrada pronta pra voce colar na lista certa abaixo. O campo 'arquivo' e o caminho relativo a esta pasta (assets/livros/).",
+
+  "dnd5e": [
+    {
+      "id": "exemplo-guia-rapido",
+      "titulo": "Guia Rápido (Exemplo)",
+      "tipo": "basico",
+      "arquivo": "dnd5e/exemplo-guia-rapido.json",
+      "paginas": 3
+    }
+  ],
+  "op": [],
+  "tormenta": [],
+  "etherion": []
+}
