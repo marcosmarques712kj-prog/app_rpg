@@ -1337,7 +1337,7 @@ function abrirGrimorio() {
       'border:none', 'border-radius:0',
       'background:transparent'
     ].join(';');
-    iframe.src = 'grimorio.html?id=' + encodeURIComponent(CHAR_ID);
+    iframe.src = 'livros/grimorio.html?id=' + encodeURIComponent(CHAR_ID);
 
     overlay.appendChild(iframe);
     document.body.appendChild(overlay);
@@ -1349,7 +1349,7 @@ function abrirGrimorio() {
   } else {
     // Já existe: atualiza o src para recarregar com dados frescos
     const iframe = document.getElementById('grimorio-iframe');
-    if (iframe) iframe.src = 'grimorio.html?id=' + encodeURIComponent(CHAR_ID);
+    if (iframe) iframe.src = 'livros/grimorio.html?id=' + encodeURIComponent(CHAR_ID);
     overlay.style.display = 'flex';
   }
 }
