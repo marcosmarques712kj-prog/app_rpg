@@ -182,6 +182,86 @@ function getPisoAtrib(attrId, d) {
   return Math.max(ATRIB_BASE, ATRIB_BASE + bonus);
 }
 
+// =============================================================
+// ENGINE — Cálculo automático dos máximos de recursos
+// Lógica espelhada de engine.js, sem dependência de import/export.
+// =============================================================
+function calcularModificador(val) {
+  return Math.floor((parseInt(val) || 0) / 2);
+}
+
+function calcularRecursosMaximos() {
+  const d = PERSONAGEM.dados;
+  const classeChave = d.classeBase || '';
+  const nivel = parseInt(d.level) || 1;
+  const cos   = getAtrib('cos');
+  const sab   = getAtrib('sab');
+  const int_  = getAtrib('int');
+
+  const classe = (typeof classesRPG !== 'undefined') ? classesRPG[classeChave] : null;
+
+  // ── Vida ──────────────────────────────────────────────────────
+  // HP = hpInicial + mod(COS) + hpPorNivel × (nivel - 1)
+  let vidaMax = 10;
+  if (classe) {
+    const modCos = calcularModificador(cos);
+    vidaMax = (classe.hpInicial || 10) + modCos + (classe.hpPorNivel || 0) * (nivel - 1);
+  }
+
+  // ── Sanidade ──────────────────────────────────────────────────
+  // Sanidade = 10 + mod(SAB)
+  const sanMax = 10 + calcularModificador(sab);
+
+  // ── Sopro ─────────────────────────────────────────────────────
+  // Sopro = 3 + mod(atributoFoco da classe) + floor(nivel / 2)
+  let soproMax = 3;
+  if (classe && classe.atributoFoco && typeof sistemaMagia !== 'undefined') {
+    const modFoco = calcularModificador(getAtrib(classe.atributoFoco));
+    soproMax = sistemaMagia.calcularLimiteSopro(nivel, modFoco);
+  } else if (classe && classe.atributoFoco) {
+    // Fallback caso sistemaMagia não esteja carregado (não deve ocorrer em produção)
+    soproMax = 3 + calcularModificador(getAtrib(classe.atributoFoco));
+  }
+
+  // ── Mácula ────────────────────────────────────────────────────
+  // Mácula = 12 + (floor(nivel / 5) × 2)
+  const maculaMax = typeof sistemaMagia !== 'undefined'
+    ? sistemaMagia.calcularLimiteMacula(nivel)
+    : 12;
+
+  return { vidaMax, sanMax, soproMax, maculaMax };
+}
+
+// Recalcula e aplica os máximos nos recursos do personagem.
+// Nunca deixa o cur maior que o novo max.
+// Atualiza o DOM inline sem re-render completo quando possível.
+function recalcularEAplicarRecursos() {
+  const d = PERSONAGEM.dados;
+  const { vidaMax, sanMax, soproMax, maculaMax } = calcularRecursosMaximos();
+
+  const novosMax = { vida: vidaMax, san: sanMax, sopro: soproMax, macula: maculaMax };
+
+  Object.entries(novosMax).forEach(([id, novoMax]) => {
+    if (!d.recursos[id]) d.recursos[id] = { cur: novoMax, max: novoMax };
+    d.recursos[id].max = novoMax;
+    // Garante que cur não ultrapasse o novo max
+    if (d.recursos[id].cur > novoMax) d.recursos[id].cur = novoMax;
+
+    // Atualiza DOM inline se os campos já existirem na tela
+    const maxEl = document.getElementById('rmax_' + id);
+    const curEl = document.getElementById('rcur_' + id);
+    const barEl = document.getElementById('rbar_' + id);
+    if (maxEl) maxEl.value = novoMax;
+    if (curEl && parseInt(curEl.value) > novoMax) curEl.value = d.recursos[id].cur;
+    if (barEl) {
+      const pct = novoMax > 0 ? Math.min(100, Math.round((d.recursos[id].cur / novoMax) * 100)) : 0;
+      barEl.style.width = pct + '%';
+    }
+  });
+
+  agendarSalvar();
+}
+
 // Aplica raça escolhida: remove o bônus da raça anterior e aplica o da nova.
 // - Subtrai o attrBonus da sub-raça antiga de cada atributo (sem descer abaixo do ATRIB_BASE)
 // - Sobe qualquer atributo que esteja abaixo do novo piso racial
@@ -278,57 +358,202 @@ function toggleOrigemPericia(periciaId, marcar) {
   agendarSalvar();
 }
 
-// Gera o HTML do painel: citação, traço narrativo, interação mecânica
-// e os 4 checkboxes do pool de perícias. Some por completo se nenhuma
-// origem estiver selecionada.
-function gerarHTMLPainelOrigem(d) {
+// =============================================================
+// DRAWERS INLINE DE IDENTIDADE — Raça, Classe e Origem (V4.1)
+// =============================================================
+function toggleDrawerIdentidade(id) {
+  ['raca','classe','origem'].forEach(d => {
+    const el = document.getElementById('idr-' + d);
+    if (!el) return;
+    if (d === id) {
+      const isOpen = el.style.maxHeight && el.style.maxHeight !== '0px';
+      el.style.maxHeight = isOpen ? '0px'  : '1400px';
+      el.style.opacity   = isOpen ? '0'    : '1';
+      el.style.marginTop = isOpen ? '0'    : '10px';
+    } else {
+      el.style.maxHeight = '0px';
+      el.style.opacity   = '0';
+      el.style.marginTop = '0';
+    }
+  });
+}
+
+// ── DRAWER: RAÇA ──────────────────────────────────────────────
+function gerarDrawerRaca(d) {
+  const sub = getSubraca(d.racaFamilia, d.racaSubraca);
+  if (!sub) return '';
+
+  const habs = sub.habilidadesTotais || [];
+  const habsHTML = habs.length === 0
+    ? `<p style="font-size:12px;opacity:0.5;font-style:italic;font-family:'EB Garamond',serif">Nenhuma habilidade cadastrada para esta sub-raça.</p>`
+    : habs.map(h => `
+        <div class="idr-hab-item">
+          <div class="idr-hab-nome">${esc(h.nome)}</div>
+          <div class="idr-hab-desc">${esc(h.desc)}</div>
+        </div>`).join('');
+
+  const attrBonusHTML = ATRIBUTOS_ETH.map(a => {
+    const bonus = sub.attrBonus ? (sub.attrBonus[a.id] || 0) : 0;
+    const temBonus = bonus > 0;
+    return `
+      <div class="idr-attr-chip ${temBonus ? 'bonus' : ''}">
+        <span class="idr-attr-label">${a.nome}</span>
+        <span class="idr-attr-val">${temBonus ? '+' + bonus : '—'}</span>
+      </div>`;
+  }).join('');
+
+  const chipLista = (lista, cls) => (lista || []).map(v =>
+    `<span class="idr-chip ${cls}">${esc(v)}</span>`).join('');
+
+  const temResist = sub.resistencias && sub.resistencias.length > 0;
+  const temFraq   = sub.fraquezas   && sub.fraquezas.length   > 0;
+  const nomeFamilia = (typeof listarFamilias === 'function'
+    ? listarFamilias().find(f => f.id === d.racaFamilia)?.nome : '') || '';
+
+  return `
+  <div id="idr-raca" class="idr-drawer" style="max-height:0;opacity:0;margin-top:0;border-left-color:var(--idr-cor-raca)">
+    <div class="idr-header">
+      <span class="idr-header-titulo" style="color:var(--idr-cor-raca)">
+        ◆ ${esc(sub.nome)}<span style="color:var(--gold-dark);opacity:0.6;font-weight:400"> — ${esc(nomeFamilia)}</span>
+      </span>
+      <button class="idr-fechar" onclick="toggleDrawerIdentidade('raca')">✕ FECHAR</button>
+    </div>
+    <div class="idr-body">
+      ${sub.citacao ? `<p class="idr-citacao">"${esc(sub.citacao)}"</p>` : ''}
+      <div>
+        <span class="idr-bloco-label">Bônus de atributos</span>
+        <div class="idr-attr-row">${attrBonusHTML}</div>
+      </div>
+      ${habs.length > 0 ? `
+      <div>
+        <span class="idr-bloco-label">Habilidades raciais</span>
+        <div style="display:flex;flex-direction:column;gap:6px">${habsHTML}</div>
+      </div>` : ''}
+      ${(temResist || temFraq) ? `
+      <div class="idr-cols">
+        ${temResist ? `<div>
+          <span class="idr-bloco-label">Resistências</span>
+          <div class="idr-chip-row">${chipLista(sub.resistencias,'ok')}</div>
+        </div>` : ''}
+        ${temFraq ? `<div>
+          <span class="idr-bloco-label">Fraquezas</span>
+          <div class="idr-chip-row">${chipLista(sub.fraquezas,'bad')}</div>
+        </div>` : ''}
+      </div>` : ''}
+      ${sub.regiao ? `
+      <div>
+        <span class="idr-bloco-label">Região de origem</span>
+        <div class="idr-chip-row"><span class="idr-chip">${esc(sub.regiao)}</span></div>
+      </div>` : ''}
+      <p class="idr-nota">Resistências e fraquezas são informativas — ainda não entram nos cálculos.</p>
+    </div>
+  </div>`;
+}
+
+// ── DRAWER: CLASSE ────────────────────────────────────────────
+function gerarDrawerClasse(d) {
+  if (!d.classeBase || typeof classesRPG === 'undefined' || !classesRPG[d.classeBase]) return '';
+  const base  = classesRPG[d.classeBase];
+  const espec = d.classeEspec ? (base.especializacoes || {})[d.classeEspec] : null;
+
+  const chipLista = (lista, cls) => (lista || []).map(v =>
+    `<span class="idr-chip ${cls}">${esc(v)}</span>`).join('');
+
+  const profChips  = chipLista(espec?.proficiencias  || base.proficiencias  || [], 'ok');
+  const equipChips = chipLista(espec?.equipamentos   || base.equipamentos   || [], 'eq');
+  const habsHTML   = (espec?.habilidades || base.habilidades || []).map(h => `
+    <div class="idr-hab-item">
+      <div class="idr-hab-nome">${esc(h.nome)}</div>
+      <div class="idr-hab-desc">${esc(h.desc)}</div>
+    </div>`).join('');
+
+  const tituloEspec = espec
+    ? `<span style="color:var(--gold-dark);opacity:0.6;font-weight:400"> — ${esc(espec.nome)}</span>`
+    : '';
+  const tracoNarrativo = espec?.tracoNarrativo || base.tracoNarrativo || '';
+
+  return `
+  <div id="idr-classe" class="idr-drawer" style="max-height:0;opacity:0;margin-top:0;border-left-color:var(--idr-cor-classe)">
+    <div class="idr-header">
+      <span class="idr-header-titulo" style="color:var(--idr-cor-classe)">
+        ◆ ${esc(base.nome)}${tituloEspec}
+      </span>
+      <button class="idr-fechar" onclick="toggleDrawerIdentidade('classe')">✕ FECHAR</button>
+    </div>
+    <div class="idr-body">
+      ${tracoNarrativo ? `<p class="idr-citacao">"${esc(tracoNarrativo)}"</p>` : ''}
+      <div class="idr-cols">
+        ${profChips ? `<div>
+          <span class="idr-bloco-label">Proficiências</span>
+          <div class="idr-chip-row">${profChips}</div>
+        </div>` : ''}
+        ${equipChips ? `<div>
+          <span class="idr-bloco-label">Equipamento inicial</span>
+          <div class="idr-chip-row">${equipChips}</div>
+        </div>` : ''}
+      </div>
+      ${habsHTML ? `
+      <div>
+        <span class="idr-bloco-label">Habilidades${espec ? ' da especialização' : ''}</span>
+        <div style="display:flex;flex-direction:column;gap:6px">${habsHTML}</div>
+      </div>` : ''}
+      <div>
+        <span class="idr-bloco-label">Recursos calculados</span>
+        <div class="idr-chip-row">
+          ${base.hpInicial != null ? `<span class="idr-chip ok">HP base: ${base.hpInicial} + mod(COS) por nível</span>` : ''}
+          ${base.atributoFoco ? `<span class="idr-chip ok">Sopro: 3 + mod(${base.atributoFoco.toUpperCase()})</span>` : ''}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── DRAWER: ORIGEM ────────────────────────────────────────────
+function gerarDrawerOrigem(d) {
   if (!d.origemId || typeof origensRPG === 'undefined' || !origensRPG[d.origemId]) return '';
-  const origem = origensRPG[d.origemId];
+  const origem     = origensRPG[d.origemId];
   const escolhidas = d.origemPericiasEscolhidas || [];
 
-  const pericias = (origem.poolPericias || []).map(periciaId => {
-    const periciaDef = PERICIAS_ETH.find(p => p.id === periciaId);
-    const nomeLabel = periciaDef ? periciaDef.nome : periciaId;
+  const periciaChecks = (origem.poolPericias || []).map(periciaId => {
+    const def     = PERICIAS_ETH.find(p => p.id === periciaId);
+    const label   = def ? def.nome : periciaId;
     const marcada = escolhidas.includes(periciaId);
     const travada = !marcada && escolhidas.length >= MAX_PERICIAS_ORIGEM;
     return `
-      <label class="origem-pericia-opt ${marcada ? 'marcada' : ''} ${travada ? 'travada' : ''}">
+      <label class="idr-check ${marcada ? 'marcada' : ''} ${travada ? 'travada' : ''}">
         <input type="checkbox" ${marcada ? 'checked' : ''} ${travada ? 'disabled' : ''}
           onchange="toggleOrigemPericia('${periciaId}', this.checked)">
-        <span>${esc(nomeLabel)}</span>
+        <span>${esc(label)}</span>
       </label>`;
   }).join('');
 
   return `
-    <div class="box origem-painel" style="margin-bottom:16px">
-      <div class="box-title">
-        Origem: ${esc(origem.nome)}
-        <span style="font-family:'EB Garamond',serif;font-style:italic;font-size:11px;color:var(--parchment-dark);opacity:0.6;letter-spacing:0;text-transform:none">
-          Escolha ${MAX_PERICIAS_ORIGEM} entre as 4 perícias do antecedente
-        </span>
+  <div id="idr-origem" class="idr-drawer" style="max-height:0;opacity:0;margin-top:0;border-left-color:var(--idr-cor-origem)">
+    <div class="idr-header">
+      <span class="idr-header-titulo" style="color:var(--idr-cor-origem)">
+        ◆ ${esc(origem.nome)}
+      </span>
+      <button class="idr-fechar" onclick="toggleDrawerIdentidade('origem')">✕ FECHAR</button>
+    </div>
+    <div class="idr-body">
+      ${origem.citacao ? `<p class="idr-citacao">"${esc(origem.citacao)}"</p>` : ''}
+      <div class="idr-cols">
+        ${origem.tracoNarrativo ? `<div>
+          <span class="idr-bloco-label">Traço narrativo</span>
+          <p class="idr-texto">${esc(origem.tracoNarrativo)}</p>
+        </div>` : ''}
+        ${origem.interacaoMecanica ? `<div>
+          <span class="idr-bloco-label">Interação mecânica</span>
+          <p class="idr-texto">${esc(origem.interacaoMecanica)}</p>
+        </div>` : ''}
       </div>
-
-      <p class="origem-citacao">"${esc(origem.citacao)}"</p>
-
-      <div class="origem-grid">
-        <div class="origem-texto-col">
-          <div class="origem-bloco">
-            <span class="origem-bloco-titulo">Traço Narrativo</span>
-            <p>${esc(origem.tracoNarrativo)}</p>
-          </div>
-          <div class="origem-bloco">
-            <span class="origem-bloco-titulo">Interação Mecânica</span>
-            <p>${esc(origem.interacaoMecanica)}</p>
-          </div>
-        </div>
-
-        <div class="origem-pericias-col">
-          <span class="origem-bloco-titulo">Perícias (${escolhidas.length}/${MAX_PERICIAS_ORIGEM})</span>
-          <div class="origem-pericias-lista">${pericias}</div>
-        </div>
+      <div>
+        <span class="idr-bloco-label">Perícias — escolha ${MAX_PERICIAS_ORIGEM} de ${(origem.poolPericias||[]).length}</span>
+        <div class="idr-check-row">${periciaChecks}</div>
+        <p class="idr-nota" style="margin-top:6px">${escolhidas.length}/${MAX_PERICIAS_ORIGEM} escolhidas${escolhidas.length >= MAX_PERICIAS_ORIGEM ? ' — desmarque uma para trocar' : ''}</p>
       </div>
     </div>
-  `;
+  </div>`;
 }
 
 function mostrarVazio(msg) {
@@ -414,88 +639,95 @@ function renderPrincipal() {
   const d = PERSONAGEM.dados;
   const r = d.recursos;
 
-  // Lógica de Fé/Heresia
   let isHeresia = false;
   if (!d.divindade || d.divindade.includes('Nenhuma') || d.divindade.includes('Zyrhûn') || d.divindade.includes('Kharvion') || d.divindade.includes('Mabryth') || d.divindade.includes('Morvethra')) {
-      isHeresia = true;
+    isHeresia = true;
   }
-  
   const statusTexto = isHeresia ? "Em estado de heresia" : "Fé Ativa";
   const statusCorTexto = isHeresia ? "var(--blood-light)" : "var(--gold-light)";
-  const estiloInputDivindade = isHeresia 
-    ? "border: 1px solid var(--blood-light); box-shadow: 0 0 8px rgba(122, 24, 24, 0.3); background: rgba(122, 24, 24, 0.03);" 
+  const estiloInputDivindade = isHeresia
+    ? "border: 1px solid var(--blood-light); box-shadow: 0 0 8px rgba(122, 24, 24, 0.3); background: rgba(122, 24, 24, 0.03);"
     : "border: 1px solid var(--gold); box-shadow: 0 0 8px rgba(201, 168, 76, 0.3); background: rgba(201, 168, 76, 0.02);";
 
-  // (opcoesClasses removido — selects de classe usam listarClassesBase() diretamente)
+  // Pills — só aparecem quando o campo está preenchido
+  const sub       = getSubraca(d.racaFamilia, d.racaSubraca);
+  const temRaca   = !!sub;
+  const temClasse = !!(d.classeBase && typeof classesRPG !== 'undefined' && classesRPG[d.classeBase]);
+  const temOrigem = !!(d.origemId   && typeof origensRPG  !== 'undefined' && origensRPG[d.origemId]);
+
+  const pillRaca   = temRaca   ? `<button class="idr-pill raca"   onclick="toggleDrawerIdentidade('raca')"  >◆ Habilidades &amp; Resistências</button>`  : '';
+  const pillClasse = temClasse ? `<button class="idr-pill classe" onclick="toggleDrawerIdentidade('classe')" >◆ Habilidades &amp; Proficiências</button>` : '';
+  const pillOrigem = temOrigem ? `<button class="idr-pill origem" onclick="toggleDrawerIdentidade('origem')" >◆ Traço Narrativo &amp; Perícias</button>`  : '';
 
   document.getElementById('panel-principal').innerHTML = `
 <div class="box" style="margin-bottom:16px">
   <div class="box-title">Identidade</div>
-  
-  <div class="identity-row" style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+
+  <div class="identity-row" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:10px">
     <div class="identity-field">
       <label class="identity-label">Raça (Família)</label>
       <select class="identity-input" id="sel_racaFamilia" onchange="onMudarFamilia(this.value)">
         <option value="">Selecione...</option>
         ${listarFamilias().map(f => `<option value="${f.id}" ${d.racaFamilia===f.id?'selected':''}>${esc(f.nome)}</option>`).join('')}
       </select>
+      ${pillRaca}
     </div>
     <div class="identity-field">
       <label class="identity-label">Sub-raça</label>
-      <select class="identity-input" id="sel_racaSubraca" onchange="aplicarRaca(document.getElementById('sel_racaFamilia').value,this.value)" ${!d.racaFamilia ? 'disabled' : ''}>
+      <select class="identity-input" id="sel_racaSubraca" onchange="aplicarRaca(document.getElementById('sel_racaFamilia').value,this.value)" ${!d.racaFamilia?'disabled':''}>
         <option value="">${d.racaFamilia ? 'Selecione...' : '— família primeiro —'}</option>
         ${listarSubracas(d.racaFamilia).map(s => `<option value="${s.id}" ${d.racaSubraca===s.id?'selected':''}>${esc(s.nome)}</option>`).join('')}
       </select>
     </div>
-    
     <div class="identity-field">
       <label class="identity-label">Classe Base</label>
       <select class="identity-input" id="sel_classeBase" onchange="onMudarClasseBase(this.value)">
         <option value="">Selecione...</option>
         ${listarClassesBase().map(c => `<option value="${c.id}" ${d.classeBase===c.id?'selected':''}>${esc(c.nome)}</option>`).join('')}
       </select>
+      ${pillClasse}
     </div>
     <div class="identity-field">
       <label class="identity-label">Especialização</label>
-      <select class="identity-input" id="sel_classeEspec" onchange="aplicarEspecializacao(this.value)" ${!d.classeBase ? 'disabled' : ''}>
+      <select class="identity-input" id="sel_classeEspec" onchange="aplicarEspecializacao(this.value)" ${!d.classeBase?'disabled':''}>
         <option value="">${d.classeBase ? 'Selecione...' : '— classe primeiro —'}</option>
         ${listarEspecializacoes(d.classeBase).map(e => `<option value="${e.id}" ${d.classeEspec===e.id?'selected':''}>${esc(e.nome)}</option>`).join('')}
       </select>
     </div>
   </div>
 
-  <div class="identity-row" style="display: grid; grid-template-columns: 1fr 1fr 0.5fr 1fr; gap: 10px; margin-bottom: 0;">
+  <div class="identity-row" style="display:grid;grid-template-columns:1fr 1fr 0.5fr 1fr;gap:10px;margin-bottom:0">
     <div class="identity-field">
       <label class="identity-label">Antecedente (Origem)</label>
       <select class="identity-input" id="sel_origem" onchange="onMudarOrigem(this.value)">
         <option value="">Selecione...</option>
         ${listarOrigens().map(o => `<option value="${o.id}" ${d.origemId===o.id?'selected':''}>${esc(o.nome)}</option>`).join('')}
       </select>
+      ${pillOrigem}
     </div>
-    
     <div class="identity-field">
-      <div style="display: flex; justify-content: space-between; align-items: baseline;">
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
         <label class="identity-label">Divindade / Patrono</label>
-        <span style="font-size: 10px; font-family: 'Cinzel', serif; color: ${statusCorTexto}; letter-spacing: 0.5px; font-weight: 600; text-transform: uppercase;">${statusTexto}</span>
+        <span style="font-size:10px;font-family:'Cinzel',serif;color:${statusCorTexto};letter-spacing:0.5px;font-weight:600;text-transform:uppercase">${statusTexto}</span>
       </div>
       <input class="identity-input" list="eth-divindades" value="${esc(d.divindade)}" placeholder="Divindade..." style="${estiloInputDivindade}" oninput="atualizarCampo('divindade',this.value);renderPrincipal()">
-      <datalist id="eth-divindades">${DIVINDADES_ETH.map(div => `<option value="${div}">`).join('')}</datalist>
+      <datalist id="eth-divindades">${DIVINDADES_ETH.map(div=>`<option value="${div}">`).join('')}</datalist>
     </div>
-
     <div class="identity-field">
       <label class="identity-label">Nível</label>
       <input class="identity-input" type="number" min="1" max="50" value="${esc(d.level||1)}" oninput="atualizarCampo('level',this.value)">
     </div>
-    
     <div class="identity-field">
       <label class="identity-label">Alinhamento</label>
       <input class="identity-input" list="eth-alinha" value="${esc(d.alinhamento)}" placeholder="Alinhamento..." oninput="atualizarCampo('alinhamento',this.value)">
       <datalist id="eth-alinha">${ALINHAMENTOS.map(a=>`<option value="${a}">`).join('')}</datalist>
     </div>
   </div>
-</div>
 
-${gerarHTMLPainelOrigem(d)}
+  ${gerarDrawerRaca(d)}
+  ${gerarDrawerClasse(d)}
+  ${gerarDrawerOrigem(d)}
+</div>
 
     <div class="box" style="margin-bottom:16px">
       <div class="box-title">
@@ -522,7 +754,6 @@ ${gerarHTMLPainelOrigem(d)}
           </div>`;
         }).join('')}
       </div>
-
       <div class="prof-row" style="margin-top:14px">
         <span class="prof-label">Bônus de Proficiência</span>
         <input class="prof-input" type="number" min="1" max="10" value="${esc(d.profBonus||2)}" oninput="atualizarCampo('profBonus',this.value);renderPericias()">
@@ -531,11 +762,11 @@ ${gerarHTMLPainelOrigem(d)}
 
     <div class="box" style="margin-bottom:16px">
       <div class="box-title">Recursos</div>
-      <div class="recursos-grid" style="display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px;">
-        ${recursoHTML('vida','Vida','vida', r.vida || {cur: 10, max: 10})}
-        ${recursoHTML('san','Sanidade','san', r.san || {cur: 10, max: 10})}
-        ${recursoHTML('sopro','Sopro (Pura)','sopro', r.sopro || {cur: 5, max: 5})}
-        ${recursoHTML('macula','Mácula (Abismo)','macula', r.macula || {cur: 0, max: 12})}
+      <div class="recursos-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px">
+        ${recursoHTML('vida','Vida','vida', r.vida || {cur:10,max:10})}
+        ${recursoHTML('san','Sanidade','san', r.san || {cur:10,max:10})}
+        ${recursoHTML('sopro','Sopro (Pura)','sopro', r.sopro || {cur:5,max:5})}
+        ${recursoHTML('macula','Mácula (Abismo)','macula', r.macula || {cur:0,max:12})}
       </div>
     </div>
 
@@ -544,60 +775,12 @@ ${gerarHTMLPainelOrigem(d)}
       ${estadosBox('perm','Estado Permanente', d.estados.perm)}
     </div>
     <div class="two-col">
-      ${habRacialAutoBox(d)}
       ${habBox('chamados','Chamados Divinos', d.chamados)}
-    </div>
-    <div class="two-col" style="margin-top:16px">
       ${habBox('habRaciais','Habilidades Raciais Extras', d.habRaciais)}
-      ${resistFraqBox(d)}
     </div>
   `;
-  
-  // eventos de recursos após render
+
   anexarEventosRecursos();
-}
-
-function habRacialAutoBox(d) {
-  const sub = getSubraca(d.racaFamilia, d.racaSubraca);
-  const habs = sub ? sub.habilidadesTotais : [];
-  const corpo = !sub
-    ? `<div style="opacity:0.5;font-style:italic;font-size:12.5px">Escolha uma raça para ver as habilidades automáticas.</div>`
-    : habs.length === 0
-      ? `<div style="opacity:0.5;font-style:italic;font-size:12.5px">Essa sub-raça ainda não tem habilidades cadastradas em etherion-racas.js.</div>`
-      : habs.map(h => `
-        <div class="hab-item" style="cursor:default">
-          <div class="hab-nome-row"><strong style="font-family:'Cinzel',serif;font-size:12px;color:var(--gold)">${esc(h.nome)}</strong></div>
-          <div style="font-size:12.5px;opacity:0.85;margin-top:2px">${esc(h.desc)}</div>
-        </div>`).join('');
-  return `
-  <div class="box">
-    <div class="box-title">
-      Habilidades Raciais ${sub ? `<span style="font-family:'EB Garamond',serif;font-style:italic;font-size:11px;opacity:0.6;text-transform:none;letter-spacing:0">— ${esc(sub.nome)}</span>` : ''}
-    </div>
-    <div class="hab-list">${corpo}</div>
-  </div>`;
-}
-
-function resistFraqBox(d) {
-  const sub = getSubraca(d.racaFamilia, d.racaSubraca);
-  if (!sub) return `<div class="box"><div class="box-title">Resistências & Fraquezas</div>
-    <div style="opacity:0.5;font-style:italic;font-size:12.5px">Escolha uma raça para ver.</div></div>`;
-
-  const linha = (titulo, lista) => !lista || lista.length === 0 ? '' : `
-    <div style="margin-bottom:8px">
-      <div style="font-family:'Cinzel',serif;font-size:10.5px;letter-spacing:1px;color:var(--parchment-dark);opacity:0.7;text-transform:uppercase">${titulo}</div>
-      <div style="font-size:12.5px">${lista.map(esc).join(' · ')}</div>
-    </div>`;
-
-  return `
-  <div class="box">
-    <div class="box-title">Resistências & Fraquezas</div>
-    ${sub.citacao ? `<div style="font-style:italic;font-size:12px;opacity:0.65;margin-bottom:10px">"${esc(sub.citacao)}"</div>` : ''}
-    ${linha('Resistências', sub.resistencias)}
-    ${linha('Fraquezas', sub.fraquezas)}
-    ${sub.regiao ? linha('Região', [sub.regiao]) : ''}
-    <div style="font-size:11px;opacity:0.45;margin-top:6px;font-style:italic">Apenas informativo — ainda não entra nos cálculos.</div>
-  </div>`;
 }
 
 function recursoHTML(id, label, cls, rec) {
@@ -609,8 +792,8 @@ function recursoHTML(id, label, cls, rec) {
       <input class="recurso-cur" type="number" value="${rec.cur}" id="rcur_${id}"
         oninput="atualizarRecurso('${id}','cur',this.value)">
       <span class="recurso-sep">/</span>
-      <input class="recurso-max" type="number" value="${rec.max}" id="rmax_${id}"
-        oninput="atualizarRecurso('${id}','max',this.value)">
+      <input class="recurso-max" type="number" value="${rec.max}" id="rmax_${id}" readonly
+        title="Calculado automaticamente pela classe e atributos" style="opacity:0.6;cursor:default">
     </div>
     <div class="recurso-bar-track">
       <div class="recurso-bar-fill ${cls}" id="rbar_${id}" style="width:${pct}%"></div>
@@ -712,23 +895,34 @@ function renderPericias() {
     const isProficiente = !!(d.profs[p.id]);
     const isProtegida = protegidas.has(p.id);
     const total = base + (isProficiente ? profB : 0);
-    const focoHTML = p.temFoco ? `
-      <input type="text" class="skill-foco-input" placeholder="Foco (ex: Alquimia)"
-        value="${esc(d.focos[p.id] || '')}"
-        oninput="atualizarFoco('${p.id}',this.value)">` : '';
+
+    // Input de foco inline — ocupa sua própria coluna quando tem-foco está ativo
+    const focoHTML = p.temFoco
+      ? `<input type="text" class="skill-foco-input" placeholder="Foco..."
+           value="${esc(d.focos[p.id] || '')}"
+           title="Especialização de ${p.nome} (ex: Alquimia, Engenharia...)"
+           oninput="atualizarFoco('${p.id}',this.value)">`
+      : '';
+
     const checkboxAttr = isProtegida
       ? `disabled title="Concedida por classe ou antecedente"`
       : `onchange="toggleProf('${p.id}',this.checked)"`;
+
+    // Sufixos de label para perícias com restrições especiais
+    const sufixoNome = isProtegida
+      ? `<sup style="font-size:8px;opacity:0.5;font-family:'Cinzel',serif;letter-spacing:0"> P</sup>`
+      : '';
+
     return `
-    <div class="skill-row ${p.temFoco?'tem-foco':''} ${isProficiente?'is-prof':''} ${isProtegida?'is-protegida':''}">
-      <input type="checkbox" class="skill-check" ${isProficiente?'checked':''} ${checkboxAttr}>
-      <span class="skill-name">${p.nome}</span>
+    <div class="skill-row ${p.temFoco ? 'tem-foco' : ''} ${isProficiente ? 'is-prof' : ''} ${isProtegida ? 'is-protegida' : ''}">
+      <input type="checkbox" class="skill-check" ${isProficiente ? 'checked' : ''} ${checkboxAttr}>
       <span class="skill-attr-tag">${p.attr.toUpperCase()}</span>
+      <span class="skill-name">${esc(p.nome)}${sufixoNome}</span>
+      ${focoHTML}
       <span class="skill-val">${total}</span>
       <button class="skill-roll-btn" onclick="rolarD20(${total},'${p.nome}')" title="Rolar d20 + ${total}">
         <svg viewBox="0 0 24 24" width="13" height="13"><path d="M12 2 L21 7.5 V16.5 L12 22 L3 16.5 V7.5 Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M12 2 V22 M3 7.5 L21 16.5 M21 7.5 L3 16.5" stroke="currentColor" stroke-width="0.8" opacity="0.5"/></svg>
       </button>
-      ${focoHTML}
     </div>`;
   }
 
@@ -967,6 +1161,9 @@ function atualizarPreviewMagia() {
 
   const modSelecionado = sistemaMagia.modificadores ? sistemaMagia.modificadores[modId] : null;
   document.getElementById('magia-preview-col').innerHTML = gerarHTMLCardMagia(magia, modSelecionado);
+  document.getElementById('grimorio-aprender-col').innerHTML = gerarBlocoAprender({
+    aspecto: aspectoId, verbo: verboId, mod: modId, manifestacao: manifestacaoId, circulo
+  });
 
   // Persiste a última combinação que o jogador estava montando (inclui manifestação).
   PERSONAGEM.dados.grimorio.ultimaCombo = {
@@ -979,11 +1176,19 @@ function atualizarPreviewMagia() {
 // Wrapper de segurança em torno de sistemaMagia.gerarMagiaSegura() (Camada 4).
 // Inclui a Manifestação opcional (4ª camada: geometria/projeção/estrutura).
 // Degrada graciosamente se dados de escalonamento estiverem incompletos.
+// Usa nível e classe reais do personagem — isso ativa corretamente regras
+// do motor que dependem deles (ex.: Imposto de Infusão para classes fora
+// de Vanguarda/Suporte).
 function gerarMagiaSegura(aspectoId, verboId, modId, circulo, manifestacaoId) {
   const aspecto = sistemaMagia.aspectos[aspectoId];
   if (aspecto && (!aspecto.tracos || !aspecto.sequela)) {
     return { erro: `O aspecto "${aspecto.nome}" ainda não tem os dados de escalonamento (tracos/sequela) cadastrados em magias.js — preview indisponível até a base ser completada.` };
   }
+  const d = PERSONAGEM.dados;
+  const nivel = parseInt(d.level) || 1;
+  const modFoco = (typeof classesRPG !== 'undefined' && d.classeBase && classesRPG[d.classeBase] && classesRPG[d.classeBase].atributoFoco)
+    ? getAtrib(classesRPG[d.classeBase].atributoFoco)
+    : 0;
   try {
     // Usa gerarMagiaSegura() do motor (Camada 4): inclui Motor de Degraus,
     // Ricochete do Disco, PV Estrutural, Imposto de Infusão e Falha Crítica.
@@ -991,7 +1196,7 @@ function gerarMagiaSegura(aspectoId, verboId, modId, circulo, manifestacaoId) {
       aspectoId, verboId, modId,
       manifestacaoId || null,
       circulo,
-      { nivel: 1, modFoco: 0, classePersonagem: null }
+      { nivel, modFoco, classePersonagem: d.classeBase || null }
     );
   } catch (e) {
     console.error('Erro ao gerar magia:', e);
@@ -1059,22 +1264,298 @@ function renderGrimorio() {
       </div>
 
       <!-- COLUNA 2 — Card de Preview -->
-      <div class="grimorio-preview" id="magia-preview-col">
-        ${gerarHTMLCardMagia(
-          (combo.aspecto && combo.verbo && combo.mod)
-            ? gerarMagiaSegura(combo.aspecto, combo.verbo, combo.mod, combo.circulo, combo.manifestacao || null)
-            : null,
-          sistemaMagia.modificadores ? sistemaMagia.modificadores[combo.mod] : null
-        )}
+      <div class="grimorio-preview-col">
+        <div class="grimorio-preview" id="magia-preview-col">
+          ${gerarHTMLCardMagia(
+            (combo.aspecto && combo.verbo && combo.mod)
+              ? gerarMagiaSegura(combo.aspecto, combo.verbo, combo.mod, combo.circulo, combo.manifestacao || null)
+              : null,
+            sistemaMagia.modificadores ? sistemaMagia.modificadores[combo.mod] : null
+          )}
+        </div>
+        <div id="grimorio-aprender-col">${gerarBlocoAprender(combo)}</div>
       </div>
 
     </div>
+
   `;
 }
 
 // =============================================================
-// COMBATE: CÁLCULOS AUTOMÁTICOS (CA / Iniciativa / Deslocamento)
+// MAGIAS APRENDIDAS — persistência real do Grimório
 // =============================================================
+// Uma magia "aprendida" é um registro único por combinação
+// Aspecto+Verbo+Modificador (Manifestação entra na unicidade também,
+// já que ela é uma 4ª camada que muda a magia de fato). O Círculo NÃO
+// entra na chave: é editável depois, sem duplicar o registro.
+
+// Limite de magias conhecidas: Nível + floor(maior(INT, SAB) / 2) —
+// diminishing returns sobre o atributo, pra evitar que INT/SAB muito
+// altos (sem teto definido no sistema) explodam o limite linearmente.
+// Atributo ainda é usado bruto (sem fórmula de modificador tipo
+// (attr-10)/2), só o efeito dele aqui que agora é dividido por 2.
+// Classes ainda não entram nesta conta (não há tabela própria por
+// classe definida até o momento).
+function limiteMagiasConhecidas() {
+  const d = PERSONAGEM.dados;
+  const nivel = parseInt(d.level) || 1;
+  const int_ = getAtrib('int');
+  const sab = getAtrib('sab');
+  return nivel + Math.floor(Math.max(int_, sab) / 2);
+}
+
+// Chave de unicidade da magia conhecida: Aspecto + Modificador (+
+// Manifestação). Verbo NÃO entra mais na chave — ver nota grande
+// abaixo de magiasSalvas sobre o motivo (Verbo agora é escolhido na
+// hora de conjurar, não na hora de aprender).
+function chaveMagia(aspecto, mod, manifestacao) {
+  return [aspecto, mod, manifestacao || ''].join('::');
+}
+
+function magiaJaAprendida(aspecto, mod, manifestacao) {
+  const chave = chaveMagia(aspecto, mod, manifestacao);
+  return (PERSONAGEM.dados.grimorio.magiasSalvas || []).some(
+    m => chaveMagia(m.aspecto, m.mod, m.manifestacao) === chave
+  );
+}
+
+// Gera o botão/aviso de "Aprender Magia" com base na combinação atual
+// da Coluna 1. Cobre os 3 estados: combinação incompleta, já aprendida,
+// limite atingido, ou pronta para salvar.
+// Nota: Verbo ainda é exigido aqui porque o preview (Coluna 2) precisa
+// de um verbo pra gerar a magia completa via gerarMagiaSegura() — mas
+// a identidade da magia SALVA é só Aspecto+Modificador(+Manifestação).
+// O Verbo escolhido aqui não é persistido como parte do registro; ele
+// volta a ser escolhido livremente no momento de conjurar (aba Combate).
+function gerarBlocoAprender(combo) {
+  const aspecto = combo.aspecto, verbo = combo.verbo, mod = combo.mod;
+  const manifestacao = combo.manifestacao || '';
+
+  if (!aspecto || !verbo || !mod) {
+    return `<div class="grimorio-aprender-aviso">Selecione Aspecto, Verbo e Modificador para poder aprender esta magia.</div>`;
+  }
+
+  const total = (PERSONAGEM.dados.grimorio.magiasSalvas || []).length;
+  const limite = limiteMagiasConhecidas();
+  const contadorHTML = `<div class="grimorio-contador ${total >= limite ? 'no-limite' : ''}">📖 Magias conhecidas: ${total} / ${limite}</div>`;
+
+  if (magiaJaAprendida(aspecto, mod, manifestacao)) {
+    return `${contadorHTML}<div class="grimorio-aprender-aviso ja-aprendida">✓ Esta combinação de Aspecto+Modificador já foi aprendida. O Verbo é escolhido livremente na hora de conjurar, na aba Combate.</div>`;
+  }
+
+  if (total >= limite) {
+    return `${contadorHTML}<div class="grimorio-aprender-aviso no-limite">⚠️ Limite de magias conhecidas atingido. Remova uma magia da lista, ou suba de nível, para aprender outra.</div>`;
+  }
+
+  return `${contadorHTML}<button class="btn-aprender-magia" onclick="aprenderMagiaAtual()">📖 Aprender esta Magia</button>`;
+}
+
+// Salva a combinação atual da Coluna 1 como uma nova magia conhecida.
+// Persiste só Aspecto+Modificador+Manifestação (a identidade real da
+// magia). O Verbo escolhido no momento de aprender é guardado como
+// `verboPreferido` — é só uma conveniência de UI (pré-seleciona o
+// seletor de verbo na lista de Combate), NÃO faz parte da identidade
+// nem da unicidade.
+// Revalida limite e unicidade no próprio momento de salvar (defesa em
+// profundidade — o botão já não deveria aparecer nesses casos).
+function aprenderMagiaAtual() {
+  const d = PERSONAGEM.dados;
+  const aspecto = document.getElementById('grim_aspecto').value;
+  const verbo = document.getElementById('grim_verbo').value;
+  const mod = document.getElementById('grim_mod').value;
+  const manifestacao = (document.getElementById('grim_manifest') || {}).value || '';
+  const circulo = parseInt(document.getElementById('grim_circulo').value) || 1;
+
+  if (!aspecto || !verbo || !mod) return;
+
+  if (magiaJaAprendida(aspecto, mod, manifestacao)) {
+    showToast('Esta combinação já foi aprendida.', 'warning');
+    return;
+  }
+  if ((d.grimorio.magiasSalvas || []).length >= limiteMagiasConhecidas()) {
+    showToast('Limite de magias conhecidas atingido.', 'warning');
+    renderGrimorio();
+    return;
+  }
+
+  d.grimorio.magiasSalvas.push({
+    id: 'mag_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+    aspecto, mod, manifestacao, circulo, verboPreferido: verbo
+  });
+
+  showToast('✓ Magia aprendida!');
+  // Atualiza o Grimório (contador/aviso de "já aprendida" do painel
+  // de criação) E o Combate (a lista de magias salvas mora lá agora).
+  renderGrimorio();
+  renderCombate();
+  agendarSalvar();
+}
+
+function removerMagiaSalva(magiaId) {
+  const d = PERSONAGEM.dados;
+  d.grimorio.magiasSalvas = (d.grimorio.magiasSalvas || []).filter(m => m.id !== magiaId);
+  // A lista mora em Combate, mas o contador/aviso do Grimório também
+  // depende da contagem de magiasSalvas — atualiza os dois.
+  renderCombate();
+  if (document.getElementById('panel-grimorio')) renderGrimorio();
+  agendarSalvar();
+}
+
+// Lê o "verbo atual" de uma magia salva, com migração transparente do
+// formato antigo. Antes desta mudança, magiasSalvas guardava `verbo`
+// como parte fixa e travada do registro (a identidade incluía verbo).
+// Agora a identidade é só Aspecto+Modificador(+Manifestação): o Verbo
+// é escolhido livremente na hora de conjurar. Registros antigos que
+// ainda têm `m.verbo` são tratados como "o último/preferido" em vez
+// de descartados — na primeira leitura, esse valor é promovido para
+// `verboUltimoUsado` e `m.verbo` é apagado (registro fica no formato
+// novo a partir daí, sem perder a escolha anterior do jogador).
+function verboAtualMagiaSalva(m) {
+  if (m.verbo && !m.verboUltimoUsado) {
+    m.verboUltimoUsado = m.verbo;
+    delete m.verbo;
+  }
+  return m.verboUltimoUsado || m.verboPreferido || '';
+}
+
+// Troca o Verbo "ativo" de uma magia salva (escolha de conjuração,
+// não faz parte da identidade nem da unicidade — é só conveniência de
+// UI, pra lembrar qual verbo o jogador usou/quer usar por último).
+// Regenera o card de detalhe em tempo real, igual editarCirculoMagiaSalva.
+function escolherVerboMagiaSalva(magiaId, novoVerbo) {
+  const d = PERSONAGEM.dados;
+  const magia = (d.grimorio.magiasSalvas || []).find(m => m.id === magiaId);
+  if (!magia) return;
+  magia.verboUltimoUsado = novoVerbo;
+  delete magia.verbo; // garante que não fica formato antigo duplicado
+
+  const detalheEl = document.getElementById('magsalva_detalhe_' + magiaId);
+  if (detalheEl) {
+    const modSelecionado = sistemaMagia.modificadores ? sistemaMagia.modificadores[magia.mod] : null;
+    const magiaCompleta = gerarMagiaSegura(magia.aspecto, novoVerbo, magia.mod, magia.circulo, magia.manifestacao || null);
+    detalheEl.innerHTML = gerarHTMLCardMagia(magiaCompleta, modSelecionado);
+  }
+
+  agendarSalvar();
+}
+
+// Edita só o Círculo de uma magia já aprendida — não duplica o registro
+// nem afeta a unicidade (que ignora Círculo de propósito).
+function editarCirculoMagiaSalva(magiaId, novoCirculo) {
+  const d = PERSONAGEM.dados;
+  const magia = (d.grimorio.magiasSalvas || []).find(m => m.id === magiaId);
+  if (!magia) return;
+  magia.circulo = parseInt(novoCirculo) || 1;
+
+  // Atualiza só o número exibido ao lado do slider, sem re-renderizar
+  // a lista inteira (evita perder o foco do input enquanto arrasta).
+  const labelEl = document.getElementById('magsalva_circulo_valor_' + magiaId);
+  if (labelEl) labelEl.textContent = magia.circulo;
+
+  // Se o detalhe expandido já existe no DOM, regenera o card dentro
+  // dele com o novo círculo (sem isso, o detalhe ficaria mostrando
+  // os dados do círculo antigo até a próxima reabertura).
+  const detalheEl = document.getElementById('magsalva_detalhe_' + magiaId);
+  if (detalheEl) {
+    const verboAtual = verboAtualMagiaSalva(magia);
+    const modSelecionado = sistemaMagia.modificadores ? sistemaMagia.modificadores[magia.mod] : null;
+    const magiaCompleta = gerarMagiaSegura(magia.aspecto, verboAtual, magia.mod, magia.circulo, magia.manifestacao || null);
+    detalheEl.innerHTML = gerarHTMLCardMagia(magiaCompleta, modSelecionado);
+  }
+
+  agendarSalvar();
+}
+
+// Expande/recolhe o card detalhado de uma magia salva (mostra o
+// gerarHTMLCardMagia completo dela, igual ao preview).
+function toggleDetalheMagiaSalva(magiaId) {
+  const el = document.getElementById('magsalva_detalhe_' + magiaId);
+  if (!el) return;
+  const aberto = el.style.maxHeight && el.style.maxHeight !== '0px';
+  el.style.maxHeight = aberto ? '0px' : '2000px';
+  el.style.opacity = aberto ? '0' : '1';
+  el.style.marginTop = aberto ? '0' : '10px';
+}
+
+// Gera a lista completa de magias salvas, com mini-card por item,
+// seletor de Verbo inline (escolha livre na hora de conjurar — não
+// trava nada, classes ainda não restringem verbos), slider de Círculo
+// inline, botão de detalhe e botão de remover.
+// Vive na aba Combate (não mais no Grimório Arcano — ver renderCombate()).
+function gerarHTMLListaMagiasSalvas(d) {
+  const salvas = d.grimorio.magiasSalvas || [];
+  if (salvas.length === 0) {
+    return `
+    <div class="box" style="margin-top:16px">
+      <div class="box-title">Magias Aprendidas</div>
+      <div class="magia-card-vazio">Nenhuma magia aprendida ainda. Monte uma combinação no Grimório Arcano e clique em "Aprender esta Magia".</div>
+    </div>`;
+  }
+
+  const itens = salvas.map(m => {
+    const aspecto = sistemaMagia.aspectos[m.aspecto];
+    const mod = sistemaMagia.modificadores[m.mod];
+    const cor = (aspecto && aspecto.corHex) || '#C9A84C';
+    const nomeAspecto = aspecto ? aspecto.nome : m.aspecto;
+    const nomeMod = mod ? mod.nome : m.mod;
+
+    // Migra formato antigo (m.verbo fixo) pra m.verboUltimoUsado na leitura.
+    const verboAtual = verboAtualMagiaSalva(m);
+    // Todos os verbos do sistema ficam disponíveis pra escolha aqui —
+    // de propósito: classes ainda não travam Verbos liberados (quando
+    // travarem, é aqui que a lista de opções passa a ser filtrada).
+    const opcoesVerbo = montarOpcoesSelect(sistemaMagia.verbos, verboAtual);
+    const verbo = sistemaMagia.verbos[verboAtual];
+    const nomeVerbo = verbo ? verbo.nome : (verboAtual || '— escolha um verbo —');
+
+    const magiaCompleta = verboAtual
+      ? gerarMagiaSegura(m.aspecto, verboAtual, m.mod, m.circulo, m.manifestacao || null)
+      : null;
+
+    return `
+    <div class="magsalva-item" style="--cor-aspecto:${cor}">
+      <div class="magsalva-linha">
+        <div class="magsalva-icone">${(aspecto && aspecto.icone) || '✦'}</div>
+        <div class="magsalva-info" onclick="toggleDetalheMagiaSalva('${m.id}')">
+          <div class="magsalva-titulo">${esc(nomeAspecto)} · ${esc(nomeMod)}</div>
+          <div class="magsalva-subtitulo">${m.manifestacao ? esc((sistemaMagia.manifestacoes[m.manifestacao]||{}).nome || m.manifestacao) : 'Sem manifestação'}</div>
+        </div>
+        <button class="magsalva-btn-rolar" title="Rolar dados desta magia (em breve)" disabled style="opacity:0.35;cursor:not-allowed;background:none;border:1px solid rgba(201,168,76,0.25);color:var(--gold);font-size:14px;padding:4px 8px;border-radius:4px">🎲</button>
+        <button class="magsalva-btn-remover" onclick="removerMagiaSalva('${m.id}')" title="Esquecer esta magia">✕</button>
+      </div>
+      <div class="magsalva-linha" style="margin-top:6px">
+        <label class="magsalva-circulo-label" style="flex-shrink:0">Verbo</label>
+        <select class="identity-input magsalva-verbo-select" style="flex:1;min-width:0"
+          onchange="escolherVerboMagiaSalva('${m.id}',this.value)">
+          <option value="">— Escolha o Verbo ao conjurar —</option>
+          ${opcoesVerbo}
+        </select>
+      </div>
+      <div class="magsalva-linha" style="margin-top:6px">
+        <div class="magsalva-circulo" style="flex:1">
+          <input type="range" min="1" max="10" step="1" value="${m.circulo}"
+            oninput="editarCirculoMagiaSalva('${m.id}',this.value)" class="grimorio-slider magsalva-slider">
+          <span class="magsalva-circulo-label">Círc. <span id="magsalva_circulo_valor_${m.id}">${m.circulo}</span></span>
+        </div>
+      </div>
+      <div class="magsalva-detalhe" id="magsalva_detalhe_${m.id}" style="max-height:0;opacity:0;margin-top:0">
+        ${verboAtual ? gerarHTMLCardMagia(magiaCompleta, mod) : `<div class="magia-card-vazio">Escolha um Verbo acima para ver o efeito completo desta magia (Aspecto: ${esc(nomeAspecto)} · ${esc(nomeMod)}).</div>`}
+      </div>
+    </div>`;
+  }).join('');
+
+  return `
+    <div class="box" style="margin-top:16px">
+      <div class="box-title">
+        Magias Aprendidas
+        <span style="font-family:'EB Garamond',serif;font-style:italic;font-size:11px;color:var(--parchment-dark);opacity:0.6;letter-spacing:0;text-transform:none">
+          ${salvas.length} / ${limiteMagiasConhecidas()} conhecidas — escolha o Verbo, ajuste o Círculo e clique no título p/ ver detalhes
+        </span>
+      </div>
+      <div class="magsalva-lista">${itens}</div>
+    </div>`;
+}
+
 
 // Divisor usado no cálculo de CA a partir da Agilidade.
 // CA = 5 + Math.floor(AGI / CA_DIVISOR_AGI) + bônus de classe + bônus de raça.
@@ -1244,8 +1725,13 @@ function renderCombate() {
       </div>
     </div>
 
+    <!-- MAGIAS APRENDIDAS (Grimório) — movido do Grimório Arcano pra aqui:
+         lá fica só a bancada de criação/composição, aqui é onde o jogador
+         de fato usa as magias em jogo (escolhe Verbo, ajusta Círculo). -->
+    ${gerarHTMLListaMagiasSalvas(d)}
+
     <!-- MAGIAS / HABILIDADES DE COMBATE -->
-    <div class="box">
+    <div class="box" style="margin-top:16px">
       <div class="box-title">Magias & Habilidades de Combate</div>
       <textarea class="text-box" style="min-height:180px" placeholder="Descreva magias, habilidades especiais, efeitos de combate..."
         oninput="atualizarCampo('magiasCombate',this.value)">${esc(d.magiasCombate)}</textarea>
@@ -1499,6 +1985,13 @@ function renderNotas() {
 // =============================================================
 function atualizarCampo(campo, valor) {
   PERSONAGEM.dados[campo] = valor;
+  // Nível afeta HP máximo e o limite de magias conhecidas (mostrado
+  // tanto no painel de criação do Grimório quanto na lista em Combate).
+  if (campo === 'level') {
+    recalcularEAplicarRecursos();
+    if (document.getElementById('panel-grimorio')) renderGrimorio();
+    if (document.getElementById('panel-combate')) renderCombate();
+  }
   agendarSalvar();
 }
 
@@ -1531,6 +2024,16 @@ function atualizarAtrib(id, valor) {
     const aFull = ATRIBUTOS_ETH.find(a => a.id === id)?.full || id;
     btn.setAttribute('onclick', `rolarD20(${v},'${aFull}')`);
     btn.setAttribute('title', `Rolar d20 + ${v}`);
+  }
+
+  // Atributos afetam HP (COS), Sanidade (SAB) e Sopro (atrib. foco da classe)
+  recalcularEAplicarRecursos();
+
+  // INT/SAB afetam o limite de magias conhecidas, mostrado no Grimório
+  // (painel de criação) e na lista de magias salvas, que mora em Combate.
+  if ((id === 'int' || id === 'sab')) {
+    if (document.getElementById('panel-grimorio')) renderGrimorio();
+    if (document.getElementById('panel-combate')) renderCombate();
   }
 
   agendarSalvar();
@@ -1633,6 +2136,7 @@ function init() {
 
   montarEstruturaAbas();
   document.getElementById('f_nome').value = PERSONAGEM.nome || '';
+  recalcularEAplicarRecursos(); // garante máximos corretos antes do primeiro render
   renderPrincipal();
   renderPericias();
   renderGrimorio();
@@ -1642,7 +2146,7 @@ function init() {
   renderNotas();
 }
 
-// CSS de upload inline (reutiliza padrão da home)
+// CSS de upload inline + Drawers de Identidade (V4.1 — design angular coeso)
 const uploadStyle = document.createElement('style');
 uploadStyle.textContent = `
   .img-upload-area {
@@ -1651,9 +2155,182 @@ uploadStyle.textContent = `
     transition:border-color 0.2s,background 0.2s;
     display:flex;align-items:center;justify-content:center;
   }
-  .img-upload-area:hover{border-color:rgba(201,168,76,0.6);background:rgba(201,168,76,0.04);}
-  .img-upload-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;
-    gap:6px;font-family:'Cinzel',serif;font-size:11px;letter-spacing:1px;color:var(--parchment);pointer-events:none;}
+  .img-upload-area:hover { border-color:rgba(201,168,76,0.6);background:rgba(201,168,76,0.04); }
+  .img-upload-placeholder {
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:6px;font-family:'Cinzel',serif;font-size:11px;letter-spacing:1px;
+    color:var(--parchment);pointer-events:none;
+  }
+
+  /* ── Variáveis de cor ────────────────────────────────────── */
+  :root {
+    --idr-cor-raca:   #4a9a6a;
+    --idr-cor-classe: #4a7ab5;
+    --idr-cor-origem: #b58c2a;
+  }
+
+  /* ── PILL ────────────────────────────────────────────────────
+     Sem border-radius. Mesma altura/tipografia dos .box-title.
+     Borda colorida identifica o tipo (raça/classe/origem).
+  ──────────────────────────────────────────────────────────── */
+  .idr-pill {
+    display:inline-flex;align-items:center;gap:6px;margin-top:6px;
+    padding:4px 10px;cursor:pointer;border:none;
+    font-family:'Cinzel',serif;font-size:9px;
+    letter-spacing:1.8px;text-transform:uppercase;
+    transition:opacity 0.15s;
+  }
+  .idr-pill:hover  { opacity:0.75; }
+  .idr-pill:active { opacity:0.55; }
+  .idr-pill.raca   { background:rgba(74,154,106,0.08);  color:var(--idr-cor-raca);   border:1px solid rgba(74,154,106,0.28);  }
+  .idr-pill.classe { background:rgba(74,122,181,0.08);  color:var(--idr-cor-classe); border:1px solid rgba(74,122,181,0.28);  }
+  .idr-pill.origem { background:rgba(181,140,42,0.08);  color:var(--idr-cor-origem); border:1px solid rgba(181,140,42,0.28);  }
+
+  /* ── DRAWER ──────────────────────────────────────────────────
+     Sem border-radius. Borda esquerda colorida (2px) =
+     mesma linguagem dos cards de magia com --cor-aspecto.
+     Borda geral fina dourada = mesma do .box principal.
+  ──────────────────────────────────────────────────────────── */
+  .idr-drawer {
+    overflow:hidden;
+    background:rgba(0,0,0,0.2);
+    border:1px solid rgba(139,105,20,0.18);
+    border-left-width:2px;
+    transition:max-height 0.3s ease, opacity 0.2s ease, margin-top 0.2s ease;
+  }
+
+  /* Header = .box-title em miniatura */
+  .idr-header {
+    display:flex;align-items:center;justify-content:space-between;
+    padding:8px 14px;
+    background:rgba(0,0,0,0.18);
+    border-bottom:1px solid rgba(139,105,20,0.14);
+  }
+  .idr-header-titulo {
+    font-family:'Cinzel',serif;font-size:9.5px;
+    letter-spacing:2px;text-transform:uppercase;font-weight:600;
+  }
+  .idr-fechar {
+    background:none;border:none;cursor:pointer;
+    font-family:'Cinzel',serif;font-size:8.5px;letter-spacing:1.5px;
+    color:var(--parchment-dark);opacity:0.38;padding:2px 6px;
+    transition:opacity 0.15s, color 0.15s;
+  }
+  .idr-fechar:hover { opacity:1; color:var(--gold); }
+
+  /* Body */
+  .idr-body { padding:14px 16px;display:flex;flex-direction:column;gap:14px; }
+
+  /* Citação = .origem-citacao */
+  .idr-citacao {
+    font-family:'EB Garamond',serif;font-style:italic;
+    font-size:13.5px;line-height:1.55;
+    color:var(--parchment-dark);
+    border-left:2px solid rgba(139,105,20,0.4);
+    padding-left:12px;margin:0;
+  }
+
+  /* Rótulo = .origem-bloco-titulo */
+  .idr-bloco-label {
+    display:block;
+    font-family:'Cinzel',serif;font-size:9px;
+    letter-spacing:1.8px;text-transform:uppercase;
+    color:var(--gold-dark);margin-bottom:7px;
+  }
+
+  /* Texto = .origem-bloco p */
+  .idr-texto {
+    font-family:'EB Garamond',serif;font-size:13.5px;
+    line-height:1.55;color:var(--parchment);margin:0;
+  }
+
+  /* Nota de rodapé */
+  .idr-nota {
+    font-family:'EB Garamond',serif;font-size:11px;
+    font-style:italic;color:var(--parchment-dark);opacity:0.38;
+  }
+
+  /* Grid 2 colunas */
+  .idr-cols { display:grid;grid-template-columns:1fr 1fr;gap:16px; }
+
+  /* ── CHIPS ────────────────────────────────────────────────────
+     Sem border-radius. Tipografia Cinzel 9px = .box-title.
+     Mesma linguagem dos .magia-badge.
+  ──────────────────────────────────────────────────────────── */
+  .idr-chip-row { display:flex;flex-wrap:wrap;gap:5px; }
+  .idr-chip {
+    font-family:'Cinzel',serif;font-size:9px;letter-spacing:0.5px;
+    padding:3px 8px;
+    background:rgba(0,0,0,0.25);
+    border:1px solid rgba(139,105,20,0.2);
+    color:var(--parchment-dark);
+  }
+  .idr-chip.ok  { background:rgba(74,154,106,0.1);  border-color:rgba(74,154,106,0.32); color:#6dbe8d; }
+  .idr-chip.bad { background:rgba(180,60,60,0.1);   border-color:rgba(180,60,60,0.32);  color:#d47070; }
+  .idr-chip.eq  { background:rgba(74,122,181,0.1);  border-color:rgba(74,122,181,0.32); color:#7aacd4; }
+
+  /* ── CARDS DE ATRIBUTO ────────────────────────────────────────
+     Sem border-radius. Mesma linguagem do .atrib-card.
+     Fundo escuro, borda dourada fina, label Cinzel pequeno.
+  ──────────────────────────────────────────────────────────── */
+  .idr-attr-row { display:grid;grid-template-columns:repeat(6,1fr);gap:6px; }
+  .idr-attr-chip {
+    display:flex;flex-direction:column;align-items:center;
+    padding:7px 2px;
+    background:rgba(0,0,0,0.3);
+    border:1px solid rgba(139,105,20,0.18);
+  }
+  .idr-attr-chip.bonus {
+    background:rgba(74,154,106,0.09);
+    border-color:rgba(74,154,106,0.38);
+  }
+  .idr-attr-label {
+    font-family:'Cinzel',serif;font-size:8px;
+    letter-spacing:2px;text-transform:uppercase;
+    color:var(--gold-dark);
+  }
+  .idr-attr-val {
+    font-family:'Cinzel Decorative',serif;font-size:17px;
+    color:var(--parchment);margin-top:3px;line-height:1;
+  }
+  .idr-attr-chip.bonus .idr-attr-label { color:#6dbe8d; }
+  .idr-attr-chip.bonus .idr-attr-val   { color:#6dbe8d; }
+
+  /* ── HABILIDADES ──────────────────────────────────────────────
+     Sem border-radius. Idêntico ao .hab-item.
+  ──────────────────────────────────────────────────────────── */
+  .idr-hab-item {
+    padding:10px 12px;
+    background:rgba(0,0,0,0.22);
+    border:1px solid rgba(139,105,20,0.14);
+  }
+  .idr-hab-nome {
+    font-family:'Cinzel',serif;font-size:11px;letter-spacing:1px;
+    color:var(--gold);margin-bottom:4px;
+  }
+  .idr-hab-desc {
+    font-family:'EB Garamond',serif;font-size:13px;font-style:italic;
+    color:var(--parchment-dark);line-height:1.5;
+  }
+
+  /* ── CHECKBOXES DE PERÍCIA ────────────────────────────────────
+     Idêntico ao .origem-pericia-opt.
+  ──────────────────────────────────────────────────────────── */
+  .idr-check-row { display:flex;flex-direction:column;gap:0; }
+  .idr-check {
+    display:flex;align-items:center;gap:10px;
+    padding:7px 8px;cursor:pointer;user-select:none;
+    font-family:'EB Garamond',serif;font-size:14px;
+    color:var(--parchment-dark);
+    border-bottom:1px solid rgba(139,105,20,0.08);
+    transition:background 0.12s;
+  }
+  .idr-check:last-child { border-bottom:none; }
+  .idr-check:hover { background:rgba(201,168,76,0.05); }
+  .idr-check input { accent-color:var(--gold);width:14px;height:14px;cursor:pointer;flex-shrink:0; }
+  .idr-check.marcada { color:var(--gold); }
+  .idr-check.travada { opacity:0.35;cursor:not-allowed; }
+  .idr-check.travada:hover { background:none; }
 `;
 document.head.appendChild(uploadStyle);
 
@@ -1713,6 +2390,7 @@ function onMudarClasseBase(val) {
   removerPericiasDeClasse();
   d.classeBase = val;
   d.classeEspec = '';
+  recalcularEAplicarRecursos();
   agendarSalvar();
   renderPrincipal();
   renderPericias();
@@ -1723,6 +2401,7 @@ function aplicarEspecializacao(val) {
   removerPericiasDeClasse();
   d.classeEspec = val;
   if (val) aplicarPericiasDeClasse(d.classeBase, val);
+  recalcularEAplicarRecursos();
   agendarSalvar();
   renderPrincipal();
   renderPericias();

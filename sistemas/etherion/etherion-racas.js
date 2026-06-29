@@ -73,7 +73,7 @@ const RACAS_DB = {
         nome: 'Durkhar das Alturas',
         aliases: ['anao das alturas'],
         citacao: 'Poucos anões olharam para o céu… menos ainda o conquistaram.',
-        attrBonus: { agi: 1 },
+        attrBonus: { agi: 2, for: 1 },
         // 'Passo Leve' e 'Salto das Alturas' são situacionais (terreno elevado/queda),
         // sem valor fixo de CA ou deslocamento aplicável em qualquer situação.
         bonusCA: 0,
@@ -91,7 +91,7 @@ const RACAS_DB = {
         nome: 'Durkhar da Forja Solar',
         aliases: ['anao da forja'],
         citacao: 'A chama que molda o mundo corre em suas veias.',
-        attrBonus: { for: 2 },
+        attrBonus: { for: 1, cos: 2 },
         // Sem bônus passivo numérico de CA/Deslocamento nas habilidades desta sub-raça.
         bonusCA: 0,
         deslocamentoBonus: 0,
@@ -109,7 +109,7 @@ const RACAS_DB = {
         nome: 'Durkhar das Profundezas',
         aliases: ['anao das profundezas'],
         citacao: 'Os que ouviram primeiro o pulsar da criação.',
-        attrBonus: {},
+        attrBonus: {for: 2, con: 1},
         // 'Velocidade reduzida' é citado como fraqueza, mas sem valor numérico definido
         // no texto original — não convertido em deslocamentoBonus pra não inventar o número.
         bonusCA: 0,
@@ -483,7 +483,7 @@ const RACAS_DB = {
         nome: 'Noctaryn',
         aliases: ['vampiro'],
         citacao: 'Predadores perfeitos para manter o equilíbrio populacional.',
-        attrBonus: { agi: 2, pre: 2 },
+        attrBonus: { agi: 2, pre: 1 },
         // 'Maldição Solar' reduz deslocamento à metade apenas em luz direta — condicional,
         // não um modificador fixo aplicável sempre. Não convertido em número.
         bonusCA: 0,
@@ -510,7 +510,7 @@ const RACAS_DB = {
         nome: 'Sylphari',
         aliases: ['fada'],
         citacao: 'Pequenos espíritos da natureza e do ar.',
-        attrBonus: { agi: 3, int: 1 },
+        attrBonus: { agi: 2, int: 1 },
         // 'Voo Fluido' concede a capacidade de voar, mas não define um número fixo de
         // metros extras de deslocamento terrestre — não convertido em deslocamentoBonus.
         bonusCA: 0,
@@ -538,7 +538,7 @@ const RACAS_DB = {
         nome: 'Velkarin',
         aliases: ['anjo caido'],
         citacao: 'Carregam a beleza divina misturada com a melancolia da queda.',
-        attrBonus: { pre: 2, agi: 1, for: 1 },
+        attrBonus: { pre: 2, agi: 1 },
         // 'Asas Sombrias' permite planar/voar por curtos períodos, sem definir um valor
         // fixo de deslocamento terrestre extra — não convertido em deslocamentoBonus.
         bonusCA: 0,
@@ -565,7 +565,7 @@ const RACAS_DB = {
         nome: 'Verdarin',
         aliases: ['dahllan'],
         citacao: 'São a fúria da própria terra viva.',
-        attrBonus: { sab: 2, con: 2 },
+        attrBonus: { sab: 2, con: 1 },
         // '+2 de Defesa Natural permanente' (resistências) → bônus fixo de CA.
         bonusCA: 2,
         deslocamentoBonus: 0,
@@ -591,7 +591,7 @@ const RACAS_DB = {
         nome: 'Zirkin',
         aliases: ['goblin'],
         citacao: 'Sobrevivem onde o resto do mundo morre.',
-        attrBonus: { agi: 2, con: 2 },
+        attrBonus: { agi: 2, con: 1 },
         // 'Sucata é Ouro' concede +4 num único teste (ataque, defesa ou cura) antes de
         // quebrar — é um efeito temporário sob ação bônus, não um bônus fixo de CA.
         bonusCA: 0,

@@ -665,6 +665,7 @@ const sistemaMagia = {
     manifestar: {
       nome: 'Manifestar',
       intencao: 'ofensivo',
+      ajusteSequela: 0,
       custoBase: 1,
       multiplicadorDados: 1.0,
       acaoBase: 'Ação Padrão',
@@ -764,6 +765,7 @@ const sistemaMagia = {
     alterar: {
       nome: 'Alterar',
       intencao: 'utilidade',
+      ajusteSequela: 0,
       custoBase: 2,
       multiplicadorDados: 0.5,
       acaoBase: 'Ação Padrão',
@@ -869,6 +871,7 @@ const sistemaMagia = {
     vincular: {
       nome: 'Vincular',
       intencao: 'utilidade',
+      ajusteSequela: 0,
       custoBase: 1,
       multiplicadorDados: 0.5,
       acaoBase: 'Ação Padrão',
@@ -966,6 +969,7 @@ const sistemaMagia = {
     selar: {
       nome: 'Selar',
       intencao: 'utilidade',
+      ajusteSequela: 0,
       custoBase: 2,
       multiplicadorDados: 0.5,
       acaoBase: 'Ação Padrão',
@@ -1067,6 +1071,7 @@ const sistemaMagia = {
     destruir: {
       nome: 'Destruir',
       intencao: 'ofensivo',
+      ajusteSequela: 0,
       custoBase: 2,
       multiplicadorDados: 1.5,
       acaoBase: 'Ação Padrão',
@@ -1178,6 +1183,7 @@ const sistemaMagia = {
     invocar: {
       nome: 'Invocar',
       intencao: 'utilidade',
+      ajusteSequela: 0,
       custoBase: 3,
       multiplicadorDados: null, // Não rola dados de dano — Vida do lacaio = Círculo × 10
       acaoBase: 'Ação Completa',
@@ -1284,6 +1290,7 @@ const sistemaMagia = {
     cortar: {
       nome: 'Cortar',
       intencao: 'ofensivo',
+      ajusteSequela: 0,
       custoBase: 1,
       multiplicadorDados: 1.0,
       acaoBase: 'Ação Padrão',
@@ -1387,6 +1394,7 @@ const sistemaMagia = {
     proteger: {
       nome: 'Proteger',
       intencao: 'defensivo',
+      ajusteSequela: -1,
       custoBase: 1,
       multiplicadorDados: 2.0,
       acaoBase: 'Ação Padrão', // Pode ser usado como Reação em algumas mesas, mas o base é Padrão
@@ -1489,6 +1497,7 @@ const sistemaMagia = {
     deslocar: {
       nome: 'Deslocar',
       intencao: 'utilidade',
+      ajusteSequela: 0,
       custoBase: 2,
       multiplicadorDados: 0.5,
       acaoBase: 'Ação Padrão',
@@ -1616,6 +1625,7 @@ const sistemaMagia = {
     direcionado: {
       nome: 'Direcionado',
       custoExtra: 0,
+      ajusteSequela: 0,
       ajustes: { ajAlcance: +0, ajArea: -1, ajDuracao: +0, ajVisibilidade: +0 },
       efeitoMecanico: 'Alvo único, alcance curto.',
       descricao: {
@@ -1651,6 +1661,7 @@ const sistemaMagia = {
     caotico: {
       nome: 'Caótico',
       custoExtra: 2,
+      ajusteSequela: +1,
       ajustes: { ajAlcance: +0, ajArea: +0, ajDuracao: +0, ajVisibilidade: +2 },
       efeitoMecanico: 'Dispersão imprevisível, chance de ricochetear.',
       descricao: {
@@ -1690,6 +1701,7 @@ const sistemaMagia = {
     continuo: {
       nome: 'Contínuo',
       custoExtra: 3,
+      ajusteSequela: +1,
       ajustes: { ajAlcance: +0, ajArea: +0, ajDuracao: +2, ajVisibilidade: +1 },
       efeitoMecanico:
         'Duração sustentada por rodadas (Limitado a 3 rodadas ou ' +
@@ -1733,6 +1745,7 @@ const sistemaMagia = {
     fragmentado: {
       nome: 'Fragmentado',
       custoExtra: 1,
+      ajusteSequela: -1,
       ajustes: { ajAlcance: -1, ajArea: +1, ajDuracao: +0, ajVisibilidade: +1 },
       efeitoMecanico: 'Divide o efeito bruto entre múltiplos alvos menores.',
       descricao: {
@@ -1774,6 +1787,7 @@ const sistemaMagia = {
     estavel: {
       nome: 'Estável',
       custoExtra: 1,
+      ajusteSequela: 0,
       ajustes: { ajAlcance: +2, ajArea: +0, ajDuracao: +0, ajVisibilidade: -1 },
       efeitoMecanico: 'Garante alcance longo e elimina riscos ambientais mundanos.',
       descricao: {
@@ -1815,6 +1829,7 @@ const sistemaMagia = {
     espelhado: {
       nome: 'Espelhado',
       custoExtra: 2,
+      ajusteSequela: +1,
       ajustes: { ajAlcance: +0, ajArea: +1, ajDuracao: +0, ajVisibilidade: +2 },
       efeitoMecanico: 'Duplica o ponto de origem através de um clone ilusório/cópia.',
       descricao: {
@@ -1855,6 +1870,7 @@ const sistemaMagia = {
     latente: {
       nome: 'Latente',
       custoExtra: 2,
+      ajusteSequela: 0,
       ajustes: { ajAlcance: +0, ajArea: +0, ajDuracao: +0, ajVisibilidade: -2 },
       efeitoMecanico: 'Transforma a magia numa armadilha tática de gatilho num quadrado do mapa.',
       descricao: {
@@ -1897,6 +1913,7 @@ const sistemaMagia = {
     simbionte: {
       nome: 'Simbionte',
       custoExtra: 2,
+      ajusteSequela: 0,
       ajustes: { ajAlcance: +0, ajArea: +0, ajDuracao: +1, ajVisibilidade: -2 },
       efeitoMecanico:
         'A magia fica dormente, alojada num aliado, e ativa-se como Reação ' +
@@ -1943,6 +1960,7 @@ const sistemaMagia = {
       nome: 'Condensado',
       custoExtra: 0,
       custoMultiplicador: 3,
+      ajusteSequela: +1,
       ajustes: { ajAlcance: +0, ajArea: -3, ajDuracao: +0, ajVisibilidade: +1 },
       efeitoMecanico:
         'Esmaga uma magia de "Grande Área" até "Alvo Único (Toque)". O ' +
@@ -1991,6 +2009,7 @@ const sistemaMagia = {
     dobra_espacial: {
       nome: 'Dobra Espacial',
       custoExtra: 3,
+      ajusteSequela: 0,
       ajustes: { ajAlcance: +3, ajArea: +0, ajDuracao: +0, ajVisibilidade: +1 },
       efeitoMecanico:
         'O efeito ignora a distância euclidiana e atravessa o Véu para ' +
@@ -2034,6 +2053,7 @@ const sistemaMagia = {
     sacrificio_vital: {
       nome: 'Sacrifício Vital',
       custoExtra: 0,
+      ajusteSequela: 0,
       ajustes: { ajAlcance: +0, ajArea: +1, ajDuracao: +1, ajVisibilidade: +2 },
       efeitoMecanico:
         'O conjurador paga (Círculo × 2) PV próprios como custo adicional. ' +
@@ -2079,6 +2099,7 @@ const sistemaMagia = {
     eco_persistente: {
       nome: 'Eco Persistente',
       custoExtra: 2,
+      ajusteSequela: 0,
       ajustes: { ajAlcance: +0, ajArea: +0, ajDuracao: +1, ajVisibilidade: +0 },
       efeitoMecanico:
         'No início do próximo turno do conjurador, o feitiço ecoa ' +
@@ -2563,18 +2584,18 @@ const sistemaMagia = {
       muralha: { nivel: 'harmonioso', motivo: 'Escudo Místico é a metade defensiva do próprio Aspecto; virar parede é literalmente o que Archëon já faz.' },
       prisma: { nivel: 'harmonioso', motivo: 'Volume fechado de força pura é o "casulo" de proteção primordial descrito na própria lore do Aspecto.' },
       lanca: { nivel: 'dissonante', motivo: 'Concentrar a força indiferenciada de Archëon num único ponto perfurante contradiz sua natureza expansiva e sem limites.' },
-      flecha: { nivel: 'dissonante', motivo: 'Mesma razão da Lança — velocidade fina e focada é o oposto de uma força que "nunca conheceu limites".' },
+      flecha: { nivel: 'dissonante', motivo: 'Como a Lança, a Flecha exige que o Sopro escolha um destino só — e Archëon nunca aprendeu a escolher, apenas a se derramar.' },
       agulha: { nivel: 'dissonante', motivo: 'Um filamento finíssimo é a antítese da força bruta e ampla de Archëon.' },
-      fio: { nivel: 'dissonante', motivo: 'Mesma razão da Agulha.' },
-      chicote: { nivel: 'neutro', motivo: 'Controle físico não acrescenta nem contradiz a lore de força primordial.' },
-      foice: { nivel: 'neutro', motivo: 'Execução cirúrgica não tem laço temático forte com Archëon.' },
-      disco: { nivel: 'neutro', motivo: 'Ricochete é neutro — não há lore de imprevisibilidade em Archëon, mas também não contradiz.' },
+      fio: { nivel: 'dissonante', motivo: 'Esticar o Sopro num fio é pedir disciplina a algo que nasceu como euforia sem forma — a corda treme antes de obedecer.' },
+      chicote: { nivel: 'neutro', motivo: 'O Chicote dá direção e ritmo ao Sopro, mas Archëon não sonhou com gestos — sonhou com tudo de uma vez. Funciona, sem poesia.' },
+      foice: { nivel: 'neutro', motivo: 'A Foice pede precisão silenciosa; o Sopro de Archëon nunca foi sobre cortar um alvo, foi sobre encher o vazio inteiro. Não há contradição, só distância.' },
+      disco: { nivel: 'neutro', motivo: 'O ricochete do Disco é imprevisível por design, mas a imprevisibilidade de Archëon é a de um sonho que se espalha, não a de um projétil que volta — coexistem sem se tocar.' },
       estrutura_fixa: { nivel: 'harmonioso', motivo: 'Construção permanente e sólida ecoa a criação primordial que "deu forma ao vazio" de modo definitivo.' },
       fracionamento: { nivel: 'dissonante', motivo: 'Pulsar em pequenas doses contradiz a imagem de uma força que se libera de uma vez, "antes que houvesse limites".' },
-      portal: { nivel: 'neutro', motivo: 'Teletransporte não tem laço de lore específico — nem favorece nem contradiz Archëon.' },
-      orbital: { nivel: 'neutro', motivo: 'Reação fora de turno é mecanicamente neutra para um Aspecto de força bruta.' },
-      elo: { nivel: 'neutro', motivo: 'Conexão contínua não conflita nem reforça a lore de força primordial explosiva.' },
-      corrente: { nivel: 'neutro', motivo: 'Mesma razão do Elo, em escala maior.' },
+      portal: { nivel: 'neutro', motivo: 'Abrir uma passagem é um gesto de limite e destino — exatamente o que o Sopro, força sem fronteiras, não pratica nem rejeita.' },
+      orbital: { nivel: 'neutro', motivo: 'Esperar o momento certo para reagir é um cálculo que Archëon nunca fez; o Sonho não escolhe quando despertar, só desperta.' },
+      elo: { nivel: 'neutro', motivo: 'Um fio de força contínua entre conjurador e alvo é mais amarra do que explosão — não nega o Sopro, mas não é o seu gesto mais natural.' },
+      corrente: { nivel: 'neutro', motivo: 'A Corrente estende o Elo a vários alvos, mas a lógica é a mesma: Archëon se espalha sozinho, não precisa de elos para alcançar todos.' },
     },
     sol_pyrael: {
       linha: { nivel: 'harmonioso', motivo: 'Um raio de sol que perfura em linha reta, queimando tudo no caminho, é a imagem mais direta do próprio Aspecto.' },
@@ -2710,23 +2731,23 @@ const sistemaMagia = {
     },
     caos_zyrhun: {
       linha: { nivel: 'dissonante', motivo: 'Uma trajetória reta e previsível é a antítese da imprevisibilidade que define o próprio nome do Aspecto.' },
-      coluna: { nivel: 'dissonante', motivo: 'Mesma razão da Linha.' },
+      coluna: { nivel: 'dissonante', motivo: 'Um pilar é a Linha em pé, mas continua sendo uma única trajetória limpa — o Caos não desenha, ele se derrama.' },
       cone: { nivel: 'harmonioso', motivo: 'Dispersão larga e descontrolada é a imagem mecânica mais direta do Caos se espalhando.' },
       esfera: { nivel: 'harmonioso', motivo: 'Mesma razão do Cone — explosão sem direção privilegiada é o próprio Caos.' },
       halo: { nivel: 'neutro', motivo: 'Plausível, mas o anel ainda tem uma forma ordenada (circular perfeita) que soa um pouco contraditória ao caos puro — fica neutro.' },
       muralha: { nivel: 'dissonante', motivo: 'Uma estrutura estável e contínua é o oposto do que o Caos representa — corrosão instável, não contenção.' },
       prisma: { nivel: 'dissonante', motivo: 'Mesma razão da Muralha — geometria fechada e perfeita é ordem, não caos.' },
       lanca: { nivel: 'dissonante', motivo: 'Concentração total e precisa num ponto único é o oposto do espalhamento errático do Caos.' },
-      flecha: { nivel: 'dissonante', motivo: 'Mesma razão da Lança.' },
+      flecha: { nivel: 'dissonante', motivo: 'Como a Lança, a Flecha precisa de um alvo certo e uma trajetória que não desvia — o Caos não promete chegar a lugar nenhum.' },
       agulha: { nivel: 'dissonante', motivo: 'Precisão fina e previsível contradiz a essência errática e instável do Caos.' },
-      fio: { nivel: 'dissonante', motivo: 'Mesma razão da Agulha.' },
-      chicote: { nivel: 'neutro', motivo: 'Plausível como instabilidade física, sem ressonância de lore forte adicional.' },
-      foice: { nivel: 'neutro', motivo: 'Funcional, sem ressonância forte.' },
+      fio: { nivel: 'dissonante', motivo: 'Como a Agulha, o Fio precisa manter um curso constante — e o Caos é, por definição, o que recusa manter qualquer curso.' },
+      chicote: { nivel: 'neutro', motivo: 'O Chicote estala de forma imprevisível, o que combina com o Caos na superfície — mas ainda obedece à mão de quem o empunha, e isso já é mais controle do que Zyrhûn costuma tolerar.' },
+      foice: { nivel: 'neutro', motivo: 'A Foice é cálculo silencioso contra um alvo só; o Caos prefere o estrondo que ninguém vê chegar. Não conflitam, só falam línguas diferentes.' },
       disco: { nivel: 'harmonioso', motivo: 'Ricochete imprevisível entre alvos é a tradução mecânica mais perfeita do Caos — energia que nunca segue um caminho previsível.' },
       estrutura_fixa: { nivel: 'dissonante', motivo: 'O Caos é "mutação instável" por definição; uma estrutura fixa e imutável é a contradição mais direta possível.' },
       fracionamento: { nivel: 'dissonante', motivo: 'Pulsos regulares e previsíveis a cada turno contradizem a natureza errática do Caos — o Caos não tem ritmo.' },
       portal: { nivel: 'harmonioso', motivo: 'A lore do próprio Aspecto menciona "fissuras do Véu Trincado" geradas pela guerra de Zyrhûn — um portal instável é literalmente herança do Caos.' },
-      orbital: { nivel: 'neutro', motivo: 'Plausível, sem ressonância de lore forte além do genérico.' },
+      orbital: { nivel: 'neutro', motivo: 'Esperar o gatilho certo para reagir é uma lógica de causa e efeito — algo que o Caos tolera por acidente, não por natureza.' },
       elo: { nivel: 'dissonante', motivo: 'Um fluxo contínuo e estável contradiz a instabilidade definidora do Caos.' },
       corrente: { nivel: 'neutro', motivo: 'Múltiplos fios simultâneos podem soar "caóticos" pela quantidade, suavizando a dissonância do Elo — fica neutro.' },
     },
@@ -2820,23 +2841,23 @@ const sistemaMagia = {
     },
     morte_morvethra: {
       linha: { nivel: 'neutro', motivo: 'Um corte necrótico direto é plausível, sem ressonância exclusiva forte (a Foice cobre melhor a "morte" tematicamente).' },
-      coluna: { nivel: 'neutro', motivo: 'Mesma razão da Linha.' },
+      coluna: { nivel: 'neutro', motivo: 'Erguer a podridão num pilar vertical ainda é um corte único — funciona como a Linha, mas a Foice continua sendo a forma que Morvethra preferiria usar.' },
       cone: { nivel: 'neutro', motivo: 'Uma onda de podridão se espalhando é plausível, sem ressonância exclusiva forte.' },
-      esfera: { nivel: 'neutro', motivo: 'Mesma razão do Cone.' },
+      esfera: { nivel: 'neutro', motivo: 'Uma explosão de necrose em todas as direções tem o peso certo, mas a Morte de Morvethra é sobre escolher um fim, não sobre alcançar todos ao mesmo tempo.' },
       halo: { nivel: 'dissonante', motivo: 'Um anel que poupa deliberadamente o centro é misericórdia — uma inversão temática direta de uma deusa que "ceifa" sem distinção.' },
       muralha: { nivel: 'dissonante', motivo: 'Morvethra não constrói nem protege — ela cessa. Uma estrutura defensiva contradiz a essência de uma força puramente destrutiva/terminal.' },
       prisma: { nivel: 'dissonante', motivo: 'Mesma razão da Muralha.' },
       lanca: { nivel: 'harmonioso', motivo: 'Concentração letal num único ponto fatal é a "ceifa" mais literal — Morvethra escolhe um e o termina por completo.' },
-      flecha: { nivel: 'harmonioso', motivo: 'Mesma razão da Lança.' },
+      flecha: { nivel: 'harmonioso', motivo: 'Como a Lança, a Flecha escolhe um alvo e o segue até o fim — é a mesma sentença da deusa, só disparada a distância.' },
       agulha: { nivel: 'neutro', motivo: 'Plausível como veneno necrótico fino, sem ressonância exclusiva forte adicional.' },
-      fio: { nivel: 'neutro', motivo: 'Mesma razão da Agulha.' },
-      chicote: { nivel: 'neutro', motivo: 'Sem ressonância de lore forte.' },
+      fio: { nivel: 'neutro', motivo: 'Manter um filamento de necrose constante sobre o alvo lembra mais um definhar lento do que uma ceifa — próximo da lore, mas a Foice ainda expressa isso melhor.' },
+      chicote: { nivel: 'neutro', motivo: 'Um chicote necrótico é uma punição repetida, não uma sentença final — Morvethra termina coisas de uma vez, não as açoita.' },
       foice: { nivel: 'harmonioso', motivo: 'Execução de quem já está à beira da morte é a tradução mecânica mais literal e perfeita da própria deusa da Morte — a foice IS Morvethra.' },
       disco: { nivel: 'dissonante', motivo: 'Sorte e ricochete imprevisível contradizem a certeza implacável e definitiva que a Morte representa — Morvethra não "talvez" ceifa.' },
       estrutura_fixa: { nivel: 'dissonante', motivo: 'Mesma razão da Muralha — Morvethra termina coisas, não as constrói para durar.' },
       fracionamento: { nivel: 'harmonioso', motivo: 'O dreno de vida gradual, pulso a pulso, é a imagem perfeita de uma vítima definhando lentamente até a Morte — "os ossos não se soldam" ao longo do tempo.' },
-      portal: { nivel: 'neutro', motivo: 'Sem ressonância de lore forte.' },
-      orbital: { nivel: 'neutro', motivo: 'Sem ressonância de lore forte.' },
+      portal: { nivel: 'neutro', motivo: 'Uma passagem instantânea não tem o peso de um fim — Morvethra está interessada na sentença, não no deslocamento.' },
+      orbital: { nivel: 'neutro', motivo: 'Aguardar o momento certo para reagir é estratégia, não destino — a Morte de Morvethra chega quando chega, ela não espera por gatilhos.' },
       elo: { nivel: 'harmonioso', motivo: 'Um dreno contínuo sem reteste, que só se rompe pelo esforço da vítima, é exatamente "drenos vitais que sugam a força do inimigo até que seus joelhos cedam" — texto quase literal da lore.' },
       corrente: { nivel: 'harmonioso', motivo: 'Múltiplos drenos simultâneos sobre vários alvos — a ceifa em escala de campo de batalha.' },
     },
@@ -2864,23 +2885,23 @@ const sistemaMagia = {
     },
     teia_mabryth: {
       linha: { nivel: 'dissonante', motivo: 'Linha perfura em trajetória reta ignorando cobertura; Mabryth é sobre prender, não sobre atravessar (calibração do handoff).' },
-      coluna: { nivel: 'dissonante', motivo: 'Mesma razão da Linha.' },
+      coluna: { nivel: 'dissonante', motivo: 'Erguer a teia num pilar vertical ainda é atravessar, não envolver — a aranha paciente não se anuncia num só golpe.' },
       cone: { nivel: 'neutro', motivo: 'Uma teia se espalhando em leque é plausível, sem ressonância exclusiva tão forte quanto Chicote/Elo/Fio.' },
-      esfera: { nivel: 'neutro', motivo: 'Mesma razão do Cone.' },
+      esfera: { nivel: 'neutro', motivo: 'Uma explosão de fios em todas as direções captura em volume, mas perde a paciência da aranha que tece a armadilha antes da presa notar.' },
       halo: { nivel: 'neutro', motivo: 'Uma teia em anel é plausível, mas sem ressonância exclusiva tão forte quanto outras opções do Aspecto.' },
       muralha: { nivel: 'neutro', motivo: 'Uma parede de teia é plausível (bloqueia passagem), sem ressonância exclusiva forte adicional.' },
       prisma: { nivel: 'neutro', motivo: 'Um casulo de teia fechado tem alguma ressonância (capturar por completo), mas sem texto de lore explícito — fica neutro.' },
       lanca: { nivel: 'dissonante', motivo: 'Perfurar contradiz a essência de "prender" — a Teia enreda, não trespassa.' },
-      flecha: { nivel: 'dissonante', motivo: 'Mesma razão da Lança.' },
+      flecha: { nivel: 'dissonante', motivo: 'Como a Lança, a Flecha busca atingir e seguir — a Teia de Mabryth quer que o fio fique, não que ele passe direto.' },
       agulha: { nivel: 'neutro', motivo: 'Um filamento fino tem ressonância com "fios", mas o efeito é perfurante/ofensivo, não restritivo — fica neutro.' },
       fio: { nivel: 'harmonioso', motivo: 'A própria Manifestação se chama "Fio" — é quase tautológico com a lore de "filamentos de energia sombria" da Teia de Mabryth.' },
       chicote: { nivel: 'harmonioso', motivo: 'Chicote derruba/agarra; Mabryth já é sobre restrição e fios — quase redundante com a identidade do Aspecto (calibração do handoff).' },
       foice: { nivel: 'neutro', motivo: 'A lore de pragas/veneno tem alguma proximidade com execução lenta, mas a Foice é súbita — contradição leve, não forte. Fica neutro.' },
-      disco: { nivel: 'neutro', motivo: 'Sem ressonância de lore forte.' },
+      disco: { nivel: 'neutro', motivo: 'O ricochete imprevisível do Disco não combina com a paciência calculada da aranha, mas também não a contradiz — só anda por um caminho próprio.' },
       estrutura_fixa: { nivel: 'neutro', motivo: 'Uma teia fixa tem alguma ressonância (armadilha permanente), mas sem texto de lore explícito — fica neutro.' },
       fracionamento: { nivel: 'harmonioso', motivo: 'O veneno/praga "que corrói de dentro para fora" e "se espalha como rumores" é literalmente um efeito gradual, pulso a pulso — texto quase exato da lore.' },
-      portal: { nivel: 'neutro', motivo: 'Sem ressonância de lore forte.' },
-      orbital: { nivel: 'neutro', motivo: 'Sem ressonância de lore forte.' },
+      portal: { nivel: 'neutro', motivo: 'Abrir uma passagem é instantâneo e direto — o oposto da armadilha lenta que Mabryth tece antes que a presa perceba. Não chega a contradizer, só é alheio.' },
+      orbital: { nivel: 'neutro', motivo: 'Reagir no momento exato é reflexo, não paciência — a aranha de Mabryth já teceu a armadilha antes de qualquer gatilho disparar.' },
       elo: { nivel: 'harmonioso', motivo: 'Um fio que prende e só se rompe pelo movimento da vítima é a tradução mais literal possível de "Teia" — a presa só se liberta pelo próprio esforço.' },
       corrente: { nivel: 'harmonioso', motivo: 'Múltiplos fios prendendo múltiplos alvos simultaneamente — a teia em escala de enxame, exatamente como pragas "se espalham de hospedeiro em hospedeiro".' },
     }
@@ -2896,6 +2917,33 @@ const sistemaMagia = {
     if (!tabela) return 'Desconhecido';
     const index = Math.min(Math.floor(valorBruto / 2.5), tabela.length - 1);
     return tabela[Math.max(0, index)];
+  },
+
+  /**
+   * Converte círculo + ajuste combinado (Verbo + Modificador) em nível
+   * de sequela.
+   *
+   * Escala base por círculo: C 1 = Nenhuma, C 2-4 = Leve, C 5-7 = Moderada,
+   * C 8-10 = Severa. O ajuste desloca o limiar: +1 agrava (antecipa o
+   * próximo nível), -1 atenua (retarda). Nunca passa de 'Severa' nem
+   * fica abaixo de 'Nenhuma'.
+   *
+   * @param {number} circulo      — círculo injetado (1 a 10)
+   * @param {number} ajusteTotal  — soma de ajusteSequela do Verbo + Modificador
+   * @returns {string}            — 'Nenhuma' | 'Leve' | 'Moderada' | 'Severa'
+   */
+  resolverNivelSequela(circulo, ajusteTotal = 0) {
+    const NIVEIS = ['Nenhuma', 'Leve', 'Moderada', 'Severa'];
+
+    // Índice base pela faixa de círculo
+    let indiceBase;
+    if      (circulo >= 8) indiceBase = 3; // Severa
+    else if (circulo >= 5) indiceBase = 2; // Moderada
+    else if (circulo >= 2) indiceBase = 1; // Leve
+    else                   indiceBase = 0; // Nenhuma
+
+    const indiceFinal = Math.max(0, Math.min(3, indiceBase + ajusteTotal));
+    return NIVEIS[indiceFinal];
   },
 
   /**
@@ -2932,14 +2980,30 @@ const sistemaMagia = {
 
     const visibilidade = this.resolverEtiqueta('visibilidade', brutoVisib + ((mod.ajustes?.ajVisibilidade || 0) * 2.5));
 
-    // 3. Sequela por faixa de círculo
-    let nivelSequela = 'Nenhuma';
-    let textoSequela = '';
-    if (C >= 8)      { nivelSequela = 'Severa';   textoSequela = aspecto.sequela.severa; }
-    else if (C >= 5) { nivelSequela = 'Moderada'; textoSequela = aspecto.sequela.moderada; }
-    else if (C >= 2) { nivelSequela = 'Leve';     textoSequela = aspecto.sequela.leve; }
+    // 3. Sequela por faixa de círculo, ajustada por Verbo + Modificador
+    const ajusteMod   = mod.ajusteSequela   || 0;
+    const ajusteVerbo = verbo.ajusteSequela || 0;
+    const nivelSequela = this.resolverNivelSequela(C, ajusteMod + ajusteVerbo);
+    const textoSequela = nivelSequela !== 'Nenhuma'
+      ? aspecto.sequela[nivelSequela.toLowerCase()]
+      : '';
 
-    return { alcance, area, duracao, visibilidade, nivelSequela, textoSequela };
+    // Prompt 07 — Parte 2: nota explicando a causa do ajuste de sequela.
+    // Só aparece quando há ajuste real (ajusteTotalSequela !== 0) E a sequela
+    // resultante não é 'Nenhuma' (não há nota a fazer sobre sequela inexistente).
+    let notaAjusteSequela = '';
+    const ajusteTotalSequela = ajusteMod + ajusteVerbo;
+    if (ajusteTotalSequela !== 0 && nivelSequela !== 'Nenhuma') {
+      notaAjusteSequela = ajusteTotalSequela > 0
+        ? ` (agravada pela combinação de ${verbo.nome} + ${mod.nome})`
+        : ` (atenuada pela combinação de ${verbo.nome} + ${mod.nome})`;
+    }
+
+    const textoSequelaComNota = textoSequela
+      ? textoSequela + notaAjusteSequela
+      : textoSequela;
+
+    return { alcance, area, duracao, visibilidade, nivelSequela, textoSequela: textoSequelaComNota };
   },
 
   /**
@@ -2990,27 +3054,187 @@ const sistemaMagia = {
   },
 
   /**
-   * Resolve a tag de Ressonância de Falha Crítica, de acordo com o
-   * Recurso (Sopro ou Mácula) do Aspecto canalizado.
+   * Tabela de Falhas Críticas por Aspecto.
    *
-   * Sopro  → [Falha Inofensiva]: energia dissipa, Ação/Mana perdida.
-   * Mácula → [Custo do Abismo]: conjurador sofre 1d6 de Dano de Sanidade.
+   * Cada um dos 15 Aspectos define três textos narrativos, um por faixa
+   * de severidade (derivada do Círculo conjurado em resolverFalhaCritica):
+   *   menor        → Círculo 1–3
+   *   moderada     → Círculo 4–6
+   *   catastrofica → Círculo 7–10
    *
-   * @param {string} recurso — 'sopro' ou 'macula'
-   * @returns {{ tag: string, descricao: string, formulaDano: string|null }}
+   * Os textos mantêm a voz de fantasia sombria/horror cósmico do restante
+   * do arquivo e refletem o elemento/lore de cada divindade. A fórmula de
+   * dano e a tag de exibição são resolvidas separadamente em
+   * resolverFalhaCritica, com base em recurso + severidade — esta tabela
+   * é puramente narrativa.
    */
-  resolverFalhaCritica(recurso) {
+  falhasCriticas: {
+    sopro_archeon: {
+      menor:        'Tremor nas mãos do conjurador por 1 rodada — um eco fraco do êxtase de Archëon que se recusa a obedecer.',
+      moderada:     'O Sopro reverte contra quem o invocou: a euforia da criação vira vertigem, e o conjurador perde Sopro adicional ao se recompor.',
+      catastrofica: 'A centelha primordial escapa de controle e explode em força bruta e luminosa, atingindo aliados próximos como se o próprio Sonho de Archëon despertasse furioso por um instante.'
+    },
+    sol_pyrael: {
+      menor:        'Uma fumaça leve sobe das mãos do conjurador — o calor da ira de Pyraël cospe de volta, inofensivo, mas quente ao toque.',
+      moderada:     'O fogo solar lambe o próprio conjurador antes de se apagar: queimaduras superficiais e o cheiro de pele chamuscada.',
+      catastrofica: 'O olho furioso de Pyraël se volta contra quem o invocou — uma explosão de calor branco cauteriza tudo ao redor, sem distinguir aliado de inimigo.'
+    },
+    lua_nyxara: {
+      menor:        'Sussurros ininteligíveis escapam dos lábios do conjurador por 1 rodada, ecos de verdades que a Lua não terminou de revelar.',
+      moderada:     'A luz prateada se embaralha na mente do próprio conjurador — visão distorcida e penalidade em testes de Percepção até o fim da cena.',
+      catastrofica: 'O véu entre o visto e o oculto se rasga no sentido errado: um segredo involuntário do conjurador é revelado a todos presentes na cena, como se Nyxara o expusesse de propósito.'
+    },
+    tempo_khairos: {
+      menor:        'Um instante perdido — o conjurador trava por uma fração de segundo, como se Khaíros tivesse cobrado um grão de areia adiantado.',
+      moderada:     'O fio da causalidade emperra: a ação do conjurador se repete ou se atrasa de forma confusa, perdendo a sincronia com o resto da cena.',
+      catastrofica: 'Khaíros cobra a dívida inteira de uma vez — um fragmento de tempo se solta ao redor do conjurador, distorcendo a ordem dos eventos próximos por um instante que ninguém mais percebe ter existido.'
+    },
+    saber_aethrys: {
+      menor:        'Uma dor de cabeça aguda atravessa o conjurador — glifos fantasma piscam e se apagam antes de formar sentido.',
+      moderada:     'O conhecimento se vira contra quem o busca: o conjurador recebe um fragmento de runa corrompida e perde a ação por confusão mental.',
+      catastrofica: 'Aethrýs nega o saber com desdém — uma sobrecarga cognitiva violenta apaga temporariamente uma perícia ou memória recente do conjurador, como se a própria Deusa arrancasse o conhecimento de volta.'
+    },
+    vida_elyssera: {
+      menor:        'Uma fome súbita e absurda invade o conjurador, como se o corpo exigisse o preço da criação que não veio.',
+      moderada:     'O motor biológico de Elysséra falha às avessas — dor visceral percorre o corpo do conjurador, sem mutação ou cura para mostrar.',
+      catastrofica: 'A Vida se recusa e pune: o corpo do conjurador sofre uma mutação instável e dolorosa, crescimento orgânico descontrolado que precisa ser removido ou cauterizado depois da cena.'
+    },
+    terra_maelthra: {
+      menor:        'Os pés do conjurador afundam um dedo no solo por instinto, como se Maelthra repreendesse a tentativa fracassada.',
+      moderada:     'A pedra responde tarde e errado: um tremor tátil sacode o próprio conjurador, desequilibrando-o por 1 turno.',
+      catastrofica: 'O organismo vivo sob os pés se revolta — uma fenda de granito negro irrompe sob o conjurador e seus aliados próximos, como se Aetherion se defendesse do próprio invocador.'
+    },
+    caos_zyrhun: {
+      menor:        'O efeito desvia aleatoriamente do alvo pretendido, rindo-se da intenção do conjurador como só o Caos sabe fazer.',
+      moderada:     'Zyrhûn vira a magia contra a fonte — o efeito atinge o próprio conjurador em vez do alvo escolhido.',
+      catastrofica: 'Uma brecha se abre no Véu já trincado por Zyrhûn, e uma entidade menor de Nythraxis é atraída pelo cheiro da mácula liberada — presença breve, mas real, na cena.'
+    },
+    trovao_karyon: {
+      menor:        'Zumbido nos ouvidos do conjurador e faíscas inúteis saltam das pontas dos dedos — a fúria de Káryon descarregada no vazio.',
+      moderada:     'A descarga retorna pelo próprio braço do conjurador: espasmos musculares e atordoamento leve por 1 turno.',
+      catastrofica: 'O céu escolhe o próprio invocador para punir — uma onda de choque sônica arremessa o conjurador e quem estiver perto contra o terreno, ensurdecendo a todos por um instante de silêncio absoluto.'
+    },
+    oceanos_neryth: {
+      menor:        'O conjurador tosse água que não devia estar ali — um eco breve da pressão abissal de Nerýth.',
+      moderada:     'A torrente reflui sobre quem a invocou: vertigem, náusea e a sensação de afogamento por 1 turno.',
+      catastrofica: 'O oceano primordial responde sem domesticação — uma onda de pressão esmagadora atinge o conjurador e os aliados próximos, como se as águas ainda não tivessem aprendido a obedecer aos Dragões.'
+    },
+    beleza_lyrea: {
+      menor:        'O conjurador se distrai com o próprio reflexo por um instante — vaidade involuntária que Lyrëa nunca recusa.',
+      moderada:     'O encanto se volta para dentro: o conjurador se vê fascinado pela própria ilusão, perdendo o foco na cena por 1 turno.',
+      catastrofica: 'A convergência de todas as forças se quebra ao contrário — o conjurador enxerga todos ao redor, incluindo aliados, como grotescos por toda a cena, incapaz de distinguir amigo de inimigo pela própria percepção distorcida.'
+    },
+    ordem_ordelyne: {
+      menor:        'O conjurador sente um peso de julgamento sobre os próprios ombros, como se Ordelyne questionasse a tentativa.',
+      moderada:     'A luz radiante se reflete contra a fonte — uma punição reativa leve atinge o próprio conjurador como consequência mal calculada.',
+      catastrofica: 'A certeza implacável de Ordelyne se volta contra quem a invocou: uma lâmina de luz branca julga o próprio conjurador, expondo suas intenções mais cruas a todos presentes como uma sentença pública.'
+    },
+    morte_morvethra: {
+      menor:        'Um frio nos ossos que nenhum fogo esquenta — Morvethra cobra antecipadamente uma fração do que será exigido.',
+      moderada:     'A negação de cura se instala no próprio conjurador: por 1 turno, ele não consegue ser curado, a marca fria da Morte presente em sua própria pele.',
+      catastrofica: 'Os poços de Morvethra se abrem por um instante sob o conjurador — não como metáfora, mas como presença sentida, fria e paciente, olhando de baixo para cima. O Dano de Sanidade da Mácula se duplica, e quem testemunha jura ter visto a sombra do conjurador separar-se do corpo por uma fração de segundo.'
+    },
+    trevas_kharvion: {
+      menor:        'A sombra do conjurador se move de forma independente por alguns segundos — um calafrio sem explicação aparente.',
+      moderada:     'A fenda para o abismo se abre do lado errado: vultos e sussurros dos condenados ecoam na mente do próprio conjurador por minutos.',
+      catastrofica: 'Kharvion abre a grade do Submundo para dentro em vez de para fora — por um instante, os condenados primordiais que ele vigia enxergam o conjurador do outro lado, e um deles estende a mão. A presença sensível permanece na cena por horas, grudada como sombra errada, e o Dano de Sanidade da Mácula não pode ser recuperado antes de um descanso longo.'
+    },
+    teia_mabryth: {
+      menor:        'Dormência nos dedos do conjurador — fios invisíveis da própria Teia roçam a pele de quem a tece.',
+      moderada:     'A armadilha se fecha ao contrário: filamentos de energia sombria prendem brevemente o próprio conjurador, como cordas de aço invisível.',
+      catastrofica: 'O fio que conecta as fissuras do Véu trincado se rompe nas mãos do conjurador — uma fresta para Nythraxis se abre, breve mas suficiente, e algo do outro lado puxa de volta. A Teia fecha sobre o conjurador como presa, e a entidade que escorrega pela fresta não se anuncia: apenas observa, quieta, de um ângulo que os outros presentes na cena não conseguem localizar.'
+    }
+  },
+
+  /**
+   * Complementos narrativos opcionais para Falha Crítica quando o jogador
+   * escolheu uma Manifestação com ironia de lore forte em caso de fracasso.
+   * Só `catastrofica` recebe complemento — em severidades menores o efeito
+   * da Manifestação ainda não é dramático o suficiente para texto extra.
+   * O complemento é concatenado ao final de `descricao` em resolverFalhaCritica.
+   */
+  falhasCriticasPorManifestacao: {
+    latente: {
+      catastrofica: ' A armadilha que deveria esperar o instante certo dispara cedo ' +
+                    'demais — ou nunca dispara, e a energia se dissolve no próprio ' +
+                    'glifo adormecido, sem nunca conhecer seu gatilho.'
+    },
+    espelhado: {
+      catastrofica: ' O erro também se duplica: o que deveria ser um único acidente ' +
+                    'se repete simultaneamente em dois pontos, como se a falha ' +
+                    'quisesse ser vista duas vezes.'
+    }
+  },
+
+  /**
+   * escalando por Recurso (Sopro ou Mácula), Aspecto e Círculo.
+   *
+   * A severidade é determinada pelo círculo:
+   *   1–3  → 'menor'
+   *   4–6  → 'moderada'
+   *   7–10 → 'catastrofica'
+   *
+   * A descrição narrativa vem de falhasCriticas[aspectoId][severidade].
+   * A fórmula de dano (apenas para Mácula) escala junto:
+   *   menor → null | moderada → '1d4' | catastrofica → '1d6'
+   * Sopro nunca aplica dano de dado — a falha é sempre narrativa/perda de
+   * recurso, mesmo em severidade catastrófica.
+   *
+   * @param {string} recurso   — 'sopro' ou 'macula'
+   * @param {string} aspectoId — chave do Aspecto em sistemaMagia.aspectos
+   * @param {number} circulo   — círculo da magia (1 a 10)
+   * @returns {{ tag: string, descricao: string, formulaDano: string|null, severidade: string }}
+   */
+  resolverFalhaCritica(recurso, aspectoId, circulo, manifestacaoId = null) {
+    const circuloNumerico = Number(circulo);
+    const circuloSeguro = Number.isFinite(circuloNumerico)
+      ? Math.max(1, Math.min(10, circuloNumerico))
+      : 1;
+
+    const severidade = circuloSeguro <= 3
+      ? 'menor'
+      : (circuloSeguro <= 6 ? 'moderada' : 'catastrofica');
+
+    const textosAspecto = this.falhasCriticas[aspectoId];
+    const descricaoBase = textosAspecto
+      ? textosAspecto[severidade]
+      : (recurso === 'macula'
+          ? 'O conjurador sofre o custo do Abismo quando a magia falha catastroficamente.'
+          : 'A energia dissipa-se sem efeito. A Ação e o Recurso gasto são perdidos.');
+
+    // Complemento narrativo de Manifestação — só em severidade catastrófica
+    const complementoManifestacao =
+      (manifestacaoId &&
+       this.falhasCriticasPorManifestacao[manifestacaoId] &&
+       this.falhasCriticasPorManifestacao[manifestacaoId][severidade]) || '';
+
+    const descricao = descricaoBase + complementoManifestacao;
+
     if (recurso === 'macula') {
+      const formulaPorSeveridade = { menor: null, moderada: '1d4', catastrofica: '1d6' };
+      const tagPorSeveridade = {
+        menor: 'Eco do Abismo',
+        moderada: 'Custo do Abismo',
+        catastrofica: 'Brecha no Abismo'
+      };
       return {
-        tag: 'Custo do Abismo',
-        descricao: 'O conjurador sofre 1d6 de Dano de Sanidade quando a magia falha catastroficamente.',
-        formulaDano: '1d6'
+        tag: tagPorSeveridade[severidade],
+        descricao,
+        formulaDano: formulaPorSeveridade[severidade],
+        severidade
       };
     }
+
+    const tagSoproPorSeveridade = {
+      menor: 'Falha Inofensiva',
+      moderada: 'Sopro Revertido',
+      catastrofica: 'Sopro Descontrolado'
+    };
     return {
-      tag: 'Falha Inofensiva',
-      descricao: 'A energia dissipa-se sem efeito. A Ação e o Recurso gasto são perdidos.',
-      formulaDano: null
+      tag: tagSoproPorSeveridade[severidade],
+      descricao,
+      formulaDano: null,
+      severidade
     };
   },
 
@@ -3466,7 +3690,7 @@ const sistemaMagia = {
     }
 
     // ── 8. Ressonância de Falha Crítica ───────────────────────────────────
-    const falhaCritica = this.resolverFalhaCritica(aspecto.recurso);
+    const falhaCritica = this.resolverFalhaCritica(aspecto.recurso, aspectoId, circuloValidado, manifestacaoId);
 
     // ── 9. Array de Tags final — único, sem duplicatas ────────────────────
     // As tags base nunca incluem dado (removido da montagem) —
@@ -3487,6 +3711,31 @@ const sistemaMagia = {
       ...tagsInfusao,
       `Falha Crítica: ${falhaCritica.tag}`
     ].filter(Boolean);
+
+    // ── 9b. Frase de Afinidade para a narrativa (V6.0, Prompt 05) ──────────
+    // Deriva do mesmo dadoFinal.afinidade já usado na tag compacta (passo 5d-bis),
+    // mas aqui o texto completo do `motivo` — escrito par a par na matriz
+    // `afinidades` — é transformado numa frase curta para entrar em
+    // descricaoFinal. Regra: nunca para nível 'neutro' (evita poluir a
+    // narrativa comum) e nunca quando não há Manifestação (dadoFinal.afinidade
+    // é null nesse caso — ver resolverDadoManifestacao).
+    const fraseAfinidade = (() => {
+      if (!dadoFinal || !dadoFinal.afinidade) return '';
+      const { nivel, motivo } = dadoFinal.afinidade;
+      if (nivel === 'neutro') return '';
+      const prefixo = nivel === 'harmonioso' ? 'Em ressonância: ' : 'Em dissonância: ';
+      return `${prefixo}${motivo}`;
+    })();
+
+    // ── 9c. Frase do Círculo para a narrativa (Prompt 07 — Parte 1) ────────
+    // Apenas para Círculo 7 ou maior ("Calamidade" em diante). Círculos baixos
+    // não precisam desse reforço; o texto dos Verbos/Aspectos já comunica bem
+    // a escala em magias menores. A frase entra como primeiro elemento do array
+    // que forma descricaoFinal, antes de templateAspecto.
+    const resumoCirculoAtual = this.resumoCirculo[circuloValidado];
+    const fraseCirculo = (circuloValidado >= 7 && resumoCirculoAtual)
+      ? `[${resumoCirculoAtual.titulo}] ${resumoCirculoAtual.desc}`
+      : '';
 
     // ── 10. Objeto de retorno completo ────────────────────────────────────
     return {
@@ -3560,7 +3809,12 @@ const sistemaMagia = {
       textoManifestacao:  templateManifestacao,
 
       // Texto final combinado
-      descricaoFinal: [templateAspecto, templateMod, templateManifestacao]
+      // V6.0: a frase de Afinidade só entra quando há Manifestação E o nível
+      // não é 'neutro' — caso contrário poluiria a narrativa em toda combinação
+      // comum (a maioria das entradas é neutra por design).
+      // Prompt 07 — Parte 1: fraseCirculo entra como primeiro elemento quando
+      // circulo >= 7; calculada em 9c, antes do return.
+      descricaoFinal: [fraseCirculo, templateAspecto, templateMod, templateManifestacao, fraseAfinidade]
         .filter(Boolean)
         .join('\n\n')
     };

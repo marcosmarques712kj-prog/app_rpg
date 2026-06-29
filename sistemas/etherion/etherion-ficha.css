@@ -232,23 +232,33 @@ body {
 .pericias-cols {
   display: grid; grid-template-columns: 1fr 1fr; gap: 0 24px;
 }
+
+/* Linha base: checkbox | attr-tag | nome | valor | dado */
 .skill-row {
-  display: grid; grid-template-columns: 20px 22px 1fr 36px 26px;
-  align-items: center; gap: 8px; padding: 5px 4px;
+  display: grid;
+  grid-template-columns: 20px 28px 1fr 32px 24px;
+  align-items: center; gap: 6px; padding: 5px 4px;
   border-bottom: 1px solid rgba(139,105,20,0.08);
   transition: background 0.12s;
 }
 .skill-row:hover { background: rgba(201,168,76,0.04); }
+
+/* Quando a perícia tem campo de foco: adiciona coluna extra inline */
+.skill-row.tem-foco {
+  grid-template-columns: 20px 28px 1fr 110px 32px 24px;
+}
+
 .skill-check {
   width: 14px; height: 14px; accent-color: var(--gold); cursor: pointer;
 }
 .skill-attr-tag {
   font-family: 'Cinzel', serif; font-size: 8px; letter-spacing: 1px;
   color: var(--arcane-glow); opacity: 0.7; text-transform: uppercase;
+  text-align: center;
 }
 .skill-name {
   font-family: 'EB Garamond', serif; font-size: 14px; color: var(--parchment-dark);
-  transition: color 0.15s;
+  transition: color 0.15s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .skill-row:has(.skill-check:checked) .skill-name { color: var(--gold); }
 .skill-val {
@@ -260,6 +270,19 @@ body {
   transition: opacity 0.15s, transform 0.15s; color: var(--gold); font-size: 12px;
 }
 .skill-roll-btn:hover { opacity: 0.9; transform: scale(1.2) rotate(-10deg); }
+
+/* Input de foco (Artifício e similares) — inline na mesma linha */
+.skill-foco-input {
+  background: rgba(0,0,0,0.3); border: none;
+  border-bottom: 1px solid rgba(139,105,20,0.3);
+  color: var(--parchment-dark); font-family: 'EB Garamond', serif;
+  font-style: italic; font-size: 12px; padding: 1px 4px;
+  outline: none; width: 100%; transition: border-color 0.15s;
+}
+.skill-foco-input:focus {
+  border-bottom-color: var(--gold-dark); color: var(--parchment);
+}
+.skill-foco-input::placeholder { opacity: 0.4; font-size: 11px; }
 
 /* Grupo de perícias divinas */
 .pericias-divinas-label {
@@ -343,7 +366,77 @@ body {
 }
 
 /* Coluna 2 — Preview */
+.grimorio-preview-col { display: flex; flex-direction: column; gap: 12px; }
 .grimorio-preview { min-height: 200px; }
+
+/* Bloco "Aprender Magia" */
+.grimorio-contador {
+  font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 0.5px;
+  color: var(--parchment-dark); opacity: 0.75; text-align: right; margin-bottom: 6px;
+}
+.grimorio-contador.no-limite { color: var(--blood-light); opacity: 1; }
+
+.grimorio-aprender-aviso {
+  font-family: 'EB Garamond', serif; font-style: italic; font-size: 13px;
+  color: var(--parchment-dark); opacity: 0.65; text-align: center;
+  padding: 10px 14px; border: 1px dashed rgba(139,105,20,0.25);
+  background: rgba(0,0,0,0.12);
+}
+.grimorio-aprender-aviso.ja-aprendida { color: var(--gold); opacity: 0.85; border-style: solid; border-color: rgba(201,168,76,0.3); }
+.grimorio-aprender-aviso.no-limite { color: var(--blood-light); opacity: 0.9; border-color: rgba(160,32,32,0.35); }
+
+.btn-aprender-magia {
+  width: 100%; padding: 12px 16px; cursor: pointer;
+  font-family: 'Cinzel', serif; font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--parchment); background: linear-gradient(160deg, rgba(201,168,76,0.18), rgba(201,168,76,0.06));
+  border: 1px solid var(--gold-dark); transition: background 0.15s, box-shadow 0.15s;
+}
+.btn-aprender-magia:hover {
+  background: linear-gradient(160deg, rgba(201,168,76,0.3), rgba(201,168,76,0.12));
+  box-shadow: 0 0 14px -4px var(--gold);
+}
+
+/* ===== LISTA DE MAGIAS SALVAS ===== */
+.magsalva-lista { display: flex; flex-direction: column; gap: 8px; }
+
+.magsalva-item {
+  --cor-aspecto: #C9A84C;
+  border: 1px solid rgba(139,105,20,0.2); border-left: 2px solid var(--cor-aspecto);
+  background: rgba(0,0,0,0.15);
+}
+.magsalva-linha {
+  display: flex; align-items: center; gap: 12px; padding: 10px 12px;
+}
+.magsalva-icone { font-size: 20px; line-height: 1; filter: drop-shadow(0 0 4px var(--cor-aspecto)); flex-shrink: 0; }
+.magsalva-info { flex: 1; cursor: pointer; min-width: 0; }
+.magsalva-titulo {
+  font-family: 'Cinzel Decorative', serif; font-size: 13.5px; color: var(--cor-aspecto);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.magsalva-subtitulo {
+  font-family: 'Cinzel', serif; font-size: 8.5px; letter-spacing: 1px;
+  color: var(--parchment-dark); opacity: 0.65; text-transform: uppercase; margin-top: 2px;
+}
+.magsalva-circulo {
+  display: flex; align-items: center; gap: 8px; width: 140px; flex-shrink: 0;
+}
+.magsalva-slider { margin-top: 0; }
+.magsalva-circulo-label {
+  font-family: 'Cinzel', serif; font-size: 10px; color: var(--parchment-dark);
+  white-space: nowrap; min-width: 48px;
+}
+.magsalva-btn-remover {
+  background: none; border: none; cursor: pointer; flex-shrink: 0;
+  color: var(--parchment-dark); opacity: 0.4; font-size: 14px; padding: 4px 6px;
+  transition: opacity 0.15s, color 0.15s;
+}
+.magsalva-btn-remover:hover { opacity: 1; color: var(--blood-light); }
+
+.magsalva-detalhe {
+  overflow: hidden; padding: 0 12px;
+  transition: max-height 0.3s ease, opacity 0.2s ease, margin-top 0.2s ease;
+}
+.magsalva-detalhe .magia-card { margin-bottom: 12px; }
 
 .magia-card-vazio {
   display: flex; align-items: center; justify-content: center; text-align: center;
