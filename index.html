@@ -918,12 +918,23 @@ async function _executarCriacaoCampanha(dadosForm) {
   const { nome, sistema, jogadores, desc, banner } = dadosForm;
   const codigoConvite = gerarCodigoConvite();
 
+  // GUARDA DEFENSIVA: mesmo raciocínio de _executarCriacaoPersonagem
+  // — nunca gravar mestre_id nulo (ver comentário lá para o contexto
+  // completo da race condition que isso evita).
+  const usuario = usuarioLogado();
+  if (!usuario || !usuario.id) {
+    console.error('[forja] tentativa de criar campanha sem usuário válido — abortando para não gravar mestre_id nulo. usuarioLogado() =', usuario);
+    showToast('⚠ Sessão ainda carregando, tente novamente em um instante.', 'warning');
+    guardarAcaoPendente('criarCampanha', dadosForm);
+    return;
+  }
+
   const { data, error } = await window.supabaseClient
     .from('campanhas')
     .insert({
       nome,
       sistema,
-      mestre_id: usuarioLogado().id,
+      mestre_id: usuario.id,
       codigo_convite: codigoConvite,
       dados: { jogadores, sessoes: 0, desc: desc || 'Uma nova campanha aguarda...', banner: banner || null, ultimaSessao: null }
     })
@@ -1053,11 +1064,30 @@ async function criarPersonagem() {
 async function _executarCriacaoPersonagem(dadosForm) {
   const { nome, sistema, dadosIniciais } = dadosForm;
 
+  // GUARDA DEFENSIVA: nunca tentar gravar um personagem sem dono_id
+  // válido. Isso já aconteceu por uma race condition no módulo de
+  // auth (corrigida em auth-supabase.js), mas mantemos esta checagem
+  // aqui como segunda linha de defesa — é melhor falhar com um toast
+  // claro e deixar a ação pendente intacta (pra tentar de novo) do
+  // que gravar uma linha "órfã" no Supabase com dono_id NULL, que
+  // fica invisível para todo mundo (inclusive quem criou) por causa
+  // da RLS, e só seria notada inspecionando o banco diretamente.
+  const usuario = usuarioLogado();
+  if (!usuario || !usuario.id) {
+    console.error('[forja] tentativa de criar personagem sem usuário válido — abortando para não gravar dono_id nulo. usuarioLogado() =', usuario);
+    showToast('⚠ Sessão ainda carregando, tente novamente em um instante.', 'warning');
+    // Mantém a ação pendente (não consome) para a próxima chamada de
+    // initDadosAutenticados() — quando a sessão já estiver íntegra —
+    // poder retomar sozinha, sem o usuário precisar preencher tudo de novo.
+    guardarAcaoPendente('criarPersonagem', dadosForm);
+    return;
+  }
+
   // Personagem nasce SEM campanha_id (solto) — decisão confirmada:
   // criado fora, depois colocado numa campanha via entrar_em_campanha().
   const { data, error } = await window.supabaseClient
     .from('personagens')
-    .insert({ nome, sistema, dono_id: usuarioLogado().id, campanha_id: null, dados: dadosIniciais })
+    .insert({ nome, sistema, dono_id: usuario.id, campanha_id: null, dados: dadosIniciais })
     .select()
     .single();
 
@@ -1430,19 +1460,20 @@ init();
   window.dispatchEvent(new Event('auth-modulo-pronto'));
 
   // Recarrega campanhas/personagens sempre que o estado de login
-  // mudar de verdade (login, logout) — não só na carga inicial.
-  // onMudancaAuth já chama o callback uma vez imediatamente com o
-  // estado atual, então isto também cobre a primeira carga.
-  let _primeiraChamada = true;
-  onMudancaAuth(() => {
-    if (_primeiraChamada) {
-      _primeiraChamada = false;
-      if (typeof window.initDadosAutenticados === 'function') window.initDadosAutenticados();
-    } else {
-      // login/logout subsequente (ex: clicou em Sair) — recarrega a
-      // lista pra refletir o novo estado (vazio se deslogou).
-      if (typeof window.initDadosAutenticados === 'function') window.initDadosAutenticados();
-    }
+  // mudar DE VERDADE (login, logout, ou troca de usuário) — não a
+  // cada disparo bruto do Supabase. O Supabase costuma disparar
+  // onAuthStateChange mais de uma vez na mesma carga de página (ex:
+  // INITIAL_SESSION seguido de SIGNED_IN/TOKEN_REFRESHED), e sem essa
+  // checagem initDadosAutenticados() rodava várias vezes à toa,
+  // multiplicando requisições ao Supabase sem necessidade (o risco
+  // de gravar dados com usuário nulo já foi corrigido na raiz, em
+  // auth-supabase.js, mas aqui evitamos o desperdício/ruído).
+  let _ultimoUsuarioId = undefined; // undefined = ainda não rodou nenhuma vez
+  onMudancaAuth((user) => {
+    const idAtual = user ? user.id : null;
+    if (idAtual === _ultimoUsuarioId) return; // mesmo usuário (ou mesmo "deslogado") de antes — ignora
+    _ultimoUsuarioId = idAtual;
+    if (typeof window.initDadosAutenticados === 'function') window.initDadosAutenticados();
   });
 
 </script>

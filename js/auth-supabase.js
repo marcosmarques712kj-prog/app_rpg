@@ -57,6 +57,24 @@ let _usuarioAtual = null;
 let _perfilAtual = null; // linha espelhada de public.usuarios (nome, avatar)
 let _prontoPromise = null;
 
+// FIX RACE CONDITION: o Supabase dispara onAuthStateChange várias
+// vezes na mesma carga de página (ex: INITIAL_SESSION, e em seguida
+// SIGNED_IN ou TOKEN_REFRESHED), e cada disparo chama _aplicarSessao,
+// que é assíncrona (faz um await numa query em `usuarios`). Sem
+// proteção, duas chamadas concorrentes de _aplicarSessao podem
+// terminar fora de ordem — a que demorar mais "vence" e sobrescreve
+// o estado mesmo sendo mais antiga, mesmo que a sessão já tenha
+// mudado de novo nesse meio tempo (ex: virou null/deslogou). Isso
+// causava o sintoma observado: usuarioLogado() oscilando entre um
+// UUID válido e null várias vezes na mesma carga, e ações disparadas
+// num momento de inconsistência (ex: criar personagem) gravando com
+// dono_id ausente/undefined.
+// A correção: cada chamada de _aplicarSessao recebe um número de
+// geração. Se, quando ela terminar seu await, uma chamada MAIS NOVA
+// já tiver começado, esta versão antiga descarta seu resultado em
+// vez de sobrescrever o estado.
+let _geracaoSessao = 0;
+
 // Resolve quando a sessão inicial já foi checada pelo menos uma vez
 // (evita condição de corrida: páginas que checam usuarioLogado() no
 // primeiro frame, antes do Supabase ter respondido getSession()).
@@ -70,23 +88,37 @@ function aguardarPronto() {
 }
 
 async function _aplicarSessao(session) {
-  _usuarioAtual = session.user;
+  const minhaGeracao = ++_geracaoSessao;
+  const usuarioId = session.user.id;
   const { data: perfil, error } = await supabase
     .from('usuarios')
     .select('*')
-    .eq('id', _usuarioAtual.id)
+    .eq('id', usuarioId)
     .maybeSingle();
   if (error) {
     console.error('[auth-supabase] erro ao buscar perfil em public.usuarios:', error.message);
   }
+  // Se outra chamada de _aplicarSessao começou DEPOIS desta (geração
+  // mais alta), esta é obsoleta — descarta o resultado sem tocar no
+  // estado global, mesmo que tenha terminado depois (fora de ordem).
+  if (minhaGeracao !== _geracaoSessao) {
+    console.log('[auth-supabase] _aplicarSessao descartada (obsoleta) — geração', minhaGeracao, 'vs atual', _geracaoSessao);
+    return;
+  }
+  _usuarioAtual = session.user;
   _perfilAtual = perfil || null;
   _notificarOuvintes();
 }
 
 supabase.auth.onAuthStateChange(async (_evento, session) => {
+  console.log('[auth-supabase] onAuthStateChange evento =', _evento, 'session =', session ? session.user.id : null);
   if (session) {
     await _aplicarSessao(session);
   } else {
+    // Mesma proteção de geração do logout: avança a geração para que
+    // qualquer _aplicarSessao() antiga ainda "em voo" seja descartada
+    // ao terminar, em vez de reviver um usuário que já deslogou.
+    ++_geracaoSessao;
     _usuarioAtual = null;
     _perfilAtual = null;
     _notificarOuvintes();
