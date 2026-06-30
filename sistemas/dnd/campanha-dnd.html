@@ -48,16 +48,22 @@
     transition: all 0.2s;
   }
   .btn-action:hover { background: rgba(201,168,76,0.1); color: var(--gold-light); }
-  
+
   .sheet-panel { display: none; }
   .sheet-panel.active { display: block; animation: fadeIn 0.3s ease both; }
 </style>
 </head>
 <body>
 
-<!-- ===== TOP BAR ===== -->
-<div class="sheet-topbar">
-  <button class="sheet-back" onclick="window.location.href='/'">← Voltar à Forja</button>
+<!-- ===== TOP BAR =====
+     Este topbar interno fica OCULTO quando a página roda dentro do
+     iframe do shell (index.html), que já mostra seu próprio topbar
+     (#topbar-sheet) com o botão Voltar e o nome da campanha. Quando
+     a página é aberta solta (fora do iframe, ex: link direto/teste),
+     o topbar interno aparece normalmente como fallback. Ver
+     detectarContextoIframe() no script abaixo. -->
+<div class="sheet-topbar" id="topbarInterno">
+  <button class="sheet-back" id="btnVoltar">← Voltar à Forja</button>
   <div class="sheet-identity">
     <input class="sheet-name-input" id="camp_nome" type="text" placeholder="Nome da Campanha" readonly>
   </div>
@@ -132,77 +138,214 @@
 
 <div class="toast-container" id="toastContainer"></div>
 
-<script>
+<script type="module">
+  // =============================================================
+  // SUPABASE — mesma origem do shell (index.html), então o client
+  // exposto em window.parent.supabaseClient já carrega com a sessão
+  // ativa (auth-supabase.js só roda uma vez, no shell). Se a página
+  // for aberta fora do iframe (sem window.parent != window), caímos
+  // de volta para importar o módulo diretamente.
+  // =============================================================
+  let sb = null;
   let campanha = null;
-  const CAMPANHAS = JSON.parse(localStorage.getItem('forja_campanhas') || '[]');
-  const PERSONAGENS = JSON.parse(localStorage.getItem('forja_personagens') || '[]');
+  let personagens = [];
+  const rodandoNoIframe = window.parent && window.parent !== window;
 
-  function init() {
+  function esc(str) {
+    return String(str ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function avisarShell(tipo, payload) {
+    if (!rodandoNoIframe) return;
+    window.parent.postMessage({ tipo, payload }, window.location.origin);
+  }
+
+  function voltar() {
+    if (rodandoNoIframe) {
+      avisarShell('ficha:voltar');
+    } else {
+      window.location.href = '/';
+    }
+  }
+  document.getElementById('btnVoltar').addEventListener('click', voltar);
+
+  // Esconde o topbar interno quando rodando dentro do shell — o
+  // shell já mostra seu próprio topbar (#topbar-sheet) com Voltar +
+  // título + indicador de salvo, então mostrar os dois seria
+  // redundante.
+  if (rodandoNoIframe) {
+    document.getElementById('topbarInterno').style.display = 'none';
+  }
+
+  async function obterClienteSupabase() {
+    if (rodandoNoIframe && window.parent.supabaseClient) {
+      return window.parent.supabaseClient;
+    }
+    // Fallback: página aberta fora do iframe (acesso direto/teste).
+    const mod = await import('../../js/auth-supabase.js');
+    return mod.supabase;
+  }
+
+  async function init() {
+    sb = await obterClienteSupabase();
+
     const urlParams = new URLSearchParams(window.location.search);
     const id = urlParams.get('id');
-    campanha = CAMPANHAS.find(c => c.id === id);
-
-    if(!campanha) {
-      document.getElementById('camp_nome').value = "Campanha não encontrada";
+    if (!id) {
+      document.getElementById('camp_nome').value = 'Campanha não encontrada';
+      mostrarVazio('charsList', 'Nenhum ID de campanha informado na URL.');
       return;
     }
 
-    document.getElementById('camp_nome').value = campanha.nome;
-    if(campanha.banner) {
-      document.getElementById('camp_banner').src = campanha.banner;
-      document.getElementById('camp_banner').style.display = 'block';
+    // RLS do Supabase já restringe a leitura a campanhas que o
+    // usuário pode ver (é o mestre, ou tem personagem nela). Mesmo
+    // assim, .single() garante que só tratamos um resultado e
+    // erro/ausência são tratados explicitamente abaixo.
+    const { data, error } = await sb
+      .from('campanhas')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error || !data) {
+      console.error('[campanha-dnd] erro ao carregar campanha:', error?.message);
+      document.getElementById('camp_nome').value = 'Campanha não encontrada';
+      avisarShell('ficha:titulo', 'Campanha não encontrada');
+      mostrarVazio('charsList', 'Não foi possível carregar esta campanha.');
+      return;
     }
 
-    document.getElementById('camp_diario').value = campanha.diario || '';
+    campanha = data;
+    const extra = campanha.dados || {};
 
+    document.getElementById('camp_nome').value = campanha.nome;
+    avisarShell('ficha:titulo', campanha.nome);
+
+    if (extra.banner) {
+      const bannerEl = document.getElementById('camp_banner');
+      bannerEl.src = extra.banner;
+      bannerEl.style.display = 'block';
+    }
+
+    document.getElementById('camp_diario').value = extra.diario || '';
+
+    await carregarPersonagens(id);
+  }
+
+  async function carregarPersonagens(campanhaId) {
+    const { data, error } = await sb
+      .from('personagens')
+      .select('*')
+      .eq('campanha_id', campanhaId)
+      .order('criado_em', { ascending: true });
+
+    if (error) {
+      console.error('[campanha-dnd] erro ao carregar personagens:', error.message);
+      mostrarVazio('charsList', 'Erro ao carregar personagens desta campanha.');
+      return;
+    }
+
+    personagens = data || [];
     renderChars();
   }
 
+  function mostrarVazio(containerId, texto) {
+    document.getElementById(containerId).innerHTML =
+      `<div class="empty-state"><div class="empty-state-text">${esc(texto)}</div></div>`;
+  }
+
   function renderChars() {
-    const charsList = document.getElementById('charsList');
-    const chars = PERSONAGENS.filter(p => (campanha.personagens||[]).includes(p.id));
-    
-    if(chars.length === 0) {
-      charsList.innerHTML = `<div class="empty-state"><div class="empty-state-text">Nenhum personagem associado a este grupo.</div></div>`;
+    if (personagens.length === 0) {
+      mostrarVazio('charsList', 'Nenhum personagem associado a este grupo.');
       return;
     }
 
-    charsList.innerHTML = chars.map(p => `
+    const charsList = document.getElementById('charsList');
+    charsList.innerHTML = personagens.map(p => {
+      const d = p.dados || {};
+      const raca = esc(d.race || 'Desconhecido');
+      const cls = esc(d.cls || '');
+      const nivel = esc(d.level ?? 1);
+      const nome = esc(p.nome);
+      return `
       <div class="char-mini-card">
         <div style="flex:1;">
-          <div class="char-mini-name">${p.nome}</div>
-          <div class="char-mini-info">${p.dados?.race || 'Desconhecido'} ${p.dados?.cls || ''} - Nível ${p.dados?.level || 1}</div>
+          <div class="char-mini-name">${nome}</div>
+          <div class="char-mini-info">${raca} ${cls} - Nível ${nivel}</div>
         </div>
-        <button class="btn-action" onclick="window.location.href='rpg-interface.html?id=${p.id}'">Abrir Ficha</button>
+        <button class="btn-action" data-pid="${esc(p.id)}">Abrir Ficha</button>
       </div>
-    `).join('');
+    `;
+    }).join('');
+
+    // Listeners via data-attribute em vez de onclick inline com nome
+    // interpolado — onclick="...${p.nome}..." seria outro vetor de
+    // injeção se o nome contiver aspas, independente do esc() acima.
+    charsList.querySelectorAll('.btn-action[data-pid]').forEach(btn => {
+      btn.addEventListener('click', () => abrirFichaPersonagem(btn.dataset.pid));
+    });
+  }
+
+  function abrirFichaPersonagem(pid) {
+    const url = `rpg-interface.html?id=${encodeURIComponent(pid)}`;
+    if (rodandoNoIframe) {
+      // Pede para o shell trocar a ficha aberta no MESMO iframe pai —
+      // não faz sentido aninhar um segundo iframe dentro deste.
+      avisarShell('ficha:abrir', url);
+    } else {
+      window.location.href = url;
+    }
   }
 
   function switchTab(tabId) {
     document.querySelectorAll('.sheet-tab').forEach(t => t.classList.remove('active'));
     document.querySelector(`.sheet-tab[data-tab="${tabId}"]`).classList.add('active');
-    
+
     document.querySelectorAll('.sheet-panel').forEach(p => p.classList.remove('active'));
     document.getElementById('panel-' + tabId).classList.add('active');
   }
 
-  function salvarDiario() {
-    if(!campanha) return;
-    campanha.diario = document.getElementById('camp_diario').value;
-    localStorage.setItem('forja_campanhas', JSON.stringify(CAMPANHAS));
+  async function salvarDiario() {
+    if (!campanha) return;
+    const novoDiario = document.getElementById('camp_diario').value;
+    const novosDados = { ...(campanha.dados || {}), diario: novoDiario };
+
+    const { error } = await sb
+      .from('campanhas')
+      .update({ dados: novosDados })
+      .eq('id', campanha.id);
+
+    if (error) {
+      console.error('[campanha-dnd] erro ao salvar diário:', error.message);
+      showToast('⚠ Erro ao salvar anotações.');
+      avisarShell('ficha:erro-salvo');
+      return;
+    }
+
+    campanha.dados = novosDados;
     showToast('Anotações salvas com sucesso!');
+    avisarShell('ficha:salvo');
   }
 
   function showToast(msg) {
     const cont = document.getElementById('toastContainer');
     const t = document.createElement('div');
     t.className = 'toast';
-    t.innerHTML = msg;
+    t.textContent = msg; // texto fixo nosso, não dado do banco — innerHTML não seria necessário aqui de qualquer forma
     cont.appendChild(t);
-    setTimeout(() => { t.style.opacity='0'; setTimeout(()=>t.remove(), 300); }, 3000);
+    setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 3000);
   }
 
-  window.onload = init;
+  // Expostas pro onclick inline dos botões de tab/salvar no HTML acima
+  window.switchTab = switchTab;
+  window.salvarDiario = salvarDiario;
+
+  init();
 </script>
 </body>
 </html>

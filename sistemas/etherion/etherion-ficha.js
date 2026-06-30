@@ -83,13 +83,66 @@ let CHAR_ID    = null;
 let PERSONAGEM = null;
 let PERSONAGENS = [];
 
-function carregarPersonagem() {
+async function carregarPersonagem() {
   const params = new URLSearchParams(window.location.search);
   CHAR_ID = params.get('id');
-  PERSONAGENS = loadData('forja_personagens') || [];
 
   if (!CHAR_ID) { mostrarVazio('Nenhum personagem especificado na URL.'); return false; }
-  PERSONAGEM = PERSONAGENS.find(p => p.id === CHAR_ID);
+
+  // Tenta buscar do Supabase primeiro (fonte de verdade).
+  // window.supabaseClient é exposto pelo auth-supabase.js carregado no HTML.
+  const sb = window.supabaseClient;
+  if (sb) {
+    const { data: { user } = {} } = await sb.auth.getUser();
+
+    const { data, error } = await sb
+      .from('personagens')
+      .select('*')
+      .eq('id', CHAR_ID)
+      .maybeSingle();
+
+    if (error) {
+      console.error('[etherion-ficha] erro ao buscar personagem no Supabase:', error.message);
+    } else if (data) {
+      // SEGUNDA CAMADA DE DEFESA (além do RLS no banco): o RLS já deveria
+      // impedir que esta query retorne um personagem de outro usuário, mas
+      // se o RLS for desabilitado acidentalmente (manutenção, reset),
+      // confirmamos aqui no client que quem está vendo é o dono OU o
+      // mestre da campanha à qual o personagem pertence — nunca um
+      // terceiro qualquer. Não filtramos a query por dono_id porque
+      // mestres legitimamente precisam ver fichas de outros jogadores
+      // (ver campanha-dnd.html / campanha-op.html / campanha-tormenta.html).
+      const ehDono = user && data.dono_id === user.id;
+      let ehMestre = false;
+      if (!ehDono && user && data.campanha_id) {
+        const { data: camp } = await sb
+          .from('campanhas')
+          .select('mestre_id')
+          .eq('id', data.campanha_id)
+          .maybeSingle();
+        ehMestre = !!(camp && camp.mestre_id === user.id);
+      }
+
+      if (!ehDono && !ehMestre) {
+        console.error('[etherion-ficha] personagem pertence a outro usuário e quem está logado não é o mestre da campanha — bloqueando exibição.');
+        mostrarVazio('Você não tem permissão para ver esta ficha.');
+        return false;
+      }
+
+      MODO_SOMENTE_LEITURA = !ehDono; // dono edita normalmente; mestre vendo ficha alheia só visualiza
+
+      // Supabase guarda os dados do personagem na coluna `dados` (jsonb).
+      // Montamos o objeto no formato que o restante do código espera.
+      PERSONAGEM = { id: data.id, nome: data.nome, sistema: data.sistema, dados: data.dados || {}, donoId: data.dono_id, campanhaId: data.campanha_id };
+    }
+  }
+
+  // Fallback: tenta localStorage (personagens antigos ou criados offline).
+  if (!PERSONAGEM) {
+    PERSONAGENS = loadData('forja_personagens') || [];
+    PERSONAGEM = PERSONAGENS.find(p => p.id === CHAR_ID) || null;
+  }
+
   if (!PERSONAGEM) { mostrarVazio('Personagem não encontrado. Verifique se foi criado na Forja.'); return false; }
 
   // Garante estrutura mínima
@@ -568,7 +621,11 @@ function mostrarVazio(msg) {
 // =============================================================
 // UTILITÁRIOS
 // =============================================================
-function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+// Escapa os 5 caracteres HTML/atributo perigosos. O ' (aspas simples) foi
+// adicionado por segurança em profundidade: nenhum atributo do código atual
+// usa delimitador de aspas simples com dado do usuário interpolado (todos
+// usam "..."), mas se algum trecho futuro vier a usar '...', esc() já cobre.
+function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 
 function getAtrib(id) {
@@ -2052,32 +2109,91 @@ function switchTab(id) {
 // NAVEGAÇÃO
 // =============================================================
 function voltarParaHome() {
-  salvarAgora();
-  // Caminho absoluto pra raiz — evita gerar '/index.html' explícito
-  // (que faz o navegador tratar como URL diferente de '/') e garante
-  // funcionamento correto independente de quantas pastas de profundidade
-  // a ficha estiver.
-  window.location.href = '/';
+  // ANTES: salvarAgora(); window.location.href = '../../index.html';
+  // Navegar destruía esta página dentro do iframe e o shell perdia o
+  // controle de quando realmente terminou de salvar. Agora esperamos
+  // salvarAgora() resolver e só então avisamos o shell pra fechar o
+  // iframe e voltar ao hub.
+  salvarAgora().then(() => {
+    window.parent.postMessage({ tipo: 'ficha:voltar' }, window.location.origin);
+  });
+}
+
+// Avisa o shell (index.html) qual é o nome atual do personagem, pra
+// ele atualizar o #sheet-title no topbar de modo ficha. Chamada ao
+// carregar (init) e sempre que o nome for (re)salvo (salvarAgora).
+function notificarShell(nome) {
+  window.parent.postMessage({ tipo: 'ficha:titulo', payload: nome }, window.location.origin);
 }
 
 // =============================================================
 // AUTOSAVE
 // =============================================================
 let _saveTimeout = null;
+let MODO_SOMENTE_LEITURA = false; // true quando quem está vendo não é o dono (ex: mestre visualizando ficha de jogador) — setado em carregarPersonagem()
 
 function agendarSalvar() {
+  if (MODO_SOMENTE_LEITURA) return; // evita agendar/logar autosave que sabemos de antemão que vai ser bloqueado
   clearTimeout(_saveTimeout);
   _saveTimeout = setTimeout(salvarAgora, 450);
 }
 
-function salvarAgora() {
+async function salvarAgora() {
   if (!PERSONAGEM) return;
   const nomeInput = document.getElementById('f_nome');
   if (nomeInput) PERSONAGEM.nome = nomeInput.value.trim() || PERSONAGEM.nome;
-  const idx = PERSONAGENS.findIndex(x => x.id === CHAR_ID);
-  if (idx >= 0) PERSONAGENS[idx] = PERSONAGEM;
-  saveData('forja_personagens', PERSONAGENS);
+  notificarShell(PERSONAGEM.nome);
+
+  // Salva no Supabase (fonte de verdade).
+  const sb = window.supabaseClient;
+  let erroSalvar = null;
+  if (sb && CHAR_ID) {
+    // GUARDA DE PERMISSÃO: só o dono do personagem pode gravar. Um mestre
+    // pode legitimamente CARREGAR a ficha de um jogador da sua campanha
+    // (ver carregarPersonagem), mas não deve conseguir SOBRESCREVER os
+    // dados dela através do autosave desta tela — isso seria edição não
+    // intencional de ficha alheia. O RLS no banco já deveria bloquear o
+    // update nesse caso (policy de UPDATE restrita a dono_id = auth.uid()),
+    // esta é a segunda camada de defesa no client, evitando até a
+    // tentativa de escrita e o erro silencioso de RLS que viria dela.
+    const { data: { user } = {} } = await sb.auth.getUser();
+    const podeEscrever = user && PERSONAGEM.donoId && PERSONAGEM.donoId === user.id;
+
+    if (!podeEscrever) {
+      console.warn('[etherion-ficha] usuário atual não é o dono deste personagem — autosave bloqueado (modo somente leitura).');
+      mostrarIndicadorSomenteLeitura();
+      return;
+    }
+
+    const { error } = await sb
+      .from('personagens')
+      .update({ nome: PERSONAGEM.nome, dados: PERSONAGEM.dados })
+      .eq('id', CHAR_ID);
+    if (error) {
+      console.error('[etherion-ficha] erro ao salvar no Supabase:', error.message);
+      erroSalvar = error;
+      // Fallback silencioso pro localStorage se o Supabase falhar
+      const idx = PERSONAGENS.findIndex(x => x.id === CHAR_ID);
+      if (idx >= 0) PERSONAGENS[idx] = PERSONAGEM;
+      saveData('forja_personagens', PERSONAGENS);
+    }
+  } else {
+    // Sem Supabase disponível: salva só no localStorage
+    const idx = PERSONAGENS.findIndex(x => x.id === CHAR_ID);
+    if (idx >= 0) PERSONAGENS[idx] = PERSONAGEM;
+    saveData('forja_personagens', PERSONAGENS);
+  }
+
   mostrarIndicadorSalvo();
+
+  // Avisa o shell (index.html) pra atualizar o indicador "✓ Salvo" /
+  // "✗ Erro ao salvar" no topbar de modo ficha — ver listener de
+  // 'message' em index.html.
+  if (erroSalvar) {
+    window.parent.postMessage({ tipo: 'ficha:erro-salvo' }, window.location.origin);
+  } else {
+    window.parent.postMessage({ tipo: 'ficha:salvo' }, window.location.origin);
+  }
 }
 
 function mostrarIndicadorSalvo() {
@@ -2087,6 +2203,18 @@ function mostrarIndicadorSalvo() {
   el.classList.add('show');
   clearTimeout(el._hideTimeout);
   el._hideTimeout = setTimeout(() => el.classList.remove('show'), 1800);
+}
+
+// Mostrado quando o autosave é bloqueado por falta de permissão (ver
+// salvarAgora) — ex: mestre visualizando a ficha de um jogador. Fica fixo
+// (sem timeout de sumir) pra deixar claro que as edições não estão sendo
+// persistidas, evitando o jogador/mestre achar que salvou quando não salvou.
+function mostrarIndicadorSomenteLeitura() {
+  const el = document.getElementById('saveIndicator');
+  if (!el) return;
+  el.textContent = '👁 Somente leitura';
+  el.classList.add('show');
+  clearTimeout(el._hideTimeout);
 }
 
 // =============================================================
@@ -2121,8 +2249,8 @@ function montarEstruturaAbas() {
   `;
 }
 
-function init() {
-  if (!carregarPersonagem()) return;
+async function init() {
+  if (!await carregarPersonagem()) return;
 
   // Reaplicar perícias de classe ao carregar personagem salvo.
   // Garante que o estado visual de perícias seja correto mesmo em personagens
@@ -2140,6 +2268,7 @@ function init() {
 
   montarEstruturaAbas();
   document.getElementById('f_nome').value = PERSONAGEM.nome || '';
+  notificarShell(PERSONAGEM.nome || '');
   recalcularEAplicarRecursos(); // garante máximos corretos antes do primeiro render
   renderPrincipal();
   renderPericias();
@@ -2148,6 +2277,7 @@ function init() {
   renderInventario();
   renderBiografia();
   renderNotas();
+  if (MODO_SOMENTE_LEITURA) mostrarIndicadorSomenteLeitura();
 }
 
 // CSS de upload inline + Drawers de Identidade (V4.1 — design angular coeso)

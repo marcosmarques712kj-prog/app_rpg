@@ -32,8 +32,8 @@
   <span id="authStatus" style="margin-left:auto; color:var(--gold,#C9A84C); font-size:12px; letter-spacing:1px; opacity:0.85;"></span>
 </header>
 
-<!-- ===== PRIMARY NAV ===== -->
-<nav class="primary-nav">
+<!-- ===== PRIMARY NAV — MODO HUB (visível por padrão) ===== -->
+<nav class="primary-nav" id="topbar-hub">
   <button class="pnav-tab active" data-section="campanhas" onclick="switchSection('campanhas')">
     ⚔ Campanhas <span class="pnav-count" id="count-campanhas">0</span>
   </button>
@@ -48,8 +48,18 @@
   </button>
 </nav>
 
-<!-- ===== MAIN ===== -->
-<div class="page-wrap">
+<!-- ===== TOPBAR — MODO FICHA/CAMPANHA (oculto por padrão) =====
+     Reaproveita a classe .primary-nav pra herdar o mesmo visual da
+     nav do hub (fundo, borda, altura) sem precisar de uma classe
+     "sheet-topbar" nova que não existe no CSS atual. -->
+<nav class="primary-nav" id="topbar-sheet" style="display:none; align-items:center; gap:14px;">
+  <button class="pnav-tab" onclick="fecharFicha()" style="flex:0 0 auto;">← Voltar</button>
+  <span id="sheet-title" style="flex:1; font-family:'Cinzel',serif; color:var(--gold,#C9A84C); letter-spacing:0.5px; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">—</span>
+  <span id="sheet-save-indicator" style="flex:0 0 auto; min-width:110px; text-align:right; font-size:12px; color:var(--gold,#C9A84C); opacity:0.85;"></span>
+</nav>
+
+<!-- ===== MAIN — CONTEÚDO HUB (visível por padrão) ===== -->
+<div class="page-wrap" id="hub-content">
 
   <!-- ========== CAMPANHAS ========== -->
   <section class="section-panel active" id="sec-campanhas">
@@ -120,6 +130,20 @@
   </section>
 
 </div>
+
+<!-- ===== IFRAME DE FICHA/CAMPANHA (oculto por padrão) =====
+     Carrega etherion-ficha.html, campanha-dnd.html, etc. no lugar de
+     navegar para outra página — o shell (index.html) nunca é
+     destruído, então a sessão do auth-supabase.js nunca se perde.
+     OBS: a altura calc() abaixo assume header + nav com ~140px de
+     altura combinada; ajuste esse valor se o layout real (definido em
+     css/home-screen.css) tiver dimensões diferentes. -->
+<iframe
+  id="sheet-frame"
+  title="Ficha ou campanha"
+  style="display:none; width:100%; height:calc(100vh - 140px); border:none;"
+  sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+></iframe>
 
 <div class="modal-backdrop" id="modalCampanha">
   <div class="modal">
@@ -324,7 +348,7 @@ const SISTEMAS = [
     cor: '#9B6FD4',
     corBg: 'rgba(155,111,212,0.08)',
     ficha: 'sistemas/etherion/etherion-ficha.html',
-    urlCampanha: 'sistemas/etherion/etherion-seed.html',
+    urlCampanha: 'sistemas/etherion/campanha-etherion.html',
     campos: [
       { id: 'cls',   label: 'Classe', tipo: 'select', opcoes: ['Guerreiro','Paladino','Ranger','Ladino','Mago','Feiticeiro','Clérigo','Druida','Bardo','Monge','Mercenário','Explorador','Outro'] },
       { id: 'race',  label: 'Raça',   tipo: 'select', opcoes: ['Humano','Elfo','Elfo das Sombras','Anão','Halfling','Orken','Zirkin','Draconato','Tiefling','Aasimar','Feérico','Outro'] },
@@ -596,6 +620,85 @@ window.addEventListener('pageshow', (event) => {
     window.location.reload();
   }
 });
+// NOTA (refatoração SPA): a partir daqui, abrir uma ficha ou campanha
+// não navega mais pra outra página (ver abrirFicha() logo abaixo) —
+// então o cenário acima não acontece mais nesse fluxo. Esse fix
+// continua valendo pra a navegação de Livros (sistema-hub.html,
+// livros-sistema.html), que ainda usa window.location.href e está
+// fora do escopo desta refatoração.
+
+// =============================================================
+// SPA SHELL — ABRIR/FECHAR FICHA OU CAMPANHA NUM IFRAME
+// =============================================================
+// Em vez de window.location.href (que destruía esta página e, com
+// ela, a sessão em memória do módulo auth-supabase.js — ver bfcache
+// fix acima), a ficha/campanha agora carrega dentro de #sheet-frame.
+// O shell (este index.html) nunca é descarregado, então a sessão
+// nunca se perde e não há mais estado "zumbi" pra esse fluxo.
+function abrirFicha(url) {
+  document.getElementById('hub-content').style.display = 'none';
+  document.getElementById('topbar-hub').style.display = 'none';
+  // reseta indicadores antes de carregar a próxima ficha — evita
+  // mostrar por um instante o título/estado da ficha anterior
+  document.getElementById('sheet-title').textContent = '—';
+  document.getElementById('sheet-save-indicator').textContent = '';
+  document.getElementById('sheet-frame').src = url;
+  document.getElementById('sheet-frame').style.display = 'block';
+  document.getElementById('topbar-sheet').style.display = 'flex';
+}
+
+function fecharFicha() {
+  const frame = document.getElementById('sheet-frame');
+  frame.src = '';
+  frame.style.display = 'none';
+  document.getElementById('topbar-sheet').style.display = 'none';
+  document.getElementById('hub-content').style.display = 'block';
+  document.getElementById('topbar-hub').style.display = 'flex';
+  // Recarrega os dados do Supabase pra refletir qualquer edição feita
+  // dentro da ficha/campanha (ex: nome do personagem mudou)
+  if (window.usuarioLogado && window.usuarioLogado()) {
+    carregarDadosDoSupabase().then(() => {
+      renderCampanhas();
+      renderPersonagens();
+    });
+  }
+}
+
+// Escuta mensagens enviadas pelas fichas/campanhas dentro do iframe
+window.addEventListener('message', (event) => {
+  // Segurança: só aceitar mensagens da mesma origem (mesmo domínio
+  // Vercel) — o iframe só carrega conteúdo nosso, mas confirmamos
+  // mesmo assim antes de confiar em event.data.
+  if (event.origin !== window.location.origin) return;
+
+  const { tipo, payload } = event.data || {};
+
+  if (tipo === 'ficha:voltar') {
+    fecharFicha();
+    return;
+  }
+
+  if (tipo === 'ficha:titulo') {
+    const el = document.getElementById('sheet-title');
+    if (el) el.textContent = payload || '—';
+    return;
+  }
+
+  if (tipo === 'ficha:salvo') {
+    const ind = document.getElementById('sheet-save-indicator');
+    if (!ind) return;
+    ind.textContent = '✓ Salvo';
+    clearTimeout(ind._t);
+    ind._t = setTimeout(() => { ind.textContent = ''; }, 2000);
+    return;
+  }
+
+  if (tipo === 'ficha:erro-salvo') {
+    const ind = document.getElementById('sheet-save-indicator');
+    if (ind) ind.textContent = '✗ Erro ao salvar';
+    return;
+  }
+});
 
 // =============================================================
 // ABRIR CAMPANHA (detalhes)
@@ -605,7 +708,7 @@ function abrirCampanha(id) {
   if (!c) return;
   const s = getSistema(c.sistema);
   if (s && s.urlCampanha) {
-    window.location.href = `${s.urlCampanha}?id=${c.id}`;
+    abrirFicha(`${s.urlCampanha}?id=${c.id}`);
   } else {
     showToast('⚠ Painel de campanha não configurado para este sistema.', 'warning');
   }
@@ -1015,7 +1118,7 @@ function abrirPersonagem(id) {
   const p = PERSONAGENS.find(x => x.id === id);
   if (!p) return;
   const s = getSistema(p.sistema);
-  if (s?.ficha) window.location.href = `${s.ficha}?id=${p.id}`;
+  if (s?.ficha) abrirFicha(`${s.ficha}?id=${p.id}`);
   else showToast('⚠ Ficha não configurada para este sistema.', 'warning');
 }
 
@@ -1104,13 +1207,12 @@ async function _executarCriacaoPersonagem(dadosForm) {
 
   const s = getSistema(sistema);
   if (s?.ficha) {
-    // navega direto pra ficha do personagem recém-criado, na mesma aba —
-    // o toast não teria tempo de aparecer antes da troca de página, então
-    // a própria transição já serve como confirmação visual aqui.
-    // IMPORTANTE: consumirAcaoPendente() já rodou ANTES desta navegação
+    // Abre a ficha do personagem recém-criado dentro do iframe do shell —
+    // não há mais troca de página, então a sessão de auth nunca se perde.
+    // IMPORTANTE: consumirAcaoPendente() já rodou ANTES desta chamada
     // (logo acima), então não fica pendência órfã esperando um load que
     // nunca mais vai chamar criarPersonagem() de novo.
-    window.location.href = `${s.ficha}?id=${novo.id}&nome=${encodeURIComponent(nome)}`;
+    abrirFicha(`${s.ficha}?id=${novo.id}&nome=${encodeURIComponent(nome)}`);
   } else {
     showToast(`✦ ${nome} criado(a) com sucesso!`, 'gold');
   }

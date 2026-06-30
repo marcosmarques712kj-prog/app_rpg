@@ -7,7 +7,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cinzel+Decorative:wght@400;700&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../../css/rpg-interface.css">
 <style>
-  /* Estilos padrão do App de RPG (Coesão Visual Absoluta) */
   .dash-banner {
     width: 100%;
     height: 180px;
@@ -48,16 +47,17 @@
     transition: all 0.2s;
   }
   .btn-action:hover { background: rgba(201,168,76,0.1); color: var(--gold-light); }
-  
+
   .sheet-panel { display: none; }
   .sheet-panel.active { display: block; animation: fadeIn 0.3s ease both; }
 </style>
 </head>
 <body>
 
-<!-- ===== TOP BAR ===== -->
-<div class="sheet-topbar">
-  <button class="sheet-back" onclick="window.location.href='/'">← Voltar à Forja</button>
+<!-- ===== TOP BAR =====
+     Oculto quando rodando dentro do iframe do shell (ver script). -->
+<div class="sheet-topbar" id="topbarInterno">
+  <button class="sheet-back" id="btnVoltar">← Voltar à Forja</button>
   <div class="sheet-identity">
     <input class="sheet-name-input" id="camp_nome" type="text" placeholder="Nome do Caso" readonly>
   </div>
@@ -132,77 +132,192 @@
 
 <div class="toast-container" id="toastContainer"></div>
 
-<script>
+<script type="module">
+  let sb = null;
   let campanha = null;
-  const CAMPANHAS = JSON.parse(localStorage.getItem('forja_campanhas') || '[]');
-  const PERSONAGENS = JSON.parse(localStorage.getItem('forja_personagens') || '[]');
+  let personagens = [];
+  const rodandoNoIframe = window.parent && window.parent !== window;
 
-  function init() {
+  function esc(str) {
+    return String(str ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function avisarShell(tipo, payload) {
+    if (!rodandoNoIframe) return;
+    window.parent.postMessage({ tipo, payload }, window.location.origin);
+  }
+
+  function voltar() {
+    if (rodandoNoIframe) {
+      avisarShell('ficha:voltar');
+    } else {
+      window.location.href = '/';
+    }
+  }
+  document.getElementById('btnVoltar').addEventListener('click', voltar);
+
+  if (rodandoNoIframe) {
+    document.getElementById('topbarInterno').style.display = 'none';
+  }
+
+  async function obterClienteSupabase() {
+    if (rodandoNoIframe && window.parent.supabaseClient) {
+      return window.parent.supabaseClient;
+    }
+    const mod = await import('../../js/auth-supabase.js');
+    return mod.supabase;
+  }
+
+  async function init() {
+    sb = await obterClienteSupabase();
+
     const urlParams = new URLSearchParams(window.location.search);
     const id = urlParams.get('id');
-    campanha = CAMPANHAS.find(c => c.id === id);
-
-    if(!campanha) {
-      document.getElementById('camp_nome').value = "Caso não encontrado";
+    if (!id) {
+      document.getElementById('camp_nome').value = 'Caso não encontrado';
+      mostrarVazio('charsList', 'Nenhum ID de caso informado na URL.');
       return;
     }
 
-    document.getElementById('camp_nome').value = campanha.nome;
-    if(campanha.banner) {
-      document.getElementById('camp_banner').src = campanha.banner;
-      document.getElementById('camp_banner').style.display = 'block';
+    const { data, error } = await sb
+      .from('campanhas')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error || !data) {
+      console.error('[campanha-op] erro ao carregar campanha:', error?.message);
+      document.getElementById('camp_nome').value = 'Caso não encontrado';
+      avisarShell('ficha:titulo', 'Caso não encontrado');
+      mostrarVazio('charsList', 'Não foi possível carregar este caso.');
+      return;
     }
 
-    document.getElementById('camp_diario').value = campanha.diario || '';
+    campanha = data;
+    const extra = campanha.dados || {};
 
+    document.getElementById('camp_nome').value = campanha.nome;
+    avisarShell('ficha:titulo', campanha.nome);
+
+    if (extra.banner) {
+      const bannerEl = document.getElementById('camp_banner');
+      bannerEl.src = extra.banner;
+      bannerEl.style.display = 'block';
+    }
+
+    document.getElementById('camp_diario').value = extra.diario || '';
+
+    await carregarPersonagens(id);
+  }
+
+  async function carregarPersonagens(campanhaId) {
+    const { data, error } = await sb
+      .from('personagens')
+      .select('*')
+      .eq('campanha_id', campanhaId)
+      .order('criado_em', { ascending: true });
+
+    if (error) {
+      console.error('[campanha-op] erro ao carregar personagens:', error.message);
+      mostrarVazio('charsList', 'Erro ao carregar agentes deste caso.');
+      return;
+    }
+
+    personagens = data || [];
     renderChars();
   }
 
+  function mostrarVazio(containerId, texto) {
+    document.getElementById(containerId).innerHTML =
+      `<div class="empty-state"><div class="empty-state-text">${esc(texto)}</div></div>`;
+  }
+
   function renderChars() {
-    const charsList = document.getElementById('charsList');
-    const chars = PERSONAGENS.filter(p => (campanha.personagens||[]).includes(p.id));
-    
-    if(chars.length === 0) {
-      charsList.innerHTML = `<div class="empty-state"><div class="empty-state-text">Nenhum agente designado para este caso.</div></div>`;
+    if (personagens.length === 0) {
+      mostrarVazio('charsList', 'Nenhum agente designado para este caso.');
       return;
     }
 
-    charsList.innerHTML = chars.map(p => `
+    const charsList = document.getElementById('charsList');
+    charsList.innerHTML = personagens.map(p => {
+      const d = p.dados || {};
+      const cls = esc(d.cls || '?');
+      const nex = esc(d.nex ?? 5);
+      const origem = esc(d.origem || '?');
+      const nome = esc(p.nome);
+      return `
       <div class="char-mini-card">
         <div style="flex:1;">
-          <div class="char-mini-name">${p.nome}</div>
-          <div class="char-mini-info">Classe: ${p.dados?.cls || '?'} | NEX: ${p.dados?.nex || 5}% | Origem: ${p.dados?.origem || '?'}</div>
+          <div class="char-mini-name">${nome}</div>
+          <div class="char-mini-info">Classe: ${cls} | NEX: ${nex}% | Origem: ${origem}</div>
         </div>
-        <button class="btn-action" onclick="window.location.href='rpg-interface.html?id=${p.id}'">Acessar Ficha</button>
+        <button class="btn-action" data-pid="${esc(p.id)}">Acessar Ficha</button>
       </div>
-    `).join('');
+    `;
+    }).join('');
+
+    charsList.querySelectorAll('.btn-action[data-pid]').forEach(btn => {
+      btn.addEventListener('click', () => abrirFichaPersonagem(btn.dataset.pid));
+    });
+  }
+
+  function abrirFichaPersonagem(pid) {
+    const url = `rpg-op.html?id=${encodeURIComponent(pid)}`;
+    if (rodandoNoIframe) {
+      avisarShell('ficha:abrir', url);
+    } else {
+      window.location.href = url;
+    }
   }
 
   function switchTab(tabId) {
     document.querySelectorAll('.sheet-tab').forEach(t => t.classList.remove('active'));
     document.querySelector(`.sheet-tab[data-tab="${tabId}"]`).classList.add('active');
-    
+
     document.querySelectorAll('.sheet-panel').forEach(p => p.classList.remove('active'));
     document.getElementById('panel-' + tabId).classList.add('active');
   }
 
-  function salvarDiario() {
-    if(!campanha) return;
-    campanha.diario = document.getElementById('camp_diario').value;
-    localStorage.setItem('forja_campanhas', JSON.stringify(CAMPANHAS));
+  async function salvarDiario() {
+    if (!campanha) return;
+    const novoDiario = document.getElementById('camp_diario').value;
+    const novosDados = { ...(campanha.dados || {}), diario: novoDiario };
+
+    const { error } = await sb
+      .from('campanhas')
+      .update({ dados: novosDados })
+      .eq('id', campanha.id);
+
+    if (error) {
+      console.error('[campanha-op] erro ao salvar relatório:', error.message);
+      showToast('⚠ Erro ao salvar relatório.');
+      avisarShell('ficha:erro-salvo');
+      return;
+    }
+
+    campanha.dados = novosDados;
     showToast('Relatório atualizado com sucesso!');
+    avisarShell('ficha:salvo');
   }
 
   function showToast(msg) {
     const cont = document.getElementById('toastContainer');
     const t = document.createElement('div');
     t.className = 'toast';
-    t.innerHTML = msg;
+    t.textContent = msg;
     cont.appendChild(t);
-    setTimeout(() => { t.style.opacity='0'; setTimeout(()=>t.remove(), 300); }, 3000);
+    setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 3000);
   }
 
-  window.onload = init;
+  window.switchTab = switchTab;
+  window.salvarDiario = salvarDiario;
+
+  init();
 </script>
 </body>
 </html>

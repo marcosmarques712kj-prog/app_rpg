@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Campanha — Tormenta 20</title>
+<title>Campanha — Etherion</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cinzel+Decorative:wght@400;700&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../../css/rpg-interface.css">
 <style>
@@ -59,18 +59,18 @@
 <div class="sheet-topbar" id="topbarInterno">
   <button class="sheet-back" id="btnVoltar">← Voltar à Forja</button>
   <div class="sheet-identity">
-    <input class="sheet-name-input" id="camp_nome" type="text" placeholder="Nome da Crônica" readonly>
+    <input class="sheet-name-input" id="camp_nome" type="text" placeholder="Nome da Campanha" readonly>
   </div>
   <span class="sheet-save-indicator" id="saveIndicator">✓ Salvo</span>
 </div>
 
 <!-- ===== TABS ===== -->
 <nav class="sheet-tabs">
-  <button class="sheet-tab active" data-tab="personagens" onclick="switchTab('personagens')">🧑‍🤝‍🧑 Guilda</button>
+  <button class="sheet-tab active" data-tab="personagens" onclick="switchTab('personagens')">🧑‍🤝‍🧑 Mercenários</button>
   <button class="sheet-tab" data-tab="npcs" onclick="switchTab('npcs')">👥 NPCs</button>
   <button class="sheet-tab" data-tab="combates" onclick="switchTab('combates')">⚔ Combates</button>
   <button class="sheet-tab" data-tab="dados" onclick="switchTab('dados')">🎲 Dados</button>
-  <button class="sheet-tab" data-tab="diario" onclick="switchTab('diario')">📜 Crônica</button>
+  <button class="sheet-tab" data-tab="diario" onclick="switchTab('diario')">📜 Diário / Anotações</button>
 </nav>
 
 <!-- ===== PAGE WRAP ===== -->
@@ -79,11 +79,11 @@
 
   <!-- TELA 1: PERSONAGENS -->
   <div id="panel-personagens" class="sheet-panel active">
-    <div class="panel-title">Aventureiros de Arton</div>
+    <div class="panel-title">Companhia de Mercenários</div>
     <div class="box">
       <div id="charsList">
         <div class="empty-state">
-          <div class="empty-state-text">Carregando heróis...</div>
+          <div class="empty-state-text">Carregando aventureiros...</div>
         </div>
       </div>
     </div>
@@ -104,7 +104,7 @@
     <div class="panel-title">Mesa de Combate e Iniciativa</div>
     <div class="box">
       <div class="empty-state">
-        <div class="empty-state-text">A ordem de iniciativa e controle de monstros ficará aqui.</div>
+        <div class="empty-state-text">A ordem de iniciativa e controle de monstros e horrores antigos ficará aqui.</div>
       </div>
     </div>
   </div>
@@ -121,7 +121,7 @@
 
   <!-- TELA 5: DIÁRIO / ANOTAÇÕES -->
   <div id="panel-diario" class="sheet-panel">
-    <div class="panel-title">Anotações da Crônica</div>
+    <div class="panel-title">Crônicas & Notas do Mestre</div>
     <div class="box">
       <textarea id="camp_diario" class="text-box" style="height: 500px; background:rgba(0,0,0,0.5);" placeholder="O que aconteceu na última sessão?"></textarea>
       <button class="add-row-btn" style="margin-top:12px; width:auto; border-style:solid;" onclick="salvarDiario()">Gravar Anotações</button>
@@ -169,6 +169,7 @@
     if (rodandoNoIframe && window.parent.supabaseClient) {
       return window.parent.supabaseClient;
     }
+    // Fallback: página aberta fora do iframe (acesso direto/teste).
     const mod = await import('../../js/auth-supabase.js');
     return mod.supabase;
   }
@@ -191,7 +192,7 @@
       .single();
 
     if (error || !data) {
-      console.error('[campanha-tormenta] erro ao carregar campanha:', error?.message);
+      console.error('[campanha-etherion] erro ao carregar campanha:', error?.message);
       document.getElementById('camp_nome').value = 'Campanha não encontrada';
       avisarShell('ficha:titulo', 'Campanha não encontrada');
       mostrarVazio('charsList', 'Não foi possível carregar esta campanha.');
@@ -223,8 +224,8 @@
       .order('criado_em', { ascending: true });
 
     if (error) {
-      console.error('[campanha-tormenta] erro ao carregar personagens:', error.message);
-      mostrarVazio('charsList', 'Erro ao carregar personagens desta crônica.');
+      console.error('[campanha-etherion] erro ao carregar personagens:', error.message);
+      mostrarVazio('charsList', 'Erro ao carregar personagens desta campanha.');
       return;
     }
 
@@ -239,7 +240,7 @@
 
   function renderChars() {
     if (personagens.length === 0) {
-      mostrarVazio('charsList', 'Nenhum personagem associado a esta crônica.');
+      mostrarVazio('charsList', 'Nenhum mercenário associado a esta companhia.');
       return;
     }
 
@@ -267,7 +268,7 @@
   }
 
   function abrirFichaPersonagem(pid) {
-    const url = `rpg-interface.html?id=${encodeURIComponent(pid)}`;
+    const url = `etherion-ficha.html?id=${encodeURIComponent(pid)}`;
     if (rodandoNoIframe) {
       avisarShell('ficha:abrir', url);
     } else {
@@ -294,7 +295,7 @@
       .eq('id', campanha.id);
 
     if (error) {
-      console.error('[campanha-tormenta] erro ao salvar anotações:', error.message);
+      console.error('[campanha-etherion] erro ao salvar anotações:', error.message);
       showToast('⚠ Erro ao salvar anotações.');
       avisarShell('ficha:erro-salvo');
       return;
