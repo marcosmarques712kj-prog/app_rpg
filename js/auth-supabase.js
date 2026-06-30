@@ -225,7 +225,20 @@ function _injetarModal() {
   document.getElementById('authModalBtnDiscord').onclick = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'discord',
-      options: { redirectTo: window.location.href }
+      options: {
+        // NUNCA usar window.location.href aqui — se o usuário clicar
+        // em "Entrar" estando em qualquer página que não seja a raiz
+        // (ex: /livros/livros-sistema.html, /fichas/etherion-ficha.html),
+        // o Discord devolveria o token pra ESSA página, que pode não
+        // ter o SDK Supabase carregado ou ter algum redirect automático
+        // que navega pra outro lugar antes do hash #access_token=...
+        // ser processado — o token se perde, nunca é salvo no
+        // localStorage, e a sessão "logada" só existe em memória por
+        // uns segundos antes de sumir. Sempre redirecionamos pra raiz,
+        // que é a única página que com certeza tem o auth-supabase.js
+        // carregado e não vai navegar pra lugar nenhum antes de processar.
+        redirectTo: window.location.origin + '/'
+      }
     });
     if (error) {
       document.getElementById('authModalMensagem').textContent = 'Erro ao iniciar login: ' + error.message;
