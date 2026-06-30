@@ -579,6 +579,34 @@ function filterCamps(f) {
 }
 
 // =============================================================
+// BFCACHE FIX — evita estado de auth "zumbi" ao voltar de outra
+// página via botão Voltar do navegador.
+// =============================================================
+// Problema real observado: ao navegar pra ficha/campanha e depois
+// clicar em "Voltar" (window.location.href='../../index.html'), o
+// Chrome/Safari frequentemente restaura esta página do bfcache (back-
+// forward cache) em vez de recarregar do zero. Isso CONGELA o estado
+// JS exatamente como estava antes de sair — incluindo variáveis
+// internas do módulo auth-supabase.js (_usuarioAtual, _perfilAtual,
+// e principalmente _resolverPendente, a Promise pendente de um
+// exigirLogin() anterior que pode nunca ter sido resolvida). Como
+// resultado: window.exigirLogin ainda existe (é a mesma função de
+// antes), mas reage a um estado interno obsoleto — fazendo o botão
+// "Criar Personagem"/"Criar Campanha" parecer travado, sem nenhum
+// erro no console (porque tecnicamente nada quebrou, só ficou preso
+// num estado velho).
+// event.persisted === true é o sinal inequívoco de que a página foi
+// restaurada do bfcache (não foi um load novo). Nesse caso, forçamos
+// um reload de verdade — mais simples e seguro do que tentar
+// reconstruir manualmente cada pedaço de estado do módulo de auth.
+window.addEventListener('pageshow', (event) => {
+  if (event.persisted) {
+    console.log('[bfcache-fix] página restaurada do cache do navegador — forçando reload para reinicializar auth-supabase.js');
+    window.location.reload();
+  }
+});
+
+// =============================================================
 // ABRIR CAMPANHA (detalhes)
 // =============================================================
 function abrirCampanha(id) {
