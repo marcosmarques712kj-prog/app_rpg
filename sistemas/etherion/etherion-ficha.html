@@ -42,10 +42,15 @@
   </div>
 </div>
 
+<!-- auth-supabase precisa ser o PRIMEIRO script a carregar e precisa
+     ser type="module" porque usa import/export ES6. Ele expõe
+     window.supabaseClient, window.usuarioLogado etc. para os scripts
+     clássicos abaixo poderem usar sem precisar virar módulos também. -->
+<script type="module" src="../../js/auth-supabase.js"></script>
 <script src="etherion-racas.js"></script>
 <script src="../../js/magias.js"></script>
 <script src="../../js/origens.js"></script>
-<script src="../../js/classes.js"></script><!-- AJUSTE O CAMINHO se classes.js estiver em outro lugar, ex: src="etherion-classes.js" -->
+<script src="../../js/classes.js"></script>
 <script src="etherion-ficha.js"></script>
 </body>
 </html>

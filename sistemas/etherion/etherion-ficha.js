@@ -2053,7 +2053,11 @@ function switchTab(id) {
 // =============================================================
 function voltarParaHome() {
   salvarAgora();
-  window.location.href = '../../index.html';
+  // Caminho absoluto pra raiz — evita gerar '/index.html' explícito
+  // (que faz o navegador tratar como URL diferente de '/') e garante
+  // funcionamento correto independente de quantas pastas de profundidade
+  // a ficha estiver.
+  window.location.href = '/';
 }
 
 // =============================================================
