@@ -348,6 +348,7 @@ function loadData(key, fallback) {
 function saveData(key, val) {
   try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) {}
 }
+let CAMPANHAS   = [];
 let PERSONAGENS = [];
 let _dadosCarregados = false; // true depois da primeira busca real ao Supabase
 
