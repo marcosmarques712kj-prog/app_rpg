@@ -29,6 +29,7 @@
       <span class="logo-subtitle">Sistema de Campanhas & Personagens</span>
     </div>
   </div>
+  <span id="authStatus" style="margin-left:auto; color:var(--gold,#C9A84C); font-size:12px; letter-spacing:1px; opacity:0.85;"></span>
 </header>
 
 <!-- ===== PRIMARY NAV ===== -->
@@ -343,27 +344,102 @@ function saveData(key, val) {
   try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) {}
 }
 
-let CAMPANHAS   = loadData('forja_campanhas',   []);
-let PERSONAGENS = loadData('forja_personagens', []);
+// NOTA: localStorage para campanhas/personagens foi REMOVIDO. Os
+// dados agora vêm 100% do Supabase, sujeitos a RLS (cada um só vê o
+// que tem permissão). loadData/saveData seguem existindo só pra
+// outras coisas pequenas e não-sensíveis (preferências de filtro,
+// estado de UI) que ainda fazem sentido ficar no navegador.
+function loadData(key, fallback) {
+  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
+  catch(e) { return fallback; }
+}
+function saveData(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) {}
+}
 
-// seeds de demo se vazio
-if (!CAMPANHAS.length) {
-  CAMPANHAS = [
-    { id: uid(), nome: 'A Maldição de Valdermoon', sistema: 'dnd5e', jogadores: 4, sessoes: 12, status: 'active', desc: 'Heróis investigam uma maldição ancestral nas ruínas de uma cidade perdida.', personagens: [] },
-    { id: uid(), nome: 'Desaparecimentos em Curitiba', sistema: 'op', jogadores: 3, sessoes: 7, status: 'active', desc: 'Agentes da Ordem investigam desaparecimentos ligados a cultos paranormais no sul do Brasil.', personagens: [] }
-  ];
-  saveData('forja_campanhas', CAMPANHAS);
-}
-if (!PERSONAGENS.length) {
-  PERSONAGENS = [
-    { id: uid(), nome: 'Aldric Stoneheart', sistema: 'dnd5e', dados: { cls: 'Paladino', race: 'Humano', level: 8, align: 'Leal Bom' } },
-    { id: uid(), nome: 'Lyra Voss',         sistema: 'dnd5e', dados: { cls: 'Mago',    race: 'Elfo',   level: 7, align: 'Neutro Bom' } },
-    { id: uid(), nome: 'Agente Raízen',      sistema: 'op',    dados: { cls: 'Combatente', origem: 'Militar', nex: 30 } }
-  ];
-  saveData('forja_personagens', PERSONAGENS);
-}
+let CAMPANHAS   = [];
+let PERSONAGENS = [];
+let _dadosCarregados = false; // true depois da primeira busca real ao Supabase
 
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+// Busca campanhas e personagens do usuário logado no Supabase. RLS
+// garante que só voltam linhas que o usuário tem permissão de ver
+// (próprias + onde é mestre) — não precisamos filtrar nada aqui no
+// client, a query já vem filtrada pelo banco.
+// Se não há sessão, zera as listas (estado "visitante" = vazio).
+async function carregarDadosDoSupabase() {
+  const user = window.usuarioLogado ? window.usuarioLogado() : null;
+  if (!user) {
+    CAMPANHAS = [];
+    PERSONAGENS = [];
+    _dadosCarregados = true;
+    return;
+  }
+
+  const sb = window.supabaseClient;
+  const [{ data: campanhas, error: erroCamp }, { data: personagens, error: erroPers }] = await Promise.all([
+    sb.from('campanhas').select('*').order('criado_em', { ascending: false }),
+    sb.from('personagens').select('*').order('criado_em', { ascending: false })
+  ]);
+
+  if (erroCamp) { console.error('[forja] erro ao carregar campanhas:', erroCamp.message); showToast('⚠ Erro ao carregar campanhas', 'warning'); }
+  if (erroPers) { console.error('[forja] erro ao carregar personagens:', erroPers.message); showToast('⚠ Erro ao carregar personagens', 'warning'); }
+
+  // Adapta o shape do Supabase pro shape que o restante do código já
+  // espera (campos em português, jeito que renderCampanhas/
+  // renderPersonagens já leem). `dados` no Supabase guarda o que
+  // antes ficava solto em campos individuais (jogadores, desc, etc)
+  // — ver mapearCampanhaSupabase/mapearPersonagemSupabase abaixo.
+  CAMPANHAS = (campanhas || []).map(mapearCampanhaSupabase);
+  PERSONAGENS = (personagens || []).map(mapearPersonagemSupabase);
+  _dadosCarregados = true;
+}
+
+// Campos como jogadores/sessoes/desc/banner/status não têm coluna
+// própria em `campanhas` (só nome, mestre_id, codigo_convite) — para
+// não exigir uma migração de schema agora só para isso, guardamos
+// esses extras dentro de uma coluna `dados` jsonb também em
+// campanhas (mesma ideia do `dados` de personagens). Isso exige uma
+// migração pequena no Supabase — ver nota no chat sobre migração 005.
+function mapearCampanhaSupabase(c) {
+  const extra = c.dados || {};
+  return {
+    id: c.id,
+    nome: c.nome,
+    sistema: c.sistema,       // coluna própria (campanha tem 1 sistema fixo)
+    status: c.status,         // coluna própria
+    jogadores: extra.jogadores ?? 4,
+    sessoes: extra.sessoes ?? 0,
+    desc: extra.desc || 'Uma nova campanha aguarda...',
+    banner: extra.banner || null,
+    criadaEm: new Date(c.criado_em).getTime(),
+    ultimaSessao: extra.ultimaSessao || null,
+    codigoConvite: c.codigo_convite,
+    mestreId: c.mestre_id
+  };
+}
+
+function mapearPersonagemSupabase(p) {
+  return {
+    id: p.id,
+    nome: p.nome,
+    sistema: p.sistema,
+    dados: p.dados || {},
+    foto: (p.dados && p.dados._foto) || null,
+    campanhaId: p.campanha_id,
+    donoId: p.dono_id
+  };
+}
+
+// Substitui o antigo `campanha.personagens` (array de IDs). Como
+// agora é o PERSONAGEM que aponta pra campanha (campanha_id), e não
+// o contrário, esta função calcula a lista na hora, a partir de
+// PERSONAGENS já carregado — ver chamadas que antes liam
+// `c.personagens` diretamente, trocadas por personagensDaCampanha(c).
+function personagensDaCampanha(c) {
+  return PERSONAGENS.filter(p => p.campanhaId === c.id);
+}
 
 // =============================================================
 // NAV
@@ -450,7 +526,7 @@ function renderCampanhas() {
   grid.innerHTML = filtradas.map((c, i) => {
     const s = getSistema(c.sistema);
     const st = statusMap[c.status] || statusMap.active;
-    const chars = PERSONAGENS.filter(p => (c.personagens||[]).includes(p.id));
+    const chars = personagensDaCampanha(c);
     return `
     <div class="camp-card fade-in" style="animation-delay:${i*0.06}s" onclick="abrirCampanha('${c.id}')">
       <div class="camp-card-top" style="${c.banner ? `background:url('${c.banner}') center/cover no-repeat` : `background:${s ? `linear-gradient(135deg, ${s.corBg}, rgba(0,0,0,0))` : ''}`}">
@@ -770,29 +846,76 @@ function confirmCrop() {
 // =============================================================
 // CRIAR CAMPANHA
 // =============================================================
-function criarCampanha() {
-  const nome    = document.getElementById('nc_name').value.trim();
-  const sistema = document.getElementById('nc_system').value;
+// Gera um código de convite curto e (na prática) único o bastante —
+// a tabela campanhas tem UNIQUE(codigo_convite) no banco, então uma
+// colisão rara seria pega pelo banco e reportada como erro, não
+// criaria silenciosamente uma campanha com convite duplicado.
+function gerarCodigoConvite() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sem O/0/I/1 (evita confusão visual)
+  let codigo = '';
+  for (let i = 0; i < 6; i++) codigo += chars[Math.floor(Math.random() * chars.length)];
+  return codigo;
+}
+
+async function criarCampanha() {
+  const nome      = document.getElementById('nc_name').value.trim();
+  const sistema   = document.getElementById('nc_system').value;
   const jogadores = document.getElementById('nc_players').value;
-  const desc    = document.getElementById('nc_desc').value.trim();
+  const desc      = document.getElementById('nc_desc').value.trim();
 
   if (!nome || !sistema) { showToast('⚠ Preencha o nome e o sistema', 'warning'); return; }
 
-  CAMPANHAS.push({ id: uid(), nome, sistema, jogadores: parseInt(jogadores)||4, sessoes: 0, status: 'active', desc: desc || 'Uma nova campanha aguarda...', personagens: [], banner: _pendingBanner || null, criadaEm: Date.now(), ultimaSessao: null });
-  saveData('forja_campanhas', CAMPANHAS);
+  const dadosForm = { nome, sistema, jogadores: parseInt(jogadores) || 4, desc, banner: _pendingBanner || null };
+
+  // Guarda a intenção ANTES de exigir login — se precisar de redirect
+  // pro Discord, isto sobrevive pro próximo load (ver auth-supabase.js).
+  guardarAcaoPendente('criarCampanha', dadosForm);
+
+  const sessao = await exigirLogin('Você precisa entrar com Discord para criar uma campanha.');
+  if (!sessao) {
+    showToast('Login cancelado — campanha não criada.', 'warning');
+    return;
+  }
+
+  await _executarCriacaoCampanha(dadosForm);
+}
+
+async function _executarCriacaoCampanha(dadosForm) {
+  const { nome, sistema, jogadores, desc, banner } = dadosForm;
+  const codigoConvite = gerarCodigoConvite();
+
+  const { data, error } = await window.supabaseClient
+    .from('campanhas')
+    .insert({
+      nome,
+      sistema,
+      mestre_id: usuarioLogado().id,
+      codigo_convite: codigoConvite,
+      dados: { jogadores, sessoes: 0, desc: desc || 'Uma nova campanha aguarda...', banner: banner || null, ultimaSessao: null }
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('[forja] erro ao criar campanha:', error.message);
+    showToast('⚠ Erro ao criar campanha: ' + error.message, 'warning');
+    return;
+  }
+
+  consumirAcaoPendente('criarCampanha'); // limpa pra não duplicar em reload acidental
+  CAMPANHAS.unshift(mapearCampanhaSupabase(data));
   renderCampanhas();
   closeModal('modalCampanha');
   document.getElementById('nc_name').value = '';
   document.getElementById('nc_desc').value = '';
   document.getElementById('nc_system').value = '';
-  // reset banner upload
   _pendingBanner = null;
   const bp = document.getElementById('nc_banner_preview');
   const bph = document.getElementById('nc_banner_placeholder');
   if (bp) { bp.src=''; bp.style.display='none'; }
   if (bph) bph.style.display='flex';
   document.getElementById('nc_banner_area')?.classList.remove('has-image');
-  showToast(`⚔ Campanha "${nome}" criada!`, 'gold');
+  showToast(`⚔ Campanha "${nome}" criada! Código de convite: ${codigoConvite}`, 'gold');
 }
 
 // =============================================================
@@ -810,7 +933,7 @@ function renderPersonagens() {
     const s = getSistema(p.sistema);
     const d = p.dados || {};
     const prog = progressaoDoChar(p, s);
-    const campanhasDoChar = CAMPANHAS.filter(c => (c.personagens||[]).includes(p.id));
+    const campanhasDoChar = CAMPANHAS.filter(c => c.id === p.campanhaId);
     return `
     <div class="char-card fade-in" style="animation-delay:${i*0.06}s" onclick="abrirPersonagem('${p.id}')">
       <button class="char-delete-btn" title="Excluir personagem" onclick="event.stopPropagation(); confirmarDeletarPersonagem('${p.id}')">✕</button>
@@ -863,28 +986,56 @@ function abrirPersonagem(id) {
 // =============================================================
 // CRIAR PERSONAGEM
 // =============================================================
-function criarPersonagem() {
+async function criarPersonagem() {
   const nome    = document.getElementById('ch_name').value.trim();
   const sistema = document.getElementById('ch_system').value;
   if (!nome || !sistema) { showToast('⚠ Preencha o nome e o sistema', 'warning'); return; }
 
   const s = getSistema(sistema);
-  const novoId = uid();
-
   // pré-popula com os valores padrão de cada campo (ex: nível 1, NEX 5%)
   // pra a ficha nascer já sincronizada com o que aparece nesta tela.
   const dadosIniciais = {};
   (s?.campos || []).forEach(c => {
     if (c.default !== undefined) dadosIniciais[c.id] = c.default;
   });
+  if (_pendingPhoto) dadosIniciais._foto = _pendingPhoto;
 
-  PERSONAGENS.push({ id: novoId, nome, sistema, dados: dadosIniciais, foto: _pendingPhoto || null });
-  saveData('forja_personagens', PERSONAGENS);
+  const dadosForm = { nome, sistema, dadosIniciais };
+  guardarAcaoPendente('criarPersonagem', dadosForm);
+
+  const sessao = await exigirLogin('Você precisa entrar com Discord para criar um personagem.');
+  if (!sessao) {
+    showToast('Login cancelado — personagem não criado.', 'warning');
+    return;
+  }
+
+  await _executarCriacaoPersonagem(dadosForm);
+}
+
+async function _executarCriacaoPersonagem(dadosForm) {
+  const { nome, sistema, dadosIniciais } = dadosForm;
+
+  // Personagem nasce SEM campanha_id (solto) — decisão confirmada:
+  // criado fora, depois colocado numa campanha via entrar_em_campanha().
+  const { data, error } = await window.supabaseClient
+    .from('personagens')
+    .insert({ nome, sistema, dono_id: usuarioLogado().id, campanha_id: null, dados: dadosIniciais })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('[forja] erro ao criar personagem:', error.message);
+    showToast('⚠ Erro ao criar personagem: ' + error.message, 'warning');
+    return;
+  }
+
+  consumirAcaoPendente('criarPersonagem');
+  const novo = mapearPersonagemSupabase(data);
+  PERSONAGENS.unshift(novo);
   renderPersonagens();
   closeModal('modalPersonagem');
   document.getElementById('ch_name').value = '';
   document.getElementById('ch_system').value = '';
-  // reset photo upload
   _pendingPhoto = null;
   const pp = document.getElementById('ch_photo_preview');
   const pph = document.getElementById('ch_photo_placeholder');
@@ -892,11 +1043,15 @@ function criarPersonagem() {
   if (pph) pph.style.display='flex';
   document.getElementById('ch_photo_area')?.classList.remove('has-image');
 
+  const s = getSistema(sistema);
   if (s?.ficha) {
     // navega direto pra ficha do personagem recém-criado, na mesma aba —
     // o toast não teria tempo de aparecer antes da troca de página, então
     // a própria transição já serve como confirmação visual aqui.
-    window.location.href = `${s.ficha}?id=${novoId}&nome=${encodeURIComponent(nome)}`;
+    // IMPORTANTE: consumirAcaoPendente() já rodou ANTES desta navegação
+    // (logo acima), então não fica pendência órfã esperando um load que
+    // nunca mais vai chamar criarPersonagem() de novo.
+    window.location.href = `${s.ficha}?id=${novo.id}&nome=${encodeURIComponent(nome)}`;
   } else {
     showToast(`✦ ${nome} criado(a) com sucesso!`, 'gold');
   }
@@ -1094,15 +1249,102 @@ function initParticles() {
 // =============================================================
 // INIT
 // =============================================================
-function init() {
+async function init() {
   initParticles();
   preencherSelectsSistema();
-  renderCampanhas();
-  renderPersonagens();
   renderSistemas();
   carregarIndiceLivros();
+  // Campanhas/Personagens dependem do módulo de auth (window.usuarioLogado,
+  // window.supabaseClient) já estar carregado — ver script type="module"
+  // logo abaixo, que dispara o evento 'auth-modulo-pronto' quando pronto,
+  // e chama initDadosAutenticados() a partir daí (não daqui).
 }
+
+// Roda assim que o <script type="module"> da ponte de auth (mais abaixo
+// no arquivo) terminar de importar e expor window.usuarioLogado/
+// window.supabaseClient. Sem esperar por isso, carregarDadosDoSupabase()
+// rodaria contra funções que ainda não existem.
+async function initDadosAutenticados() {
+  await carregarDadosDoSupabase();
+  renderCampanhas();
+  renderPersonagens();
+
+  // Retoma uma ação pendente de criar campanha/personagem que tenha
+  // sobrevivido a um redirect de login (ver auth-supabase.js).
+  const pendenteCampanha = consumirAcaoPendente('criarCampanha');
+  if (pendenteCampanha) await _executarCriacaoCampanha(pendenteCampanha);
+
+  const pendentePersonagem = consumirAcaoPendente('criarPersonagem');
+  if (pendentePersonagem) await _executarCriacaoPersonagem(pendentePersonagem);
+}
+
 init();
+</script>
+
+<!-- ============================================================
+     PONTE PARA O MÓDULO DE AUTH (Supabase)
+     ============================================================
+     auth-supabase.js usa export/import (ES Modules) — não pode ser
+     chamado direto de dentro do <script> clássico acima, nem de
+     onclick="..." inline. Este bloco type="module" importa o que
+     precisamos e pendura em window, pro script clássico (e os
+     onclick inline do HTML) chamarem normalmente, como sempre
+     fizeram. Não convertemos o script principal pra module: ele tem
+     ~800 linhas de lógica não-modular e o risco de quebrar onclick
+     inline em produção não compensa o ganho aqui.
+============================================================ -->
+<script type="module">
+  import {
+    exigirLogin, logout, usuarioLogado, perfilLogado, onMudancaAuth,
+    guardarAcaoPendente, consumirAcaoPendente, supabase
+  } from './js/auth-supabase.js';
+
+  window.exigirLogin = exigirLogin;
+  window.logoutSupabase = logout;
+  window.usuarioLogado = usuarioLogado;
+  window.perfilLogado = perfilLogado;
+  window.guardarAcaoPendente = guardarAcaoPendente;
+  window.consumirAcaoPendente = consumirAcaoPendente;
+  window.supabaseClient = supabase;
+
+  // Atualiza um indicador simples de login no header (se existir na
+  // página) toda vez que o estado de auth mudar. Ver bloco HTML do
+  // header — adicionamos um span#authStatus lá embaixo, opcional.
+  onMudancaAuth((user, perfil) => {
+    const el = document.getElementById('authStatus');
+    if (!el) return;
+    if (user) {
+      el.textContent = '✦ ' + (perfil?.username || 'Logado');
+      el.onclick = async () => { await logout(); window.location.reload(); };
+      el.style.cursor = 'pointer';
+    } else {
+      el.textContent = '';
+      el.onclick = null;
+    }
+  });
+
+  // Dispara o flag pro script clássico saber que pode chamar
+  // window.exigirLogin com segurança (evita corrida onde um onclick
+  // dispara antes deste module terminar de importar/avaliar).
+  window._authModuloPronto = true;
+  window.dispatchEvent(new Event('auth-modulo-pronto'));
+
+  // Recarrega campanhas/personagens sempre que o estado de login
+  // mudar de verdade (login, logout) — não só na carga inicial.
+  // onMudancaAuth já chama o callback uma vez imediatamente com o
+  // estado atual, então isto também cobre a primeira carga.
+  let _primeiraChamada = true;
+  onMudancaAuth(() => {
+    if (_primeiraChamada) {
+      _primeiraChamada = false;
+      if (typeof window.initDadosAutenticados === 'function') window.initDadosAutenticados();
+    } else {
+      // login/logout subsequente (ex: clicou em Sair) — recarrega a
+      // lista pra refletir o novo estado (vazio se deslogou).
+      if (typeof window.initDadosAutenticados === 'function') window.initDadosAutenticados();
+    }
+  });
+
 </script>
 </body>
 </html>
