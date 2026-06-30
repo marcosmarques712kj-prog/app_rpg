@@ -214,14 +214,11 @@
             </div>
             <div class="form-group">
               <label style="display:block; font-size:11px; letter-spacing:1px; color:var(--gold); margin-bottom:4px;">SISTEMA</label>
-              <select id="ch_system" class="form-input" onchange="renderCamposExtras()">
+              <select id="ch_system" class="form-input">
                 <option value="">Selecione o Sistema...</option>
               </select>
             </div>
           </div>
-        </div>
-        <div id="ch_dynamic_fields" style="display:flex; flex-direction:column; gap:12px;">
-          <!-- Campos dinâmicos (Raça, Classe, etc) -->
         </div>
       </div>
     </div>
@@ -1130,17 +1127,11 @@ async function criarPersonagem() {
   const sistema = document.getElementById('ch_system').value;
   if (!nome || !sistema) { showToast('⚠ Preencha o nome e o sistema', 'warning'); return; }
 
-  const s = getSistema(sistema);
-  // pré-popula com os valores padrão de cada campo (ex: nível 1, NEX 5%),
-  // depois sobrescreve com o que o jogador de fato preencheu no formulário
-  // dinâmico (renderCamposExtras/coletarValoresCamposExtras) — assim a
-  // ficha nasce com os valores reais escolhidos, caindo pro default só
-  // quando o campo foi deixado em branco.
+  // Classe/Raça/Nível/Alinhamento etc. NÃO são mais preenchidos aqui no
+  // momento da criação (feature descontinuada de propósito — ver nota
+  // acima de preencherSelectsSistema()). O personagem nasce só com nome
+  // e sistema; tudo o mais é preenchido depois dentro da própria ficha.
   const dadosIniciais = {};
-  (s?.campos || []).forEach(c => {
-    if (c.default !== undefined) dadosIniciais[c.id] = c.default;
-  });
-  Object.assign(dadosIniciais, coletarValoresCamposExtras());
   if (_pendingPhoto) dadosIniciais._foto = _pendingPhoto;
 
   const dadosForm = { nome, sistema, dadosIniciais };
@@ -1353,65 +1344,21 @@ function preencherSelectsSistema() {
   });
 }
 
-// Gera os campos extras (Classe, Raça, Nível, etc) dentro de
-// #ch_dynamic_fields, de acordo com o sistema escolhido no select
-// #ch_system. Cada sistema define seu próprio array `campos` (ver
-// SISTEMAS[] no topo do arquivo) — esta função é agnóstica do
-// sistema específico, só lê o contrato { id, label, tipo, opcoes |
-// min/max/default } e monta o input certo pra cada tipo.
-// IMPORTANTE: esta função NUNCA tinha sido escrita antes (só era
-// referenciada no onchange do HTML) — bug pré-existente corrigido
-// aqui. criarPersonagem() lê os valores reais preenchidos aqui via
-// coletarValoresCamposExtras(), abaixo.
-function renderCamposExtras() {
-  const sistemaId = document.getElementById('ch_system').value;
-  const container = document.getElementById('ch_dynamic_fields');
-  if (!container) return;
-
-  const s = getSistema(sistemaId);
-  if (!s || !s.campos) { container.innerHTML = ''; return; }
-
-  container.innerHTML = s.campos.map(c => {
-    const inputId = 'chx_' + c.id;
-    if (c.tipo === 'select') {
-      const opcoesHtml = (c.opcoes || []).map(op => `<option value="${op}">${op}</option>`).join('');
-      return `
-        <div class="form-group">
-          <label style="display:block; font-size:11px; letter-spacing:1px; color:var(--gold); margin-bottom:4px;">${c.label.toUpperCase()}</label>
-          <select id="${inputId}" class="form-input" data-campo-id="${c.id}">
-            <option value="">Selecione...</option>
-            ${opcoesHtml}
-          </select>
-        </div>`;
-    }
-    if (c.tipo === 'number') {
-      return `
-        <div class="form-group">
-          <label style="display:block; font-size:11px; letter-spacing:1px; color:var(--gold); margin-bottom:4px;">${c.label.toUpperCase()}</label>
-          <input type="number" id="${inputId}" class="form-input" data-campo-id="${c.id}"
-            min="${c.min ?? ''}" max="${c.max ?? ''}" value="${c.default ?? ''}">
-        </div>`;
-    }
-    return '';
-  }).join('');
-}
-
-// Lê os valores atualmente preenchidos nos campos extras gerados por
-// renderCamposExtras(), na forma { campoId: valor }. Campos do tipo
-// number são convertidos pra Number; campos vazios (select sem
-// escolha) ficam de fora do objeto (criarPersonagem aplica o default
-// do sistema pra esses, não um valor vazio/inválido).
-function coletarValoresCamposExtras() {
-  const container = document.getElementById('ch_dynamic_fields');
-  if (!container) return {};
-  const valores = {};
-  container.querySelectorAll('[data-campo-id]').forEach(el => {
-    const campoId = el.dataset.campoId;
-    if (el.value === '') return; // deixa o default do sistema prevalecer
-    valores[campoId] = el.type === 'number' ? Number(el.value) : el.value;
-  });
-  return valores;
-}
+// DESCONTINUADO DE PROPÓSITO: este projeto já teve uma feature de
+// "campos extras" (Classe/Raça/Nível/Alinhamento etc.) preenchida no
+// próprio modal de criação, gerada dinamicamente por sistema a partir
+// de SISTEMAS[].campos (renderCamposExtras() + coletarValoresCamposExtras(),
+// lidas por criarPersonagem() em #ch_dynamic_fields). Foi removida de
+// propósito — não é regressão. Esses dados agora só existem dentro de
+// cada ficha (sistemas/*/*-ficha.html), preenchidos lá depois que o
+// personagem já existe. Não reintroduzir esse formulário dinâmico no
+// modal de criação sem confirmar antes — já causou bug onde os campos
+// de um sistema apareciam preenchidos com opções de outro.
+// SISTEMAS[].campos continua existindo só porque subtituloChar(),
+// campoProgressao() e progressaoDoChar() (mais abaixo) usam esses IDs
+// pra saber quais chaves de `dados` exibir no card do personagem —
+// isso é puramente de leitura/exibição do que a ficha já salvou, não
+// tem relação com o formulário de criação.
 
 // =============================================================
 // MODAIS

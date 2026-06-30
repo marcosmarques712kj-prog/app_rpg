@@ -83,6 +83,29 @@ let CHAR_ID    = null;
 let PERSONAGEM = null;
 let PERSONAGENS = [];
 
+// Esta página roda dentro do <iframe id="sheet-frame"> do shell
+// (index.html). Quem inicializa o Supabase e pendura o client em
+// window.supabaseClient é o bloco-ponte <script type="module"> do
+// PRÓPRIO index.html — isso acontece no window do shell, não no window
+// deste iframe (cada documento tem seu window). Por isso lemos daqui
+// via window.parent.supabaseClient (mesma origem; o iframe em
+// index.html já tem sandbox="allow-same-origin", então isso funciona).
+// O fallback pra window.supabaseClient só existe pra não quebrar se
+// algum dia esta página for aberta fora do shell, sem pai nenhum
+// (ex: teste manual direto do arquivo) — nesse caso não há client
+// nenhum disponível mesmo, e o código segue pro fallback de
+// localStorage normalmente.
+function obterSupabase() {
+  try {
+    if (window.parent && window.parent !== window && window.parent.supabaseClient) {
+      return window.parent.supabaseClient;
+    }
+  } catch (e) {
+    // cross-origin de verdade (não deveria acontecer aqui, mesma origem) — ignora e cai no fallback abaixo
+  }
+  return window.supabaseClient || null;
+}
+
 async function carregarPersonagem() {
   const params = new URLSearchParams(window.location.search);
   CHAR_ID = params.get('id');
@@ -90,8 +113,7 @@ async function carregarPersonagem() {
   if (!CHAR_ID) { mostrarVazio('Nenhum personagem especificado na URL.'); return false; }
 
   // Tenta buscar do Supabase primeiro (fonte de verdade).
-  // window.supabaseClient é exposto pelo auth-supabase.js carregado no HTML.
-  const sb = window.supabaseClient;
+  const sb = obterSupabase();
   if (sb) {
     const { data: { user } = {} } = await sb.auth.getUser();
 
@@ -2145,7 +2167,7 @@ async function salvarAgora() {
   notificarShell(PERSONAGEM.nome);
 
   // Salva no Supabase (fonte de verdade).
-  const sb = window.supabaseClient;
+  const sb = obterSupabase();
   let erroSalvar = null;
   if (sb && CHAR_ID) {
     // GUARDA DE PERMISSÃO: só o dono do personagem pode gravar. Um mestre

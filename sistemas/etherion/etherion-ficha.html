@@ -42,15 +42,43 @@
   </div>
 </div>
 
-<!-- auth-supabase precisa ser o PRIMEIRO script a carregar e precisa
-     ser type="module" porque usa import/export ES6. Ele expõe
-     window.supabaseClient, window.usuarioLogado etc. para os scripts
-     clássicos abaixo poderem usar sem precisar virar módulos também. -->
-<script type="module" src="../../js/auth-supabase.js"></script>
+<!-- IMPORTANTE: esta página roda dentro do <iframe id="sheet-frame"> do
+     shell (index.html). NÃO importar js/auth-supabase.js aqui de novo —
+     isso criaria uma SEGUNDA instância de GoTrueClient (cada import do
+     módulo roda createClient() de novo) e, mais grave, essa segunda
+     instância nunca fica pendurada em window.supabaseClient: quem faz
+     essa atribuição é só o bloco-ponte <script type="module"> dentro do
+     próprio index.html, que roda no window DO SHELL, não no window
+     deste documento (iframe tem window próprio). Resultado se
+     reimportássemos aqui: window.supabaseClient dentro do iframe ficaria
+     sempre undefined, mesmo logado, mesmo com o personagem existindo no
+     banco — era a causa do bug "Personagem não encontrado".
+     O jeito certo é ler o client já pronto do shell via
+     window.parent.supabaseClient (mesma origem, sandbox do iframe em
+     index.html já tem allow-same-origin, então isso funciona). Ver uso
+     em etherion-ficha.js, função obterSupabase(). -->
 <script src="etherion-racas.js"></script>
 <script src="../../js/magias.js"></script>
 <script src="../../js/origens.js"></script>
 <script src="../../js/classes.js"></script>
 <script src="etherion-ficha.js"></script>
+
+<!-- Quando esta página roda dentro do iframe do shell, o shell já mostra
+     seu próprio topbar (#topbar-sheet, com Voltar + título + indicador de
+     salvo via postMessage) — então escondemos o topbar interno daqui pra
+     não duplicar a barra "← Voltar" na tela. Mesmo padrão já usado em
+     campanha-dnd.html / campanha-op.html / campanha-tormenta.html /
+     campanha-etherion.html. Fica solto aqui no fim do body (depois do
+     etherion-ficha.js) só porque .sheet-topbar precisa já existir no
+     DOM — não depende de nada que etherion-ficha.js inicializa. -->
+<script>
+  (function () {
+    const rodandoNoIframe = window.parent && window.parent !== window;
+    if (rodandoNoIframe) {
+      const topbar = document.querySelector('.sheet-topbar');
+      if (topbar) topbar.style.display = 'none';
+    }
+  })();
+</script>
 </body>
 </html>
