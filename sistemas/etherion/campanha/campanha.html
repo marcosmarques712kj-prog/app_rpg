@@ -7,6 +7,13 @@
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cinzel+Decorative:wght@400;700&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../../../core/css/ficha-base.css">
 <style>
+  /* ===========================================================
+     Estilos específicos de campanha-etherion.html — tudo que não
+     já vem de ficha-base.css. Mantém a paleta gótica/arcana do
+     sistema Etherion (fundo #16110b, dourado #C9A84C, Cinzel +
+     EB Garamond) coerente com o resto do app.
+     =========================================================== */
+
   .dash-banner {
     width: 100%;
     height: 180px;
@@ -16,12 +23,76 @@
     mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
     -webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
   }
-  .char-mini-card {
-    background: rgba(0,0,0,0.3);
-    border: 1px solid rgba(139,105,20,0.3);
-    padding: 12px;
+
+  .sheet-panel { display: none; }
+  .sheet-panel.active { display: block; animation: fadeIn 0.3s ease both; }
+
+  /* -------- badge de papel (mestre/jogador) no topbar interno -------- */
+  .role-badge {
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 3px 9px;
+    border: 1px solid var(--gold-dark);
+    color: var(--gold);
+    border-radius: 2px;
+    opacity: 0.85;
+  }
+
+  /* -------- Início: lista de jogadores -------- */
+  .codigo-convite-box {
     display: flex;
     align-items: center;
+    gap: 10px;
+    background: rgba(0,0,0,0.35);
+    border: 1px dashed var(--gold-dark);
+    padding: 10px 14px;
+    margin-bottom: 18px;
+  }
+  .codigo-convite-valor {
+    font-family: 'Cinzel', serif;
+    letter-spacing: 3px;
+    color: var(--gold-light);
+    font-size: 15px;
+  }
+  .jogador-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 4px;
+    border-bottom: 1px solid rgba(139,105,20,0.2);
+  }
+  .jogador-row:last-child { border-bottom: none; }
+  .jogador-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    object-fit: cover; border: 1px solid var(--gold-dark);
+    background: rgba(0,0,0,0.4);
+  }
+  .jogador-nome {
+    font-family: 'EB Garamond', serif;
+    color: var(--parchment-dark);
+    font-size: 15px;
+  }
+  .jogador-nome .tag-mestre {
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    color: var(--gold);
+    opacity: 0.7;
+    margin-left: 6px;
+  }
+
+  /* -------- Personagens: cards de recursos -------- */
+  .char-card {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(139,105,20,0.3);
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+  .char-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     gap: 12px;
     margin-bottom: 10px;
   }
@@ -33,9 +104,40 @@
   .char-mini-info {
     font-family: 'EB Garamond', serif;
     color: var(--parchment-dark);
-    font-size: 14px;
+    font-size: 13px;
     font-style: italic;
+    opacity: 0.85;
   }
+  .recursos-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .recurso-pill {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(139,105,20,0.25);
+    padding: 6px 4px;
+    text-align: center;
+  }
+  .recurso-pill .label {
+    font-family: 'Cinzel', serif;
+    font-size: 8px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--gold-dark);
+    display: block;
+    margin-bottom: 3px;
+  }
+  .recurso-pill .valor {
+    font-family: 'Cinzel', serif;
+    font-size: 14px;
+    color: var(--parchment-dark);
+  }
+  .recurso-pill.vida .valor { color: #b5544a; }
+  .recurso-pill.san .valor { color: #6f8fae; }
+  .recurso-pill.sopro .valor { color: #7fae6f; }
+  .recurso-pill.macula .valor { color: #9a6fae; }
+
   .btn-action {
     background: rgba(0,0,0,0.5);
     border: 1px solid var(--gold-dark);
@@ -45,99 +147,438 @@
     font-size: 10px;
     cursor: pointer;
     transition: all 0.2s;
+    white-space: nowrap;
   }
   .btn-action:hover { background: rgba(201,168,76,0.1); color: var(--gold-light); }
 
-  .sheet-panel { display: none; }
-  .sheet-panel.active { display: block; animation: fadeIn 0.3s ease both; }
+  /* -------- Controle (só mestre): edição inline de recursos -------- */
+  .controle-card {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(139,105,20,0.3);
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+  .controle-campos {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .controle-campo label {
+    display: block;
+    font-family: 'Cinzel', serif;
+    font-size: 8px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--gold-dark);
+    margin-bottom: 4px;
+  }
+  .controle-campo input {
+    width: 100%;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(139,105,20,0.35);
+    color: var(--parchment-dark);
+    font-family: 'Cinzel', serif;
+    font-size: 14px;
+    padding: 6px 8px;
+    text-align: center;
+  }
+  .controle-campo input:focus {
+    outline: none;
+    border-color: var(--gold);
+  }
+  .controle-status {
+    font-family: 'EB Garamond', serif;
+    font-size: 11px;
+    font-style: italic;
+    color: var(--gold);
+    opacity: 0;
+    transition: opacity 0.3s;
+    margin-left: 8px;
+  }
+  .controle-status.show { opacity: 0.8; }
+
+  .realtime-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    display: inline-block; margin-right: 6px;
+    background: #7fae6f; box-shadow: 0 0 6px #7fae6f;
+    vertical-align: middle;
+  }
+  .realtime-dot.off { background: #6b6b6b; box-shadow: none; }
+
+  /* -------- NPCs -------- */
+  .npc-card {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(139,105,20,0.3);
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+  .npc-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .npc-nome {
+    font-family: 'Cinzel Decorative', serif;
+    color: var(--gold);
+    font-size: 15px;
+  }
+  .npc-tipo {
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--gold-dark);
+  }
+  .npc-aparencia {
+    font-family: 'EB Garamond', serif;
+    font-style: italic;
+    color: var(--parchment-dark);
+    opacity: 0.85;
+    font-size: 13px;
+    margin-top: 6px;
+  }
+  .npc-visibilidade {
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    padding: 3px 8px;
+    border: 1px solid;
+    white-space: nowrap;
+  }
+  .npc-visibilidade.visivel { color: #7fae6f; border-color: #7fae6f66; }
+  .npc-visibilidade.oculto { color: #6b6b6b; border-color: #6b6b6b66; }
+
+  .form-npc {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .form-npc .full { grid-column: 1 / -1; }
+  .form-npc input, .form-npc select, .form-npc textarea {
+    width: 100%;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(139,105,20,0.35);
+    color: var(--parchment-dark);
+    font-family: 'EB Garamond', serif;
+    font-size: 13px;
+    padding: 8px 10px;
+  }
+  .form-npc textarea { min-height: 70px; resize: vertical; }
+  .form-npc input:focus, .form-npc select:focus, .form-npc textarea:focus {
+    outline: none; border-color: var(--gold);
+  }
+
+  /* -------- Diário -------- */
+  .diario-entrada {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(139,105,20,0.3);
+    padding: 14px 16px;
+    margin-bottom: 14px;
+  }
+  .diario-entrada-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .diario-titulo {
+    font-family: 'Cinzel Decorative', serif;
+    color: var(--gold);
+    font-size: 15px;
+  }
+  .diario-data {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    color: var(--gold-dark);
+    letter-spacing: 1px;
+  }
+  .diario-resumo {
+    font-family: 'EB Garamond', serif;
+    color: var(--parchment-dark);
+    font-size: 14px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+  }
+  .form-diario {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .form-diario-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 10px;
+  }
+  .form-diario input, .form-diario textarea {
+    width: 100%;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(139,105,20,0.35);
+    color: var(--parchment-dark);
+    font-family: 'EB Garamond', serif;
+    font-size: 13px;
+    padding: 8px 10px;
+  }
+  .form-diario textarea { min-height: 90px; resize: vertical; }
+
+  /* -------- Dados -------- */
+  .dados-roll-area {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .dado-btn {
+    background: rgba(0,0,0,0.5);
+    border: 1px solid var(--gold-dark);
+    color: var(--gold);
+    padding: 10px 18px;
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .dado-btn:hover { background: rgba(201,168,76,0.12); color: var(--gold-light); }
+  .dados-historico-item {
+    font-family: 'EB Garamond', serif;
+    font-size: 13px;
+    color: var(--parchment-dark);
+    padding: 6px 4px;
+    border-bottom: 1px solid rgba(139,105,20,0.15);
+  }
+  .dados-historico-item b { color: var(--gold); }
+
+  /* -------- Login exigido -------- */
+  .tela-login-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+  }
+  .tela-login-wrap .titulo {
+    font-family: 'Cinzel Decorative', serif;
+    color: var(--gold);
+    font-size: 22px;
+    letter-spacing: 1px;
+  }
+  .tela-login-wrap .sub {
+    font-family: 'EB Garamond', serif;
+    font-style: italic;
+    color: var(--parchment-dark);
+    opacity: 0.75;
+    max-width: 360px;
+  }
+
+  @media (max-width: 720px) {
+    .recursos-grid, .controle-campos { grid-template-columns: repeat(2, 1fr); }
+    .form-npc, .form-diario-row { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
 
-<!-- ===== TOP BAR =====
-     Oculto quando rodando dentro do iframe do shell (ver script). -->
-<div class="sheet-topbar" id="topbarInterno">
-  <button class="sheet-back" id="btnVoltar">← Voltar à Forja</button>
-  <div class="sheet-identity">
-    <input class="sheet-name-input" id="camp_nome" type="text" placeholder="Nome da Campanha" readonly>
-  </div>
-  <span class="sheet-save-indicator" id="saveIndicator">✓ Salvo</span>
+<!-- ===== TELA DE LOGIN OBRIGATÓRIO ===== -->
+<!-- Mostrada enquanto não há sessão. exigirLogin() (via módulo de auth)
+     cuida do modal de fato; este bloco é só o estado de fundo da página
+     antes/enquanto isso é resolvido. -->
+<div id="telaLogin" class="tela-login-wrap" style="display:none;">
+  <div class="titulo">✦ Forja das Eras</div>
+  <div class="sub">Esta campanha é privada. Entre com sua conta Discord para ver o que se passa em Etherion.</div>
+  <button class="btn-action" id="btnEntrarTelaLogin" style="padding:10px 22px; font-size:12px;">Entrar com Discord</button>
 </div>
 
-<!-- ===== TABS ===== -->
-<nav class="sheet-tabs">
-  <button class="sheet-tab active" data-tab="personagens" onclick="switchTab('personagens')">🧑‍🤝‍🧑 Mercenários</button>
-  <button class="sheet-tab" data-tab="npcs" onclick="switchTab('npcs')">👥 NPCs</button>
-  <button class="sheet-tab" data-tab="combates" onclick="switchTab('combates')">⚔ Combates</button>
-  <button class="sheet-tab" data-tab="dados" onclick="switchTab('dados')">🎲 Dados</button>
-  <button class="sheet-tab" data-tab="diario" onclick="switchTab('diario')">📜 Diário / Anotações</button>
-</nav>
+<!-- ===== CONTEÚDO DA CAMPANHA (oculto até autenticar e carregar) ===== -->
+<div id="conteudoCampanha" style="display:none;">
 
-<!-- ===== PAGE WRAP ===== -->
-<div class="sheet-wrap">
-  <img id="camp_banner" class="dash-banner" style="display:none;">
+  <!-- ===== TOP BAR =====
+       Fica oculto quando a página roda dentro do iframe do shell
+       (index.html), que já mostra seu próprio topbar (#topbar-sheet)
+       com o botão Voltar e o nome da campanha. Ver detectarContexto
+       no script abaixo. -->
+  <div class="sheet-topbar" id="topbarInterno">
+    <button class="sheet-back" id="btnVoltar">← Voltar à Forja</button>
+    <div class="sheet-identity">
+      <input class="sheet-name-input" id="camp_nome" type="text" placeholder="Nome da Campanha" readonly>
+    </div>
+    <span class="role-badge" id="roleBadge" style="display:none;"></span>
+    <span class="sheet-save-indicator" id="saveIndicator"></span>
+  </div>
 
-  <!-- TELA 1: PERSONAGENS -->
-  <div id="panel-personagens" class="sheet-panel active">
-    <div class="panel-title">Companhia de Mercenários</div>
-    <div class="box">
-      <div id="charsList">
-        <div class="empty-state">
-          <div class="empty-state-text">Carregando aventureiros...</div>
+  <!-- ===== TABS ===== -->
+  <nav class="sheet-tabs">
+    <button class="sheet-tab active" data-tab="inicio" onclick="switchTab('inicio')">🏰 Início</button>
+    <button class="sheet-tab" data-tab="personagens" onclick="switchTab('personagens')">🧑‍🤝‍🧑 Personagens</button>
+    <button class="sheet-tab" data-tab="diario" onclick="switchTab('diario')">📜 Diário</button>
+    <button class="sheet-tab" data-tab="dados" onclick="switchTab('dados')">🎲 Dados</button>
+    <button class="sheet-tab tab-mestre" data-tab="controle" onclick="switchTab('controle')" style="display:none;">🕯 Controle</button>
+    <button class="sheet-tab tab-mestre" data-tab="npcs" onclick="switchTab('npcs')" style="display:none;">👥 NPCs</button>
+    <button class="sheet-tab tab-mestre" data-tab="bestiario" onclick="switchTab('bestiario')" style="display:none;">🐉 Bestiário</button>
+    <button class="sheet-tab tab-mestre" data-tab="notas" onclick="switchTab('notas')" style="display:none;">🖋 Notas do Mestre</button>
+  </nav>
+
+  <!-- ===== PAGE WRAP ===== -->
+  <div class="sheet-wrap">
+    <img id="camp_banner" class="dash-banner" style="display:none;">
+
+    <!-- TELA: INÍCIO -->
+    <div id="panel-inicio" class="sheet-panel active">
+      <div class="panel-title">A Campanha</div>
+      <div class="box">
+        <div id="codigoConviteWrap" style="display:none;">
+          <div class="codigo-convite-box">
+            <span class="char-mini-info" style="opacity:0.7;">Código de convite:</span>
+            <span class="codigo-convite-valor" id="codigoConviteValor">——</span>
+            <button class="btn-action" id="btnCopiarCodigo">Copiar</button>
+          </div>
+        </div>
+        <div id="campanhaDescricao" class="char-mini-info" style="margin-bottom:16px; display:none;"></div>
+        <div id="campanhaStatus" class="role-badge" style="margin-bottom:16px; display:inline-block;"></div>
+      </div>
+      <div class="panel-title">Jogadores</div>
+      <div class="box">
+        <div id="jogadoresList">
+          <div class="empty-state"><div class="empty-state-text">Carregando jogadores...</div></div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- TELA 2: NPCs -->
-  <div id="panel-npcs" class="sheet-panel">
-    <div class="panel-title">Lista de NPCs Conhecidos</div>
-    <div class="box">
-      <div class="empty-state">
-        <div class="empty-state-text">Nenhum NPC registrado ainda. Esta área pode ser expandida no futuro.</div>
+    <!-- TELA: PERSONAGENS -->
+    <div id="panel-personagens" class="sheet-panel">
+      <div class="panel-title">O Grupo de Aventureiros</div>
+      <div class="box">
+        <div id="charsList">
+          <div class="empty-state"><div class="empty-state-text">Carregando heróis...</div></div>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- TELA 3: COMBATES -->
-  <div id="panel-combates" class="sheet-panel">
-    <div class="panel-title">Mesa de Combate e Iniciativa</div>
-    <div class="box">
-      <div class="empty-state">
-        <div class="empty-state-text">A ordem de iniciativa e controle de monstros e horrores antigos ficará aqui.</div>
+    <!-- TELA: DIÁRIO -->
+    <div id="panel-diario" class="sheet-panel">
+      <div class="panel-title">Crônicas da Campanha</div>
+      <div class="box" id="formDiarioWrap" style="display:none;">
+        <div class="form-diario">
+          <div class="form-diario-row">
+            <input type="text" id="diario_titulo" placeholder="Título da sessão">
+            <input type="date" id="diario_data">
+          </div>
+          <textarea id="diario_resumo" placeholder="O que aconteceu nesta sessão?"></textarea>
+        </div>
+        <button class="add-row-btn" style="width:auto; border-style:solid;" id="btnAddDiario">Registrar Sessão</button>
+      </div>
+      <div class="box">
+        <div id="diarioList">
+          <div class="empty-state"><div class="empty-state-text">Carregando crônicas...</div></div>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- TELA 4: DADOS -->
-  <div id="panel-dados" class="sheet-panel">
-    <div class="panel-title">Rolador de Dados do Mestre</div>
-    <div class="box">
-      <div class="empty-state">
-        <div class="empty-state-text">Ferramentas de rolagem rápida e tabelas aleatórias em breve.</div>
+    <!-- TELA: DADOS -->
+    <div id="panel-dados" class="sheet-panel">
+      <div class="panel-title">Rolagem de Dados</div>
+      <div class="box">
+        <div class="dados-roll-area">
+          <button class="dado-btn" data-faces="4">d4</button>
+          <button class="dado-btn" data-faces="6">d6</button>
+          <button class="dado-btn" data-faces="8">d8</button>
+          <button class="dado-btn" data-faces="10">d10</button>
+          <button class="dado-btn" data-faces="12">d12</button>
+          <button class="dado-btn" data-faces="20">d20</button>
+          <button class="dado-btn" data-faces="100">d100</button>
+        </div>
+        <div id="dadosHistorico">
+          <div class="empty-state"><div class="empty-state-text">Nenhuma rolagem ainda nesta sessão.</div></div>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- TELA 5: DIÁRIO / ANOTAÇÕES -->
-  <div id="panel-diario" class="sheet-panel">
-    <div class="panel-title">Crônicas & Notas do Mestre</div>
-    <div class="box">
-      <textarea id="camp_diario" class="text-box" style="height: 500px; background:rgba(0,0,0,0.5);" placeholder="O que aconteceu na última sessão?"></textarea>
-      <button class="add-row-btn" style="margin-top:12px; width:auto; border-style:solid;" onclick="salvarDiario()">Gravar Anotações</button>
+    <!-- TELA: CONTROLE (só mestre) -->
+    <div id="panel-controle" class="sheet-panel">
+      <div class="panel-title">
+        <span class="realtime-dot" id="realtimeDot"></span>Painel de Controle
+      </div>
+      <div class="box">
+        <div id="controleList">
+          <div class="empty-state"><div class="empty-state-text">Carregando personagens...</div></div>
+        </div>
+      </div>
     </div>
-  </div>
 
+    <!-- TELA: NPCs (só mestre) -->
+    <div id="panel-npcs" class="sheet-panel">
+      <div class="panel-title">NPCs da Campanha</div>
+      <div class="box">
+        <div id="npcsList">
+          <div class="empty-state"><div class="empty-state-text">Nenhum NPC registrado ainda.</div></div>
+        </div>
+      </div>
+      <div class="panel-title">Novo NPC</div>
+      <div class="box">
+        <div class="form-npc">
+          <input type="text" id="npc_nome" placeholder="Nome do NPC">
+          <input type="text" id="npc_tipo" placeholder="Tipo (aliado, vilão, mercador...)">
+          <textarea id="npc_aparencia" class="full" placeholder="Aparência / descrição"></textarea>
+        </div>
+        <button class="add-row-btn" style="width:auto; border-style:solid; margin-top:10px;" id="btnAddNpc">Criar NPC</button>
+      </div>
+    </div>
+
+    <!-- TELA: BESTIÁRIO (só mestre) -->
+    <div id="panel-bestiario" class="sheet-panel">
+      <div class="panel-title">Bestiário de Etherion</div>
+      <div class="box">
+        <div class="empty-state">
+          <div class="empty-state-text">O bestiário de Etherion ainda não foi catalogado. Em breve, criaturas e ameaças do sistema aparecerão aqui.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TELA: NOTAS DO MESTRE (só mestre) -->
+    <div id="panel-notas" class="sheet-panel">
+      <div class="panel-title">Notas do Mestre <span class="controle-status" id="notasStatus">salvando...</span></div>
+      <div class="box">
+        <textarea id="notas_conteudo" class="text-box" style="height: 500px; background:rgba(0,0,0,0.5);" placeholder="Segredos, planos e anotações que só você pode ver."></textarea>
+      </div>
+    </div>
+
+  </div>
 </div>
 
 <div class="toast-container" id="toastContainer"></div>
 
 <script type="module">
-  let sb = null;
-  let campanha = null;
-  let personagens = [];
+  // =============================================================
+  // CAMPANHA ETHERION — construída do zero sobre Supabase (não usa
+  // localStorage). Segue o mesmo padrão de campanha-dnd.html:
+  // roda dentro de um <iframe> no shell (index.html) na maior parte
+  // das vezes, reaproveitando window.parent.supabaseClient e
+  // window.parent.usuarioLogado/exigirLogin; se aberta solta (fora
+  // do iframe), importa o módulo de auth diretamente.
+  // =============================================================
+
   const rodandoNoIframe = window.parent && window.parent !== window;
 
+  let sb = null;
+  let exigirLoginFn = null;
+  let usuarioLogadoFn = null;
+
+  let campanha = null;
+  let personagens = [];
+  let npcs = [];
+  let entradasDiario = [];
+  let ehMestre = false;
+  let usuarioAtual = null;
+  let canalRealtime = null;
+  let notasDebounceTimer = null;
+
+  // -----------------------------------------------------------
+  // Helpers
+  // -----------------------------------------------------------
   function esc(str) {
     return String(str ?? '')
       .replace(/&/g, '&amp;')
@@ -152,158 +593,9 @@
     window.parent.postMessage({ tipo, payload }, window.location.origin);
   }
 
-  function voltar() {
-    if (rodandoNoIframe) {
-      avisarShell('ficha:voltar');
-    } else {
-      window.location.href = '/';
-    }
-  }
-  document.getElementById('btnVoltar').addEventListener('click', voltar);
-
-  if (rodandoNoIframe) {
-    document.getElementById('topbarInterno').style.display = 'none';
-  }
-
-  async function obterClienteSupabase() {
-    if (rodandoNoIframe && window.parent.supabaseClient) {
-      return window.parent.supabaseClient;
-    }
-    // Fallback: página aberta fora do iframe (acesso direto/teste).
-    const mod = await import('../../../core/js/auth-supabase.js');
-    return mod.supabase;
-  }
-
-  async function init() {
-    sb = await obterClienteSupabase();
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const id = urlParams.get('id');
-    if (!id) {
-      document.getElementById('camp_nome').value = 'Campanha não encontrada';
-      mostrarVazio('charsList', 'Nenhum ID de campanha informado na URL.');
-      return;
-    }
-
-    const { data, error } = await sb
-      .from('campanhas')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (error || !data) {
-      console.error('[campanha-etherion] erro ao carregar campanha:', error?.message);
-      document.getElementById('camp_nome').value = 'Campanha não encontrada';
-      avisarShell('ficha:titulo', 'Campanha não encontrada');
-      mostrarVazio('charsList', 'Não foi possível carregar esta campanha.');
-      return;
-    }
-
-    campanha = data;
-    const extra = campanha.dados || {};
-
-    document.getElementById('camp_nome').value = campanha.nome;
-    avisarShell('ficha:titulo', campanha.nome);
-
-    if (extra.banner) {
-      const bannerEl = document.getElementById('camp_banner');
-      bannerEl.src = extra.banner;
-      bannerEl.style.display = 'block';
-    }
-
-    document.getElementById('camp_diario').value = extra.diario || '';
-
-    await carregarPersonagens(id);
-  }
-
-  async function carregarPersonagens(campanhaId) {
-    const { data, error } = await sb
-      .from('personagens')
-      .select('*')
-      .eq('campanha_id', campanhaId)
-      .order('criado_em', { ascending: true });
-
-    if (error) {
-      console.error('[campanha-etherion] erro ao carregar personagens:', error.message);
-      mostrarVazio('charsList', 'Erro ao carregar personagens desta campanha.');
-      return;
-    }
-
-    personagens = data || [];
-    renderChars();
-  }
-
   function mostrarVazio(containerId, texto) {
     document.getElementById(containerId).innerHTML =
       `<div class="empty-state"><div class="empty-state-text">${esc(texto)}</div></div>`;
-  }
-
-  function renderChars() {
-    if (personagens.length === 0) {
-      mostrarVazio('charsList', 'Nenhum mercenário associado a esta companhia.');
-      return;
-    }
-
-    const charsList = document.getElementById('charsList');
-    charsList.innerHTML = personagens.map(p => {
-      const d = p.dados || {};
-      const raca = esc(d.race || 'Desconhecido');
-      const cls = esc(d.cls || '');
-      const nivel = esc(d.level ?? 1);
-      const nome = esc(p.nome);
-      return `
-      <div class="char-mini-card">
-        <div style="flex:1;">
-          <div class="char-mini-name">${nome}</div>
-          <div class="char-mini-info">${raca} ${cls} - Nível ${nivel}</div>
-        </div>
-        <button class="btn-action" data-pid="${esc(p.id)}">Abrir Ficha</button>
-      </div>
-    `;
-    }).join('');
-
-    charsList.querySelectorAll('.btn-action[data-pid]').forEach(btn => {
-      btn.addEventListener('click', () => abrirFichaPersonagem(btn.dataset.pid));
-    });
-  }
-
-  function abrirFichaPersonagem(pid) {
-    const url = `/sistemas/etherion/ficha/ficha.html?id=${encodeURIComponent(pid)}`;
-    if (rodandoNoIframe) {
-      avisarShell('ficha:abrir', url);
-    } else {
-      window.location.href = url;
-    }
-  }
-
-  function switchTab(tabId) {
-    document.querySelectorAll('.sheet-tab').forEach(t => t.classList.remove('active'));
-    document.querySelector(`.sheet-tab[data-tab="${tabId}"]`).classList.add('active');
-
-    document.querySelectorAll('.sheet-panel').forEach(p => p.classList.remove('active'));
-    document.getElementById('panel-' + tabId).classList.add('active');
-  }
-
-  async function salvarDiario() {
-    if (!campanha) return;
-    const novoDiario = document.getElementById('camp_diario').value;
-    const novosDados = { ...(campanha.dados || {}), diario: novoDiario };
-
-    const { error } = await sb
-      .from('campanhas')
-      .update({ dados: novosDados })
-      .eq('id', campanha.id);
-
-    if (error) {
-      console.error('[campanha-etherion] erro ao salvar anotações:', error.message);
-      showToast('⚠ Erro ao salvar anotações.');
-      avisarShell('ficha:erro-salvo');
-      return;
-    }
-
-    campanha.dados = novosDados;
-    showToast('Anotações salvas com sucesso!');
-    avisarShell('ficha:salvo');
   }
 
   function showToast(msg) {
@@ -315,10 +607,764 @@
     setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 3000);
   }
 
+  function switchTab(tabId) {
+    document.querySelectorAll('.sheet-tab').forEach(t => t.classList.remove('active'));
+    const btn = document.querySelector(`.sheet-tab[data-tab="${tabId}"]`);
+    if (btn) btn.classList.add('active');
+    document.querySelectorAll('.sheet-panel').forEach(p => p.classList.remove('active'));
+    const panel = document.getElementById('panel-' + tabId);
+    if (panel) panel.classList.add('active');
+  }
   window.switchTab = switchTab;
-  window.salvarDiario = salvarDiario;
+
+  function formatarData(dataStr) {
+    if (!dataStr) return '';
+    // dataStr vem em formato YYYY-MM-DD (coluna date do Postgres) —
+    // parse manual evita o typical bug de fuso horário de `new Date('YYYY-MM-DD')`
+    // interpretar como UTC meia-noite e "voltar um dia" em fusos negativos.
+    const [ano, mes, dia] = dataStr.split('-');
+    if (!ano || !mes || !dia) return dataStr;
+    return `${dia}/${mes}/${ano}`;
+  }
+
+  // -----------------------------------------------------------
+  // Bootstrap de auth — obtém o client Supabase e as funções de auth,
+  // preferindo as expostas pelo shell (window.parent) via
+  // auth-supabase.js, com fallback para import direto do módulo
+  // quando a página roda solta (fora do iframe).
+  // -----------------------------------------------------------
+  async function obterAuth() {
+    if (rodandoNoIframe && window.parent.supabaseClient && window.parent.exigirLogin) {
+      return {
+        supabase: window.parent.supabaseClient,
+        exigirLogin: window.parent.exigirLogin,
+        usuarioLogado: window.parent.usuarioLogado,
+      };
+    }
+    const mod = await import('../../../core/js/auth-supabase.js');
+    return {
+      supabase: mod.supabase,
+      exigirLogin: mod.exigirLogin,
+      usuarioLogado: mod.usuarioLogado,
+    };
+  }
+
+  function voltar() {
+    if (rodandoNoIframe) {
+      avisarShell('ficha:voltar');
+    } else {
+      window.location.href = '/';
+    }
+  }
+
+  // -----------------------------------------------------------
+  // Init
+  // -----------------------------------------------------------
+  async function init() {
+    const auth = await obterAuth();
+    sb = auth.supabase;
+    exigirLoginFn = auth.exigirLogin;
+    usuarioLogadoFn = auth.usuarioLogado;
+
+    document.getElementById('btnVoltar').addEventListener('click', voltar);
+    if (rodandoNoIframe) {
+      document.getElementById('topbarInterno').style.display = 'none';
+    }
+
+    // Login é obrigatório nesta página (diferente do hub, que é lazy).
+    // Se já houver sessão (síncrona), pula direto pro carregamento.
+    let user = usuarioLogadoFn ? usuarioLogadoFn() : null;
+    if (user) {
+      usuarioAtual = user;
+      await carregarTudo();
+      return;
+    }
+
+    // Sem sessão síncrona ainda: pode ser um visitante de fato, ou um
+    // F5 recente em que o SDK ainda está restaurando o token do
+    // localStorage (ver armadilha documentada em auth-supabase.js).
+    // Tenta silenciosamente por um curto período antes de assumir
+    // "visitante" e exigir clique manual — evita mostrar o modal de
+    // login piscando numa sessão que na verdade já é válida.
+    let jaCarregou = false;
+    const flagCarregarUmaVez = async (u) => {
+      if (jaCarregou) return;
+      jaCarregou = true;
+      document.getElementById('telaLogin').style.display = 'none';
+      usuarioAtual = u;
+      await carregarTudo();
+    };
+
+    document.getElementById('telaLogin').style.display = 'flex';
+    document.getElementById('btnEntrarTelaLogin').addEventListener('click', async () => {
+      const sessao = await exigirLoginFn('Entre com Discord para acessar esta campanha.');
+      // Se cancelou o modal, sessao é null e simplesmente permanecemos
+      // na tela de login — signInWithOAuth (quando bem-sucedido) navega
+      // a página inteira embora, então esta Promise nem chega a
+      // resolver com sucesso nesta carga; ver comentário em
+      // auth-supabase.js sobre o fluxo de redirect.
+      if (sessao) await flagCarregarUmaVez(sessao.user);
+    });
+
+    const sessaoSilenciosa = await exigirLoginFnSilenciosa();
+    if (sessaoSilenciosa) await flagCarregarUmaVez(sessaoSilenciosa.user);
+  }
+
+  // Tenta obter sessão sem abrir modal — usa usuarioLogadoFn de novo
+  // depois de um pequeno delay, cobrindo o caso de F5 onde a sessão
+  // ainda está sendo restaurada pelo SDK no momento em que esta página
+  // carrega (ver "armadilha" documentada em auth-supabase.js sobre
+  // usuarioLogado() oscilar momentaneamente após reload).
+  function exigirLoginFnSilenciosa() {
+    return new Promise(resolve => {
+      let tentativas = 0;
+      const intervalo = setInterval(() => {
+        tentativas++;
+        const u = usuarioLogadoFn ? usuarioLogadoFn() : null;
+        if (u) {
+          clearInterval(intervalo);
+          resolve({ user: u });
+        } else if (tentativas >= 10) {
+          clearInterval(intervalo);
+          resolve(null);
+        }
+      }, 200);
+    });
+  }
+
+  // -----------------------------------------------------------
+  // Carregamento principal
+  // -----------------------------------------------------------
+  async function carregarTudo() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const id = urlParams.get('id');
+    if (!id) {
+      document.getElementById('camp_nome').value = 'Campanha não encontrada';
+      document.getElementById('conteudoCampanha').style.display = 'block';
+      mostrarVazio('jogadoresList', 'Nenhum ID de campanha informado na URL.');
+      return;
+    }
+
+    // RLS garante que só voltam campanhas que este usuário pode ver
+    // (é o mestre, ou tem personagem vinculado a ela).
+    const { data, error } = await sb
+      .from('campanhas')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error || !data) {
+      console.error('[campanha-etherion] erro ao carregar campanha:', error?.message);
+      document.getElementById('camp_nome').value = 'Campanha não encontrada';
+      document.getElementById('conteudoCampanha').style.display = 'block';
+      avisarShell('ficha:titulo', 'Campanha não encontrada');
+      mostrarVazio('jogadoresList', 'Não foi possível carregar esta campanha — verifique se o link está correto e se você faz parte dela.');
+      return;
+    }
+
+    campanha = data;
+    ehMestre = campanha.mestre_id === usuarioAtual?.id;
+
+    document.getElementById('conteudoCampanha').style.display = 'block';
+    document.getElementById('camp_nome').value = campanha.nome;
+    avisarShell('ficha:titulo', campanha.nome);
+
+    const roleBadge = document.getElementById('roleBadge');
+    roleBadge.textContent = ehMestre ? '✦ Mestre' : '✦ Jogador';
+    roleBadge.style.display = 'inline-block';
+
+    if (ehMestre) {
+      document.querySelectorAll('.tab-mestre').forEach(el => el.style.display = 'inline-block');
+    }
+
+    const extra = campanha.dados || {};
+    if (extra.banner) {
+      const bannerEl = document.getElementById('camp_banner');
+      bannerEl.src = extra.banner;
+      bannerEl.style.display = 'block';
+    }
+    if (extra.desc) {
+      const descEl = document.getElementById('campanhaDescricao');
+      descEl.textContent = extra.desc;
+      descEl.style.display = 'block';
+    }
+    const statusEl = document.getElementById('campanhaStatus');
+    const statusLabel = { active: 'Em andamento', paused: 'Pausada', done: 'Encerrada' }[campanha.status] || campanha.status;
+    statusEl.textContent = statusLabel;
+
+    if (ehMestre && campanha.codigo_convite) {
+      document.getElementById('codigoConviteWrap').style.display = 'block';
+      document.getElementById('codigoConviteValor').textContent = campanha.codigo_convite;
+      document.getElementById('btnCopiarCodigo').addEventListener('click', () => {
+        navigator.clipboard.writeText(campanha.codigo_convite).then(() => {
+          showToast('Código copiado!');
+        }).catch(() => {
+          showToast('Não foi possível copiar automaticamente — copie manualmente.');
+        });
+      });
+    }
+
+    // Carrega tudo que a página precisa em paralelo. RLS filtra o que
+    // cada role pode ver (ex: notas_mestre só retorna algo se ehMestre).
+    await Promise.all([
+      carregarPersonagens(id),
+      carregarNpcs(id),
+      carregarDiario(id),
+      ehMestre ? carregarNotasMestre(id) : Promise.resolve(),
+    ]);
+
+    renderJogadores();
+    renderChars();
+    renderNpcs();
+    renderDiario();
+    if (ehMestre) {
+      renderControle();
+      configurarFormNpc();
+      configurarNotasMestre();
+      iniciarRealtime(id);
+    }
+    configurarFormDiario();
+    configurarDados();
+  }
+
+  async function carregarPersonagens(campanhaId) {
+    const { data, error } = await sb
+      .from('personagens')
+      .select('*')
+      .eq('campanha_id', campanhaId)
+      .order('criado_em', { ascending: true });
+
+    if (error) {
+      console.error('[campanha-etherion] erro ao carregar personagens:', error.message);
+      personagens = [];
+      return;
+    }
+    personagens = data || [];
+  }
+
+  async function carregarNpcs(campanhaId) {
+    if (!ehMestre) {
+      // Jogadores só recebem NPCs visíveis via RLS mesmo, mas evitamos
+      // a query se a aba nem aparece pra eles — exceto que a aba Início
+      // não precisa de NPCs, então ok pular por completo aqui.
+      npcs = [];
+      return;
+    }
+    const { data, error } = await sb
+      .from('npcs')
+      .select('*')
+      .eq('campanha_id', campanhaId)
+      .order('criado_em', { ascending: false });
+
+    if (error) {
+      console.error('[campanha-etherion] erro ao carregar NPCs:', error.message);
+      npcs = [];
+      return;
+    }
+    npcs = data || [];
+  }
+
+  async function carregarDiario(campanhaId) {
+    const { data, error } = await sb
+      .from('entradas_diario')
+      .select('*')
+      .eq('campanha_id', campanhaId)
+      .order('data_sessao', { ascending: false });
+
+    if (error) {
+      console.error('[campanha-etherion] erro ao carregar diário:', error.message);
+      entradasDiario = [];
+      return;
+    }
+    entradasDiario = data || [];
+  }
+
+  async function carregarNotasMestre(campanhaId) {
+    const { data, error } = await sb
+      .from('notas_mestre')
+      .select('*')
+      .eq('campanha_id', campanhaId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('[campanha-etherion] erro ao carregar notas do mestre:', error.message);
+      return;
+    }
+    document.getElementById('notas_conteudo').value = data?.conteudo || '';
+  }
+
+  // -----------------------------------------------------------
+  // RENDER: Início — lista de jogadores
+  // -----------------------------------------------------------
+  function renderJogadores() {
+    if (personagens.length === 0) {
+      mostrarVazio('jogadoresList', 'Nenhum jogador entrou nesta campanha ainda.');
+      return;
+    }
+
+    // Um "jogador" aqui é um personagem vinculado à campanha — busca
+    // os perfis (nome/avatar) dos donos únicos.
+    const donoIds = [...new Set(personagens.map(p => p.dono_id).filter(Boolean))];
+
+    sb.from('usuarios').select('*').in('id', donoIds).then(({ data: perfis, error }) => {
+      if (error) console.error('[campanha-etherion] erro ao carregar perfis de jogadores:', error.message);
+      const perfisPorId = {};
+      (perfis || []).forEach(p => { perfisPorId[p.id] = p; });
+
+      const list = document.getElementById('jogadoresList');
+      list.innerHTML = personagens.map(p => {
+        const perfil = perfisPorId[p.dono_id];
+        const nome = esc(perfil?.username || 'Jogador desconhecido');
+        const avatar = perfil?.avatar_url ? esc(perfil.avatar_url) : '';
+        const ehDonoMestre = p.dono_id === campanha.mestre_id;
+        return `
+        <div class="jogador-row">
+          ${avatar ? `<img class="jogador-avatar" src="${avatar}" alt="">` : `<div class="jogador-avatar"></div>`}
+          <div class="jogador-nome">${nome}${ehDonoMestre ? '<span class="tag-mestre">MESTRE</span>' : ''} — <span style="opacity:0.7;">${esc(p.nome)}</span></div>
+        </div>`;
+      }).join('');
+    });
+  }
+
+  // -----------------------------------------------------------
+  // RENDER: Personagens — card por jogador com recursos + Abrir Ficha
+  // -----------------------------------------------------------
+  function pillsRecursos(d) {
+    // Campos esperados em personagens.dados para Etherion: vida, vidaMax,
+    // sanidade, sanidadeMax, sopro, soproMax, macula, maculaMax. Usamos
+    // '—' quando ausente em vez de 0, para não sugerir "zerado" quando
+    // é apenas "não preenchido ainda" (ex: personagem recém-criado).
+    const par = (v, vMax) => (v === undefined || v === null) ? '—' : `${v}${vMax !== undefined && vMax !== null ? '/' + vMax : ''}`;
+    return `
+      <div class="recursos-grid">
+        <div class="recurso-pill vida"><span class="label">Vida</span><span class="valor">${esc(par(d.vida, d.vidaMax))}</span></div>
+        <div class="recurso-pill san"><span class="label">Sanidade</span><span class="valor">${esc(par(d.sanidade, d.sanidadeMax))}</span></div>
+        <div class="recurso-pill sopro"><span class="label">Sopro</span><span class="valor">${esc(par(d.sopro, d.soproMax))}</span></div>
+        <div class="recurso-pill macula"><span class="label">Mácula</span><span class="valor">${esc(par(d.macula, d.maculaMax))}</span></div>
+      </div>`;
+  }
+
+  function renderChars() {
+    if (personagens.length === 0) {
+      mostrarVazio('charsList', 'Nenhum personagem associado a este grupo.');
+      return;
+    }
+
+    // Jogador comum vê só o próprio card; mestre vê todos.
+    const lista = ehMestre
+      ? personagens
+      : personagens.filter(p => p.dono_id === usuarioAtual?.id);
+
+    if (lista.length === 0) {
+      mostrarVazio('charsList', 'Você ainda não tem um personagem nesta campanha.');
+      return;
+    }
+
+    const charsList = document.getElementById('charsList');
+    charsList.innerHTML = lista.map(p => {
+      const d = p.dados || {};
+      const raca = esc(d.raca || d.race || 'Desconhecido');
+      const classe = esc(d.classe || d.cls || '');
+      const nivel = esc(d.nivel ?? d.level ?? 1);
+      const nome = esc(p.nome);
+      return `
+      <div class="char-card" data-pid="${esc(p.id)}">
+        <div class="char-card-head">
+          <div>
+            <div class="char-mini-name">${nome}</div>
+            <div class="char-mini-info">${raca} ${classe} — Nível ${nivel}</div>
+          </div>
+          <button class="btn-action" data-pid="${esc(p.id)}">Abrir Ficha</button>
+        </div>
+        ${pillsRecursos(d)}
+      </div>`;
+    }).join('');
+
+    charsList.querySelectorAll('.btn-action[data-pid]').forEach(btn => {
+      btn.addEventListener('click', () => abrirFichaPersonagem(btn.dataset.pid));
+    });
+  }
+
+  function abrirFichaPersonagem(pid) {
+    const url = `../ficha/ficha.html?id=${encodeURIComponent(pid)}`;
+    if (rodandoNoIframe) {
+      avisarShell('ficha:abrir', url);
+    } else {
+      window.location.href = url;
+    }
+  }
+
+  // Atualiza um card de personagem já renderizado sem re-render total
+  // (usado pelo Realtime — troca instantânea sem "piscar" a lista).
+  function atualizarCardPersonagemNaTela(personagemAtualizado) {
+    const card = document.querySelector(`.char-card[data-pid="${CSS.escape(personagemAtualizado.id)}"]`);
+    if (!card) return;
+    const d = personagemAtualizado.dados || {};
+    const grid = card.querySelector('.recursos-grid');
+    if (grid) grid.outerHTML = pillsRecursos(d);
+  }
+
+  // -----------------------------------------------------------
+  // Diário — só mestre escreve, todos leem
+  // -----------------------------------------------------------
+  function renderDiario() {
+    if (ehMestre) {
+      document.getElementById('formDiarioWrap').style.display = 'block';
+    }
+    if (entradasDiario.length === 0) {
+      mostrarVazio('diarioList', 'Nenhuma entrada de diário registrada ainda.');
+      return;
+    }
+    const list = document.getElementById('diarioList');
+    list.innerHTML = entradasDiario.map(e => `
+      <div class="diario-entrada">
+        <div class="diario-entrada-head">
+          <span class="diario-titulo">${esc(e.titulo || 'Sessão sem título')}</span>
+          <span class="diario-data">${esc(formatarData(e.data_sessao))}</span>
+        </div>
+        <div class="diario-resumo">${esc(e.resumo || '')}</div>
+      </div>`).join('');
+  }
+
+  function configurarFormDiario() {
+    if (!ehMestre) return;
+    const btn = document.getElementById('btnAddDiario');
+    // valor padrão: hoje, formato YYYY-MM-DD exigido pelo <input type="date">
+    const hoje = new Date();
+    const isoHoje = hoje.getFullYear() + '-' + String(hoje.getMonth() + 1).padStart(2, '0') + '-' + String(hoje.getDate()).padStart(2, '0');
+    document.getElementById('diario_data').value = isoHoje;
+
+    btn.addEventListener('click', async () => {
+      const titulo = document.getElementById('diario_titulo').value.trim();
+      const dataSessao = document.getElementById('diario_data').value;
+      const resumo = document.getElementById('diario_resumo').value.trim();
+
+      if (!titulo && !resumo) {
+        showToast('Escreva ao menos um título ou resumo.');
+        return;
+      }
+
+      btn.disabled = true;
+      const { data, error } = await sb
+        .from('entradas_diario')
+        .insert({
+          campanha_id: campanha.id,
+          titulo: titulo || null,
+          data_sessao: dataSessao || null,
+          resumo: resumo || null,
+        })
+        .select()
+        .single();
+      btn.disabled = false;
+
+      if (error) {
+        console.error('[campanha-etherion] erro ao salvar entrada de diário:', error.message);
+        showToast('⚠ Erro ao registrar a sessão.');
+        avisarShell('ficha:erro-salvo');
+        return;
+      }
+
+      entradasDiario.unshift(data);
+      renderDiario();
+      document.getElementById('diario_titulo').value = '';
+      document.getElementById('diario_resumo').value = '';
+      showToast('Sessão registrada!');
+      avisarShell('ficha:salvo');
+    });
+  }
+
+  // -----------------------------------------------------------
+  // Dados — rolagem simples compartilhada (histórico local à sessão
+  // do navegador; sem persistência no banco, conforme escopo do handoff)
+  // -----------------------------------------------------------
+  function configurarDados() {
+    document.querySelectorAll('.dado-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const faces = parseInt(btn.dataset.faces, 10);
+        const resultado = 1 + Math.floor(Math.random() * faces);
+        registrarRolagem(faces, resultado);
+      });
+    });
+  }
+
+  function registrarRolagem(faces, resultado) {
+    const hist = document.getElementById('dadosHistorico');
+    const vazio = hist.querySelector('.empty-state');
+    if (vazio) hist.innerHTML = '';
+
+    const nomeRolador = ehMestre ? 'Mestre' : (esc(personagens.find(p => p.dono_id === usuarioAtual?.id)?.nome) || 'Você');
+    const item = document.createElement('div');
+    item.className = 'dados-historico-item';
+    item.innerHTML = `${nomeRolador} rolou d${faces}: <b>${resultado}</b>`;
+    hist.prepend(item);
+
+    // limita histórico visível para não crescer indefinidamente na sessão
+    const itens = hist.querySelectorAll('.dados-historico-item');
+    if (itens.length > 30) itens[itens.length - 1].remove();
+  }
+
+  // -----------------------------------------------------------
+  // NPCs — só mestre (via RLS, jogadores nem recebem npcs != visíveis,
+  // mas esta aba inteira também só é exibida pra ehMestre === true)
+  // -----------------------------------------------------------
+  function renderNpcs() {
+    if (npcs.length === 0) {
+      mostrarVazio('npcsList', 'Nenhum NPC registrado ainda.');
+      return;
+    }
+    const list = document.getElementById('npcsList');
+    list.innerHTML = npcs.map(n => `
+      <div class="npc-card" data-nid="${esc(n.id)}">
+        <div class="npc-card-head">
+          <div>
+            <div class="npc-nome">${esc(n.nome)}</div>
+            ${n.tipo ? `<div class="npc-tipo">${esc(n.tipo)}</div>` : ''}
+          </div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span class="npc-visibilidade ${n.visivel_jogadores ? 'visivel' : 'oculto'}">${n.visivel_jogadores ? 'Visível aos jogadores' : 'Oculto'}</span>
+            <button class="btn-action" data-toggle-nid="${esc(n.id)}">${n.visivel_jogadores ? 'Esconder' : 'Revelar'}</button>
+          </div>
+        </div>
+        ${n.aparencia ? `<div class="npc-aparencia">${esc(n.aparencia)}</div>` : ''}
+      </div>`).join('');
+
+    list.querySelectorAll('[data-toggle-nid]').forEach(btn => {
+      btn.addEventListener('click', () => alternarVisibilidadeNpc(btn.dataset.toggleNid));
+    });
+  }
+
+  async function alternarVisibilidadeNpc(npcId) {
+    const npc = npcs.find(n => n.id === npcId);
+    if (!npc) return;
+    const novoValor = !npc.visivel_jogadores;
+
+    const { error } = await sb
+      .from('npcs')
+      .update({ visivel_jogadores: novoValor })
+      .eq('id', npcId);
+
+    if (error) {
+      console.error('[campanha-etherion] erro ao alternar visibilidade do NPC:', error.message);
+      showToast('⚠ Erro ao atualizar visibilidade.');
+      return;
+    }
+
+    npc.visivel_jogadores = novoValor;
+    renderNpcs();
+    showToast(novoValor ? 'NPC revelado aos jogadores.' : 'NPC escondido dos jogadores.');
+  }
+
+  function configurarFormNpc() {
+    document.getElementById('btnAddNpc').addEventListener('click', async () => {
+      const nome = document.getElementById('npc_nome').value.trim();
+      const tipo = document.getElementById('npc_tipo').value.trim();
+      const aparencia = document.getElementById('npc_aparencia').value.trim();
+
+      if (!nome) {
+        showToast('O NPC precisa de um nome.');
+        return;
+      }
+
+      const btn = document.getElementById('btnAddNpc');
+      btn.disabled = true;
+      const { data, error } = await sb
+        .from('npcs')
+        .insert({
+          campanha_id: campanha.id,
+          nome,
+          tipo: tipo || null,
+          aparencia: aparencia || null,
+          visivel_jogadores: false,
+        })
+        .select()
+        .single();
+      btn.disabled = false;
+
+      if (error) {
+        console.error('[campanha-etherion] erro ao criar NPC:', error.message);
+        showToast('⚠ Erro ao criar NPC.');
+        return;
+      }
+
+      npcs.unshift(data);
+      renderNpcs();
+      document.getElementById('npc_nome').value = '';
+      document.getElementById('npc_tipo').value = '';
+      document.getElementById('npc_aparencia').value = '';
+      showToast('NPC criado.');
+    });
+  }
+
+  // -----------------------------------------------------------
+  // Notas do Mestre — autosave com debounce, upsert em notas_mestre
+  // (UNIQUE por campanha_id, conforme schema)
+  // -----------------------------------------------------------
+  function configurarNotasMestre() {
+    const textarea = document.getElementById('notas_conteudo');
+    const status = document.getElementById('notasStatus');
+
+    textarea.addEventListener('input', () => {
+      status.textContent = 'digitando...';
+      status.classList.add('show');
+      clearTimeout(notasDebounceTimer);
+      notasDebounceTimer = setTimeout(salvarNotasMestre, 900);
+    });
+  }
+
+  async function salvarNotasMestre() {
+    const status = document.getElementById('notasStatus');
+    const conteudo = document.getElementById('notas_conteudo').value;
+
+    status.textContent = 'salvando...';
+    const { error } = await sb
+      .from('notas_mestre')
+      .upsert({ campanha_id: campanha.id, conteudo }, { onConflict: 'campanha_id' });
+
+    if (error) {
+      console.error('[campanha-etherion] erro ao salvar notas do mestre:', error.message);
+      status.textContent = '✗ erro ao salvar';
+      avisarShell('ficha:erro-salvo');
+      return;
+    }
+
+    status.textContent = '✓ salvo';
+    avisarShell('ficha:salvo');
+    setTimeout(() => status.classList.remove('show'), 1500);
+  }
+
+  // -----------------------------------------------------------
+  // Controle — só mestre. Edição direta de vida/san/sopro/mácula de
+  // qualquer jogador, sem abrir a ficha. Mudanças propagam via
+  // Realtime para os cards na aba Personagens de todos os presentes.
+  // -----------------------------------------------------------
+  const CAMPOS_RECURSO = [
+    { chave: 'vida', chaveMax: 'vidaMax', label: 'Vida' },
+    { chave: 'sanidade', chaveMax: 'sanidadeMax', label: 'Sanidade' },
+    { chave: 'sopro', chaveMax: 'soproMax', label: 'Sopro' },
+    { chave: 'macula', chaveMax: 'maculaMax', label: 'Mácula' },
+  ];
+
+  function renderControle() {
+    if (personagens.length === 0) {
+      mostrarVazio('controleList', 'Nenhum personagem nesta campanha ainda.');
+      return;
+    }
+
+    const list = document.getElementById('controleList');
+    list.innerHTML = personagens.map(p => {
+      const d = p.dados || {};
+      const campos = CAMPOS_RECURSO.map(c => `
+        <div class="controle-campo">
+          <label>${c.label}</label>
+          <input type="number" data-pid="${esc(p.id)}" data-campo="${c.chave}" value="${d[c.chave] ?? ''}">
+        </div>`).join('');
+      return `
+      <div class="controle-card" data-pid="${esc(p.id)}">
+        <div class="char-card-head">
+          <div class="char-mini-name">${esc(p.nome)}</div>
+          <span class="controle-status" data-status-pid="${esc(p.id)}">salvo</span>
+        </div>
+        <div class="controle-campos">${campos}</div>
+      </div>`;
+    }).join('');
+
+    // Debounce por personagem: espera a pessoa parar de digitar antes
+    // de gravar, evitando um UPDATE a cada tecla.
+    const timersPorPersonagem = {};
+    list.querySelectorAll('input[data-pid][data-campo]').forEach(input => {
+      input.addEventListener('input', () => {
+        const pid = input.dataset.pid;
+        const statusEl = list.querySelector(`[data-status-pid="${CSS.escape(pid)}"]`);
+        if (statusEl) { statusEl.textContent = 'editando...'; statusEl.classList.add('show'); }
+        clearTimeout(timersPorPersonagem[pid]);
+        timersPorPersonagem[pid] = setTimeout(() => salvarRecursosPersonagem(pid), 700);
+      });
+    });
+  }
+
+  async function salvarRecursosPersonagem(pid) {
+    const personagem = personagens.find(p => p.id === pid);
+    if (!personagem) return;
+
+    const statusEl = document.querySelector(`[data-status-pid="${CSS.escape(pid)}"]`);
+    const card = document.querySelector(`.controle-card[data-pid="${CSS.escape(pid)}"]`);
+    if (!card) return;
+
+    const novosDados = { ...(personagem.dados || {}) };
+    card.querySelectorAll('input[data-campo]').forEach(input => {
+      const valor = input.value === '' ? undefined : Number(input.value);
+      if (valor === undefined) {
+        delete novosDados[input.dataset.campo];
+      } else if (!Number.isNaN(valor)) {
+        novosDados[input.dataset.campo] = valor;
+      }
+    });
+
+    if (statusEl) statusEl.textContent = 'salvando...';
+
+    const { error } = await sb
+      .from('personagens')
+      .update({ dados: novosDados })
+      .eq('id', pid);
+
+    if (error) {
+      console.error('[campanha-etherion] erro ao salvar recursos do personagem:', error.message);
+      if (statusEl) statusEl.textContent = '✗ erro';
+      avisarShell('ficha:erro-salvo');
+      return;
+    }
+
+    personagem.dados = novosDados;
+    // Atualiza também o card correspondente na aba Personagens, caso
+    // o mestre alterne entre abas sem recarregar — o Realtime cobriria
+    // isso pra outros usuários, mas para o PRÓPRIO mestre (que fez a
+    // mudança) o evento Realtime não é necessário já que já temos o
+    // dado em mãos aqui.
+    atualizarCardPersonagemNaTela(personagem);
+
+    if (statusEl) {
+      statusEl.textContent = '✓ salvo';
+      setTimeout(() => statusEl.classList.remove('show'), 1200);
+    }
+    avisarShell('ficha:salvo');
+  }
+
+  // -----------------------------------------------------------
+  // Realtime — assina mudanças em personagens desta campanha para
+  // refletir instantaneamente nos cards de todos os presentes
+  // (jogadores recebem só o próprio personagem via RLS; o mestre
+  // recebe todos, já que tem SELECT liberado em todos via policy).
+  // -----------------------------------------------------------
+  function iniciarRealtime(campanhaId) {
+    canalRealtime = sb.channel('campanha-' + campanhaId)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'personagens',
+        filter: `campanha_id=eq.${campanhaId}`,
+      }, (payload) => {
+        const atualizado = payload.new;
+        const idx = personagens.findIndex(p => p.id === atualizado.id);
+        if (idx !== -1) personagens[idx] = atualizado;
+        atualizarCardPersonagemNaTela(atualizado);
+      })
+      .subscribe((status) => {
+        const dot = document.getElementById('realtimeDot');
+        if (!dot) return;
+        if (status === 'SUBSCRIBED') {
+          dot.classList.remove('off');
+        } else {
+          dot.classList.add('off');
+        }
+      });
+
+    window.addEventListener('beforeunload', () => {
+      if (canalRealtime) canalRealtime.unsubscribe();
+    });
+  }
 
   init();
 </script>
+
 </body>
 </html>

@@ -1,0 +1,311 @@
+# Prompt de Handoff — campanha-etherion.html (Forja das Eras)
+
+Cole este prompt inteiro para outra IA construir a página de campanha. Ele contém todo o contexto necessário: decisões já tomadas, schema do banco, arquivos existentes, e exatamente o que precisa ser feito.
+
+---
+
+## CONTEXTO DO PROJETO
+
+Projeto: **Forja das Eras** — plataforma multi-sistema de RPG de mesa (Etherion, D&D 5e, Ordem Paranormal, Tormenta).
+
+Stack: **HTML/CSS/JS puro, sem framework, sem build step**. Hospedado na Vercel, banco no Supabase (Postgres + Auth + Realtime).
+
+**Estrutura de pastas atual**
+```
+app_rpg/
+├── index.html                          ← hub principal: campanhas, personagens, sistemas e livros
+│
+├── core/                               ← coisas compartilhadas pelo app inteiro
+│   ├── css/
+│   │   ├── home-screen.css             ← CSS do hub principal
+│   │   └── ficha-base.css              ← CSS da ficha genérica
+│   │
+│   ├── js/
+│   │   ├── auth-supabase.js            ← módulo central de login/sessão Supabase
+│   │   ├── engine.js                   ← motor antigo/compartilhado
+│   │   └── sistemas-registry.js        ← catálogo único dos sistemas
+│   │
+│   └── ficha/
+│       ├── ficha.html                  ← ficha genérica usada por D&D/Tormenta
+│       └── ficha.js                    ← lógica da ficha genérica
+│
+├── features/                           ← módulos transversais, não pertencem a um RPG específico
+│   └── livros/
+│       ├── livros.html                 ← biblioteca geral
+│       ├── livros.css                  ← CSS da biblioteca geral
+│       ├── livros-sistema.html         ← lista de livros de um sistema
+│       ├── livros-sistema.css
+│       ├── livro-leitor.html           ← leitor de livro JSON
+│       ├── livro-leitor.css
+│       ├── sistema-hub.html            ← hub de um sistema
+│       ├── sistema-hub.css
+│       ├── sistema-hub.js
+│       └── grimorio.html               ← grimório D&D
+│
+├── assets/                             ← assets globais
+│   ├── icons/
+│   │   ├── dnd.png
+│   │   ├── eth.png
+│   │   ├── op.png
+│   │   └── tmt.png
+│   │
+│   └── livros/
+│       ├── livros-index.json
+│       └── dnd5e/
+│           └── exemplo-guia-rapido.json
+│
+├── scripts/
+│   └── extrair_livro.py
+│
+└── sistemas/                           ← cada RPG fica autocontido aqui
+    ├── dnd5e/
+    │   ├── manifest.json               ← metadados/entrypoints do sistema
+    │   ├── ficha/
+    │   │   └── ficha.html              ← redirect fino para core/ficha/ficha.html
+    │   ├── campanha/
+    │   │   ├── campanha.html
+    │   │   └── personagens.html
+    │   ├── mesa/
+    │   │   └── mesa.html
+    │   ├── data/
+    │   │   └── spells-data.js
+    │   └── styles/
+    │       ├── campanha.css
+    │       └── mesa.css
+    │
+    ├── tormenta20/
+    │   ├── manifest.json
+    │   ├── ficha/
+    │   │   └── ficha.html              ← redirect fino para core/ficha/ficha.html
+    │   ├── campanha/
+    │   │   └── campanha.html
+    │   ├── data/
+    │   └── styles/
+    │
+    ├── ordem_paranormal/
+    │   ├── manifest.json
+    │   ├── ficha/
+    │   │   └── ficha.html
+    │   ├── campanha/
+    │   │   └── campanha.html
+    │   ├── data/
+    │   └── styles/
+    │       └── ficha.css
+    │
+    └── etherion/
+        ├── manifest.json
+        ├── ficha/
+        │   ├── ficha.html
+        │   └── ficha.js
+        ├── campanha/
+        │   └── campanha.html
+        ├── data/
+        │   ├── racas.js
+        │   ├── classes.js
+        │   ├── origens.js
+        │   └── magias.js
+        └── styles/
+            └── ficha.css
+```
+
+O arquivo a ser criado é: **`sistemas/etherion/campanha-etherion.html`**
+
+Depois de criado, atualizar `index.html` linha ~327:
+```js
+urlCampanha: 'sistemas/etherion/etherion-seed.html',
+// trocar para:
+urlCampanha: 'sistemas/etherion/campanha-etherion.html',
+```
+
+---
+
+## CREDENCIAIS SUPABASE (anon/publishable — seguras no frontend)
+
+```js
+const SUPABASE_URL = 'https://qqaatpndnngdczatpjxf.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_zhHOZiEV-YipHcW8GNPwvQ_F4s40QmK';
+```
+
+---
+
+## MÓDULO DE AUTH: js/auth-supabase.js
+
+Módulo ES Module (import/export) que gerencia login Discord via Supabase. **Já existe e está funcional.** A página de campanha deve importá-lo via `<script type="module">` e expor em `window` o necessário, seguindo o mesmo padrão do `index.html`.
+
+**API disponível:**
+```js
+import {
+  exigirLogin,      // async, mostra modal Discord se não logado
+  logout,
+  usuarioLogado,    // () => { id, ... } | null — síncrono
+  perfilLogado,     // () => { id, username, avatar_url } | null
+  onMudancaAuth,    // (callback) → chamado toda vez que login/logout muda
+  guardarAcaoPendente,   // (nomeAcao, dados) → sobrevive ao redirect OAuth
+  consumirAcaoPendente,  // (nomeAcao) → lê e remove do sessionStorage
+  supabase          // cliente Supabase já configurado
+} from '../../js/auth-supabase.js'; // ajustar path se estrutura mudar
+```
+
+**IMPORTANTE sobre módulos ES e onclick inline:** funções declaradas em `<script type="module">` não ficam em `window` automaticamente. Seguir o padrão do `index.html`: ter um `<script>` clássico com as funções globais, e um `<script type="module">` separado que importa o auth e expõe em `window`. Exemplo do index.html:
+
+```html
+<script>
+  // funções globais aqui (onclick="...") 
+</script>
+<script type="module">
+  import { exigirLogin, supabase, ... } from '../../js/auth-supabase.js';
+  window.exigirLogin = exigirLogin;
+  window.supabaseClient = supabase;
+  window._authModuloPronto = true;
+  window.dispatchEvent(new Event('auth-modulo-pronto'));
+</script>
+```
+
+---
+
+## SCHEMA DO BANCO (estado atual após migrações 001-008)
+
+### Tabelas relevantes pra campanha-etherion.html:
+
+```sql
+-- campanhas
+id uuid, nome text, mestre_id uuid, codigo_convite text,
+status text ('active'|'paused'|'done'), sistema text,
+dados jsonb (jogadores, sessoes, desc, banner, ultimaSessao),
+criado_em timestamptz
+
+-- personagens
+id uuid, campanha_id uuid (nullable), dono_id uuid,
+sistema text, nome text, dados jsonb, criado_em, atualizado_em
+
+-- usuarios (perfil público)
+id uuid, discord_id text, username text, avatar_url text
+
+-- npcs
+id uuid, campanha_id uuid, nome text, aparencia text,
+tipo text, dados jsonb (privado mestre), visivel_jogadores boolean,
+criado_em, atualizado_em
+
+-- notas_mestre
+id uuid, campanha_id uuid, conteudo text, atualizado_em
+(UNIQUE por campanha_id — 1 bloco por campanha)
+
+-- entradas_diario
+id uuid, campanha_id uuid, titulo text, data_sessao date,
+resumo text, dados jsonb, criado_em, atualizado_em
+```
+
+### Funções de banco disponíveis:
+```sql
+-- Entrar numa campanha com código de convite (valida sistema compatível)
+entrar_em_campanha(p_codigo_convite text, p_personagem_id uuid) → personagens
+
+-- Sair da campanha atual
+sair_de_campanha(p_personagem_id uuid) → personagens
+```
+
+### RLS (resumo do que cada role pode fazer):
+
+**Mestre** (`mestre_id = auth.uid()`):
+- campanhas: SELECT/UPDATE/DELETE nas próprias
+- personagens: SELECT/UPDATE em todos da campanha
+- npcs: SELECT/INSERT/UPDATE/DELETE em todos da campanha
+- notas_mestre: SELECT/INSERT/UPDATE/DELETE nas próprias
+- entradas_diario: SELECT/INSERT/UPDATE/DELETE nas próprias campnhas
+
+**Jogador** (tem personagem com `campanha_id` vinculado):
+- campanhas: SELECT (só as em que participa)
+- personagens: SELECT/UPDATE só do próprio; SELECT dos outros via mestre policy
+- npcs: SELECT só dos com `visivel_jogadores = true` da campanha
+- entradas_diario: SELECT das campanhas em que participa
+- notas_mestre: SEM ACESSO
+
+**Realtime:** Supabase Realtime está disponível via `supabase.channel(...)`. Usar para atualizar em tempo real os recursos (vida/san/sopro/mácula) dos personagens quando o mestre editar.
+
+---
+
+## REFERÊNCIA DE TEMPLATE: campanha-dnd.html
+
+Este é o template atual dos outros sistemas (D&D, OP, Tormenta), com ~208 linhas, abas: Personagens / NPCs / Combates / Dados / Diário. Ainda usa localStorage — **campanha-etherion.html deve ser construída do zero com Supabase**, não adaptar este template. O template serve só como referência visual/estrutural.
+
+Estrutura de abas confirmada com o dono do projeto:
+
+**Abas visíveis para TODOS (jogador e mestre):**
+- `Início` — nome da campanha, código de convite (só mestre vê), lista de jogadores com avatar/nome, status geral
+- `Personagens` — jogador: card do próprio personagem (vida/san/sopro/mácula) + botão "Abrir Ficha"; mestre: cards de todos os jogadores com recursos + "Abrir Ficha" de cada um
+- `Diário` — entradas de sessão (só mestre escreve, todos leem)
+- `Dados` — rolagem de dados compartilhada
+
+**Abas visíveis SÓ para o MESTRE:**
+- `Controle` — painel de combate: ajustar vida/san/sopro/mácula de qualquer jogador diretamente (SEM abrir a ficha), com campos numéricos inline. **DEVE usar Realtime** para que mudanças apareçam imediatamente para todos os jogadores presentes.
+- `NPCs` — lista de NPCs da campanha; botão de revelar/esconder pra jogadores; formulário de criar NPC
+- `Bestiário` — referência de monstros do sistema Etherion (se existir; caso contrário, placeholder)
+- `Notas do Mestre` — textarea que faz upsert em `notas_mestre` automaticamente (autosave com debounce)
+
+---
+
+## DECISÕES DE DESIGN CONFIRMADAS
+
+1. **Página única global** (`campanha-etherion.html`) — não há "painel do mestre separado". A mesma página detecta quem é o usuário (via `mestre_id`) e mostra blocos adicionais para o mestre.
+
+2. **Detecção de role:** `const ehMestre = campanha.mestre_id === usuarioLogado()?.id` — simples, sem tabela de roles.
+
+3. **Fichas dos jogadores:** mestre vê resumo inline (vida/san/sopro/mácula) na aba Personagens + botão "Abrir Ficha" que navega pra `etherion-ficha.html?id=<uuid>`. Não abre inline.
+
+4. **Realtime é obrigatório** no painel de Controle — quando mestre muda HP de um jogador, o card do jogador na aba Personagens (e na própria ficha dele, quando o módulo de ficha for migrado) deve atualizar instantaneamente.
+
+5. **Login obrigatório** para ver qualquer coisa nesta página. Se não logado ao carregar, exibir tela de "entre com Discord" (usar `exigirLogin()` do módulo de auth).
+
+6. **URL pattern:** `campanha-etherion.html?id=<uuid-da-campanha>` — o `id` na querystring é o UUID real da linha em `public.campanhas`.
+
+7. **Responsividade:** desktop-first, mas legível no mobile. A ficha do Etherion usa uma estética gótica/arcana (fundo escuro `#16110b`, dourado `#C9A84C`, fontes Cinzel + EB Garamond) — manter coerência visual.
+
+---
+
+## SUPABASE REALTIME — como usar
+
+```js
+// Assinar mudanças em personagens de uma campanha específica
+const canal = supabase.channel('campanha-' + campanhaId)
+  .on('postgres_changes', {
+    event: 'UPDATE',
+    schema: 'public',
+    table: 'personagens',
+    filter: `campanha_id=eq.${campanhaId}`
+  }, (payload) => {
+    // payload.new tem o personagem atualizado
+    atualizarCardPersonagem(payload.new);
+  })
+  .subscribe();
+
+// Cancelar ao sair da página
+window.addEventListener('beforeunload', () => canal.unsubscribe());
+```
+
+---
+
+## ARMADILHAS JÁ DESCOBERTAS (não repetir)
+
+1. **`let` em script clássico NÃO vira `window.variavel`** — `function` vira, `let`/`const` não. Se precisar de variáveis globais acessíveis de onclick inline, declare com `var` ou atribua explicitamente a `window.X = ...`.
+
+2. **Módulos ES não carregam via `file://`** — sempre precisa de servidor HTTP. Na Vercel isso está resolvido; localmente usar `python3 -m http.server`.
+
+3. **`onAuthStateChange` pode disparar múltiplas vezes** — proteger com flag ou comparar estado anterior pra não recarregar dados desnecessariamente em cascata.
+
+4. **`eh_mestre_da_campanha(null)` retorna false** — isso é correto e intencional (personagem solto = nenhum mestre). Não contornar.
+
+5. **Realtime do Supabase exige RLS configurado na tabela** — já está. Mas o canal só recebe updates de linhas que o usuário tem permissão de SELECT. Ou seja: jogador só recebe Realtime do próprio personagem (não dos outros), a menos que você use um canal de broadcast separado. Para o painel do mestre receber todos, ele tem SELECT em todos via RLS, então funciona.
+
+6. **`bump_atualizado_em()` trigger já existe** — não recriar, só referenciar em novos triggers de novas tabelas. Já está em `npcs`, `notas_mestre` e `entradas_diario`.
+
+7. **`sistema` em campanha deve bater com `sistema` dos personagens** — a função `entrar_em_campanha()` já rejeita no banco se tentarem entrar com personagem de sistema diferente. Não precisa de validação adicional no frontend, mas pode mostrar aviso amigável se a função retornar erro.
+
+---
+
+## O QUE NÃO PRECISA SER FEITO AQUI
+
+- NÃO migrar `etherion-ficha.js` para Supabase (isso é passo separado e maior)
+- NÃO criar o bestiário de verdade (placeholder é suficiente)
+- NÃO implementar sistema de dados (placeholder ou implementação simples)
+- NÃO tocar em `auth-supabase.js` (já funcional)
+- NÃO tocar em `index.html` além de atualizar a linha `urlCampanha`
