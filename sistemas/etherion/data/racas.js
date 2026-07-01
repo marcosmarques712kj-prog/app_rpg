@@ -373,6 +373,7 @@ const RACAS_DB = {
         resistencias: ['RD 2 contra dano físico'],
         fraquezas: ['Vulnerabilidade a efeitos que quebram ou fragmentam (dano crítico causa +50% de dano extra).'],
         regiao: 'Cordilheiras antigas e desfiladeiros onde a terra ainda pulsa com força',
+        pericias: ['fortitude', 'atletismo'],
         habilidades: [
           { nome: 'Pulso da Terra', desc: 'Uma vez por cena, golpe no chão que causa dano em área a 3m e derruba alvos que falharem em Reflexos.' },
           { nome: 'Proficiências', desc: '+4 em Fortitude e Atletismo.' }
@@ -388,6 +389,7 @@ const RACAS_DB = {
         resistencias: ['+2 contra Ilusão e Encantamento'],
         fraquezas: ['Ressonância Frágil: sofre Vantagem em ataques baseados em som ou vibração contra si.'],
         regiao: 'Cavernas de quartzo e veios arcanos profundos, onde o Motor do Mundo é mais intenso',
+        pericias: ['sintonia', 'arcanismo'],
         habilidades: [
           { nome: 'Eco Arcano', desc: 'Uma vez por sessão, absorve uma magia direcionada a si e a devolve como um raio de energia bruta (mesmo dano, sem efeito adicional).' },
           { nome: 'Proficiências', desc: '+4 em Sintonia e Conhecimento (Arcano).' }
@@ -403,6 +405,7 @@ const RACAS_DB = {
         resistencias: ['Fogo (Imunidade)'],
         fraquezas: ['Vulnerabilidade a Frio (Dano em dobro).', 'Rastro Incandescente: deixa marcas visíveis de calor onde passa, facilitando ser rastreado.'],
         regiao: 'Regiões vulcânicas e fendas próximas ao núcleo de Aetherion',
+        pericias: ['fortitude', 'intimidacao'],
         habilidades: [
           { nome: 'Núcleo em Ebulição', desc: 'Uma vez por cena, libera calor: ataques corpo a corpo causam +4 de dano de fogo extra por 2 rodadas.' },
           { nome: 'Proficiências', desc: '+4 em Fortitude e Intimidação.' }
@@ -418,6 +421,7 @@ const RACAS_DB = {
         resistencias: ['Frio (Imunidade)'],
         fraquezas: ['Vulnerabilidade a Fogo (Dano em dobro).'],
         regiao: 'Geleiras e picos congelados de Nyrvald',
+        pericias: ['percepcao', 'fortitude'],
         habilidades: [
           { nome: 'Vigília Gélida', desc: 'Não pode ser surpreendido nem sofrer o estado Surpreso.' },
           { nome: 'Toque Congelante', desc: 'Uma vez por cena, ataque corpo a corpo reduz o deslocamento do alvo pela metade por 1 rodada (Fortitude evita).' },
@@ -446,6 +450,7 @@ const RACAS_DB = {
         resistencias: ['+2 contra danos elementais naturais (Fogo, Frio, Elétrico)'],
         fraquezas: [],
         regiao: 'Vilarejos nas bordas da floresta e cidades pequenas',
+        pericias: ['furtividade', 'ladinagem'],
         habilidades: [
           { nome: 'Truque da Floresta', desc: 'Uma vez por combate, ilusão que distrai o alvo (-4 em ataque ou percepção por 1 rodada).' },
           { nome: 'Mão Leve', desc: 'Vantagem em testes para furtar ou trocar objetos pequenos sem ser percebido.' },
@@ -462,6 +467,7 @@ const RACAS_DB = {
         resistencias: ['+2 contra danos elementais naturais (Fogo, Frio, Elétrico)', 'Resistência a venenos naturais'],
         fraquezas: [],
         regiao: 'Bosques profundos e raízes ancestrais',
+        pericias: ['exploracao', 'percepcao'],
         habilidades: [
           { nome: 'Transposição de Raízes', desc: 'Ação bônus para teleporte até 6m através do subsolo (terra/floresta/pântano).' },
           { nome: 'Vínculo com a Floresta', desc: 'Sente a presença de intrusos em até 15m dentro de floresta ou pântano.' },
@@ -478,6 +484,7 @@ const RACAS_DB = {
         resistencias: ['+2 contra danos elementais naturais (Fogo, Frio, Elétrico)', 'Imunidade a magias que apagam memórias'],
         fraquezas: ['Existência Esquecida (agravada): a perda de PV Máx por isolamento é o dobro da usual.'],
         regiao: 'Feiras, tavernas e encruzilhadas onde histórias circulam',
+        pericias: ['tradicao', 'diplomacia'],
         habilidades: [
           { nome: 'Eco do Mito', desc: 'Uma vez por sessão, pode transformar uma falha em teste social em Acerto Crítico ao contar uma história convincente.' },
           { nome: 'Memória Emprestada', desc: 'Pode "gastar" uma interação recente para recuperar 1d6 PV, como se fosse lembrado com carinho por alguém.' },
@@ -626,6 +633,7 @@ const RACAS_DB = {
         resistencias: [],
         fraquezas: ['Paranoia Constante: -2 em Carisma/Diplomacia e não confiam no grupo (exigem contratos).'],
         regiao: 'Subsolo profundo, longe do conhecimento de qualquer outra raça',
+        pericias: ['sintonia', 'arcanismo'],
         habilidades: [
           { nome: 'Gênio Recluso', desc: 'Uma vez por sessão, decifra qualquer runa, enigma ou selo arcano (+4 p/ desarmar armadilhas mágicas).' },
           { nome: 'Glifo Defensivo', desc: 'Reação para ativar um glifo gravado no corpo: +4 de CA contra o ataque específico.' },
@@ -642,6 +650,7 @@ const RACAS_DB = {
         resistencias: [],
         fraquezas: ['Exilado de Casa: sofre Desvantagem em testes de Diplomacia com outros Myrran Reclusos, que os veem como traidores da causa.'],
         regiao: 'Rotas comerciais entre o subsolo e a superfície',
+        pericias: ['diplomacia', 'arcanismo'],
         habilidades: [
           { nome: 'Talismã Improvisado', desc: 'Uma vez por cena, cria um pequeno talismã arcano que concede +4 em um teste de Sintonia, Ladinagem ou Percepção.' },
           { nome: 'Barganha Justa', desc: 'Vantagem em testes de negociação envolvendo compra, venda ou troca de itens.' },
@@ -679,6 +688,7 @@ const RACAS_DB = {
         resistencias: [],
         fraquezas: ['Fome do Caos: se passar mais de 3 dias sem se alimentar, sofre Desvantagem em testes de Vontade contra impulsos violentos.'],
         regiao: 'Sombras, cavernas e florestas noturnas',
+        pericias: ['furtividade', 'atletismo'],
         habilidades: [
           { nome: 'Predador Noturno', desc: 'Se não tiverem se alimentado, Vantagem para rastrear criaturas vivas.' },
           { nome: 'Sede de Vitalidade', desc: 'Uma vez por cena, +4 de dano necrótico em ataque e recupera isso em PV.' },
@@ -695,6 +705,7 @@ const RACAS_DB = {
         resistencias: ['+2 contra Encantamento e efeitos de leitura mental'],
         fraquezas: [],
         regiao: 'Cidades, cortes e salões noturnos',
+        pericias: ['diplomacia', 'enganacao'],
         habilidades: [
           { nome: 'Encanto do Sangue', desc: 'Uma vez por cena, alvo que falhar em teste de Vontade fica Fascinado por 1 rodada, tratando o Noctaryn como aliado confiável.' },
           { nome: 'Sede de Vitalidade', desc: 'Uma vez por cena, +4 de dano necrótico em ataque e recupera isso em PV.' },
@@ -724,6 +735,7 @@ const RACAS_DB = {
         resistencias: [],
         fraquezas: [],
         regiao: 'Clareiras enevoadas de florestas místicas',
+        pericias: ['furtividade', 'acrobacia'],
         habilidades: [
           { nome: 'Invisibilidade Efêmera', desc: 'Reação a ataque (uma vez por cena) ou ação de movimento: fica invisível.' },
           { nome: 'Pó de Sonhos', desc: 'Força alvo (Vontade) a ficar atordoado/dormir por 1 rodada.' },
@@ -740,6 +752,7 @@ const RACAS_DB = {
         resistencias: ['Resistência a venenos naturais'],
         fraquezas: [],
         regiao: 'Bosques floridos e jardins mágicos',
+        pericias: ['sintonia', 'socorrismo'],
         habilidades: [
           { nome: 'Afinidade Arcana', desc: 'Reduz custo de magias em 1 ou ganha +2 em conjuração.' },
           { nome: 'Toque Vital', desc: 'Uma vez por cena, cura 2d6 PV em um alvo tocado, ou acelera o crescimento de plantas próximas.' },
@@ -769,6 +782,7 @@ const RACAS_DB = {
         resistencias: [],
         fraquezas: [],
         regiao: 'Santuários esquecidos e vilarejos que aceitam sua presença',
+        pericias: ['diplomacia', 'discernimento'],
         habilidades: [
           { nome: 'Presença Imponente', desc: 'Uma vez por cena, força inimigos (Vontade) a ficarem abalados.' },
           { nome: 'Luz Residual', desc: 'Uma vez por cena, cura 2d6 PV em um aliado tocado.' },
@@ -785,6 +799,7 @@ const RACAS_DB = {
         resistencias: [],
         fraquezas: ['Ira Contida: Desvantagem em testes de Vontade contra provocações diretas.'],
         regiao: 'Variadas, sempre à margem de qualquer comunidade estabelecida',
+        pericias: ['intimidacao', 'atletismo'],
         habilidades: [
           { nome: 'Chama do Exílio', desc: 'Ataques causam +4 de dano espiritual extra.' },
           { nome: 'Grito da Queda', desc: 'Uma vez por cena, força inimigos próximos (Vontade) a recuarem 3m.' },
@@ -814,6 +829,7 @@ const RACAS_DB = {
         resistencias: [],
         fraquezas: [],
         regiao: 'Florestas conscientes densas e antigas',
+        pericias: ['exploracao', 'socorrismo'],
         habilidades: [
           { nome: 'Raízes de Maelthra', desc: 'Ação bônus, alvo faz teste de Reflexos ou fica Enraizado por 1 rodada.' },
           { nome: 'Proficiências', desc: '+4 em Sobrevivência (Florestas) e Medicina.' }
@@ -829,6 +845,7 @@ const RACAS_DB = {
         resistencias: [],
         fraquezas: [],
         regiao: 'Charnecas, terras agrestes e bordas selvagens sem cultivo',
+        pericias: ['atletismo', 'exploracao'],
         habilidades: [
           { nome: 'Simbionte de Batalha', desc: 'Em terreno natural, ataques corpo a corpo causam +4 dano extra.' },
           { nome: 'Proficiências', desc: '+4 em Atletismo e Sobrevivência.' }
@@ -856,6 +873,7 @@ const RACAS_DB = {
         resistencias: [],
         fraquezas: [],
         regiao: 'Esgotos e cavernas ácidas, longe de qualquer clã',
+        pericias: ['artificio', 'ladinagem'],
         habilidades: [
           { nome: 'Sucata é Ouro', desc: 'Ação bônus p/ criar Gambiarra: +4 num único teste (ataque, defesa, cura) antes de quebrar.' },
           { nome: 'Ataque Oportunista', desc: 'Se atacar alvo distraído/flanqueado, causa +4 de dano extra.' },
@@ -872,6 +890,7 @@ const RACAS_DB = {
         resistencias: ['Imunidade a Provocação/Fúria induzida magicamente'],
         fraquezas: [],
         regiao: 'Colônias e assentamentos subterrâneos densamente povoados',
+        pericias: ['exploracao', 'intimidacao'],
         habilidades: [
           { nome: 'Vantagem Numérica', desc: 'Ganha +1 em ataque e Defesa para cada aliado Zirkin adjacente ao alvo (máximo +3).' },
           { nome: 'Grito do Clã', desc: 'Ação bônus, uma vez por cena: aliados Zirkin em 6m ganham Vantagem no próximo ataque.' },

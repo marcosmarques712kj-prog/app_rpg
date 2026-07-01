@@ -74,7 +74,10 @@
         <div class="sec-title">Campanhas</div>
         <div class="sec-desc">Cada campanha é ligada a um sistema e pode ter vários personagens.</div>
       </div>
-      <button class="btn-gold" onclick="openModal('modalCampanha')">⚔ Nova Campanha</button>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="btn-gold" onclick="openModal('modalCampanha')">⚔ Nova Campanha</button>
+        <button class="btn btn-ghost" onclick="abrirModalEntrarCampanha()">🔑 Entrar em Campanha</button>
+      </div>
     </div>
 
     <!-- Filtro rápido por sistema -->
@@ -175,6 +178,13 @@
           <input type="number" id="nc_players" class="form-input" value="4">
         </div>
         <div class="form-group">
+          <label style="display:block; font-size:11px; letter-spacing:1px; color:var(--gold); margin-bottom:4px;">ENTRADA NA CAMPANHA</label>
+          <select id="nc_entrada" class="form-input">
+            <option value="aberta">Aberta — qualquer um com o código entra direto</option>
+            <option value="fechada">Fechada — precisa da sua aprovação</option>
+          </select>
+        </div>
+        <div class="form-group">
           <label style="display:block; font-size:11px; letter-spacing:1px; color:var(--gold); margin-bottom:4px;">PREMISSA</label>
           <textarea id="nc_desc" class="form-input" rows="3"></textarea>
         </div>
@@ -191,6 +201,51 @@
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('modalCampanha')">Cancelar</button>
       <button class="btn btn-gold" onclick="criarCampanha()">+ Criar Campanha</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: ENTRAR EM CAMPANHA ===== -->
+<div class="modal-backdrop" id="modalEntrarCampanha">
+  <div class="modal">
+    <div class="corner tl"></div><div class="corner tr"></div>
+    <div class="corner bl"></div><div class="corner br"></div>
+    <div class="modal-header">
+      <span class="modal-title">🔑 ENTRAR EM CAMPANHA</span>
+      <button class="modal-close" onclick="closeModal('modalEntrarCampanha')">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex; flex-direction:column; gap:16px;">
+
+        <!-- ETAPA 1: código de convite -->
+        <div class="form-group" id="ec_etapa_codigo">
+          <label style="display:block; font-size:11px; letter-spacing:1px; color:var(--gold); margin-bottom:4px;">CÓDIGO DE CONVITE</label>
+          <input type="text" id="ec_codigo" class="form-input" placeholder="Ex: X7K2QP" style="text-transform:uppercase; letter-spacing:2px;" maxlength="6">
+          <div id="ec_codigo_erro" style="color:#c47a7a; font-size:12px; margin-top:6px; display:none;"></div>
+        </div>
+
+        <!-- ETAPA 2: resultado da busca + escolha/criação de personagem (oculta até validar o código) -->
+        <div id="ec_etapa_personagem" style="display:none; flex-direction:column; gap:16px;">
+          <div id="ec_campanha_info" style="border:1px solid rgba(201,168,76,0.3); padding:12px 14px; font-size:13px; color:var(--parchment-dark);"></div>
+
+          <div class="form-group" id="ec_wrap_selecionar" style="display:none;">
+            <label style="display:block; font-size:11px; letter-spacing:1px; color:var(--gold); margin-bottom:4px;">SEU PERSONAGEM</label>
+            <select id="ec_personagem_select" class="form-input"></select>
+          </div>
+
+          <div class="form-group" id="ec_wrap_criar" style="display:none;">
+            <label style="display:block; font-size:11px; letter-spacing:1px; color:var(--gold); margin-bottom:4px;">NOME DO NOVO PERSONAGEM</label>
+            <input type="text" id="ec_novo_personagem_nome" class="form-input" placeholder="Como seu personagem se chama?">
+            <div style="font-size:11px; color:var(--parchment-dark); opacity:0.65; margin-top:6px;">Você poderá completar raça, classe e o resto direto na ficha depois.</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalEntrarCampanha')">Cancelar</button>
+      <button class="btn btn-gold" id="ec_btn_buscar" onclick="buscarCampanhaPorCodigo()">Buscar</button>
+      <button class="btn btn-gold" id="ec_btn_entrar" style="display:none;" onclick="confirmarEntrarCampanha()">Entrar</button>
     </div>
   </div>
 </div>
@@ -389,7 +444,8 @@ function mapearCampanhaSupabase(c) {
     criadaEm: new Date(c.criado_em).getTime(),
     ultimaSessao: extra.ultimaSessao || null,
     codigoConvite: c.codigo_convite,
-    mestreId: c.mestre_id
+    mestreId: c.mestre_id,
+    entradaAberta: c.entrada_aberta !== false
   };
 }
 
@@ -942,6 +998,7 @@ async function criarCampanha() {
   const sistema   = document.getElementById('nc_system').value;
   const jogadores = document.getElementById('nc_players').value;
   const desc      = document.getElementById('nc_desc').value.trim();
+  const entradaAberta = document.getElementById('nc_entrada').value !== 'fechada';
 
   if (!nome || !sistema) { showToast('⚠ Preencha o nome e o sistema', 'warning'); return; }
 
@@ -954,7 +1011,7 @@ async function criarCampanha() {
     return;
   }
 
-  const dadosForm = { nome, sistema, jogadores: parseInt(jogadores) || 4, desc, banner: _pendingBanner || null };
+  const dadosForm = { nome, sistema, jogadores: parseInt(jogadores) || 4, desc, banner: _pendingBanner || null, entradaAberta };
 
   // Guarda a intenção ANTES de exigir login — se precisar de redirect
   // pro Discord, isto sobrevive pro próximo load (ver auth-supabase.js).
@@ -970,7 +1027,7 @@ async function criarCampanha() {
 }
 
 async function _executarCriacaoCampanha(dadosForm) {
-  const { nome, sistema, jogadores, desc, banner } = dadosForm;
+  const { nome, sistema, jogadores, desc, banner, entradaAberta } = dadosForm;
   const codigoConvite = gerarCodigoConvite();
 
   // GUARDA DEFENSIVA: mesmo raciocínio de _executarCriacaoPersonagem
@@ -991,6 +1048,7 @@ async function _executarCriacaoCampanha(dadosForm) {
       sistema,
       mestre_id: usuario.id,
       codigo_convite: codigoConvite,
+      entrada_aberta: entradaAberta !== false, // default true se ausente (compat com chamadas antigas de ação pendente)
       dados: { jogadores, sessoes: 0, desc: desc || 'Uma nova campanha aguarda...', banner: banner || null, ultimaSessao: null }
     })
     .select()
@@ -1009,6 +1067,7 @@ async function _executarCriacaoCampanha(dadosForm) {
   document.getElementById('nc_name').value = '';
   document.getElementById('nc_desc').value = '';
   document.getElementById('nc_system').value = '';
+  document.getElementById('nc_entrada').value = 'aberta';
   _pendingBanner = null;
   const bp = document.getElementById('nc_banner_preview');
   const bph = document.getElementById('nc_banner_placeholder');
@@ -1016,6 +1075,202 @@ async function _executarCriacaoCampanha(dadosForm) {
   if (bph) bph.style.display='flex';
   document.getElementById('nc_banner_area')?.classList.remove('has-image');
   showToast(`⚔ Campanha "${nome}" criada! Código de convite: ${codigoConvite}`, 'gold');
+}
+
+// =============================================================
+// ENTRAR EM CAMPANHA (código de convite)
+// =============================================================
+// Estado transitório desta operação — vive só enquanto o modal está
+// aberto, não precisa sobreviver a reload (diferente de criarCampanha/
+// criarPersonagem, que guardam ação pendente por causa do redirect do
+// Discord). Se o usuário nem está logado, exigirLogin() já cobre isso
+// antes de chegar aqui.
+let _ecCampanhaEncontrada = null; // { id, nome, sistema, entrada_aberta }
+let _ecCodigoValidado = null; // código exato que resultou em _ecCampanhaEncontrada
+
+function abrirModalEntrarCampanha() {
+  _ecCampanhaEncontrada = null;
+  _ecCodigoValidado = null;
+  document.getElementById('ec_codigo').value = '';
+  document.getElementById('ec_codigo').readOnly = false;
+  document.getElementById('ec_codigo_erro').style.display = 'none';
+  document.getElementById('ec_etapa_personagem').style.display = 'none';
+  document.getElementById('ec_wrap_selecionar').style.display = 'none';
+  document.getElementById('ec_wrap_criar').style.display = 'none';
+  document.getElementById('ec_novo_personagem_nome').value = '';
+  document.getElementById('ec_btn_buscar').style.display = 'inline-block';
+  document.getElementById('ec_btn_entrar').style.display = 'none';
+  openModal('modalEntrarCampanha');
+}
+
+async function buscarCampanhaPorCodigo() {
+  const codigoDigitado = document.getElementById('ec_codigo').value.trim().toUpperCase();
+  const erroEl = document.getElementById('ec_codigo_erro');
+  erroEl.style.display = 'none';
+
+  if (!codigoDigitado) {
+    erroEl.textContent = 'Digite um código de convite.';
+    erroEl.style.display = 'block';
+    return;
+  }
+
+  // Login é necessário já aqui, e não só na hora de confirmar — a
+  // busca em si não exige (a function de banco não olha auth.uid()
+  // pra este lookup específico), mas exigir cedo evita "achar" a
+  // campanha e só então descobrir que precisa logar, o que seria uma
+  // segunda barreira depois de já ter escolhido personagem.
+  const sessao = await exigirLogin('Você precisa entrar com Discord para entrar em uma campanha.');
+  if (!sessao) return;
+
+  const btnBuscar = document.getElementById('ec_btn_buscar');
+  btnBuscar.disabled = true;
+
+  const { data, error } = await window.supabaseClient
+    .rpc('buscar_campanha_por_codigo', { p_codigo_convite: codigoDigitado });
+
+  btnBuscar.disabled = false;
+
+  // buscar_campanha_por_codigo retorna um SETOF (array), mesmo que
+  // encontre no máximo 1 linha — codigo_convite não tem UNIQUE
+  // garantido no schema documentado, então tratamos como lista e
+  // pegamos a primeira, em vez de assumir .single().
+  const encontrada = Array.isArray(data) ? data[0] : data;
+
+  if (error || !encontrada) {
+    console.error('[forja] código de convite não encontrado:', error?.message);
+    erroEl.textContent = 'Código não encontrado. Confira e tente de novo.';
+    erroEl.style.display = 'block';
+    return;
+  }
+
+  _ecCampanhaEncontrada = encontrada;
+  _ecCodigoValidado = codigoDigitado;
+  document.getElementById('ec_codigo').readOnly = true;
+  const sistemaInfo = getSistema(encontrada.sistema);
+
+  document.getElementById('ec_campanha_info').innerHTML =
+    `<strong style="color:var(--gold);">${esc(encontrada.nome)}</strong><br>` +
+    `Sistema: ${esc(sistemaInfo?.nome || encontrada.sistema)}<br>` +
+    (encontrada.entrada_aberta
+      ? '<span style="color:#7fae6f;">Entrada aberta — você entra direto.</span>'
+      : '<span style="color:#C9A84C;">Entrada por aprovação — o mestre precisa aceitar seu pedido.</span>');
+
+  // Personagens soltos (sem campanha) do MESMO sistema da campanha.
+  const candidatos = PERSONAGENS.filter(p => p.sistema === encontrada.sistema && !p.campanhaId);
+
+  const selecionar = document.getElementById('ec_wrap_selecionar');
+  const criar = document.getElementById('ec_wrap_criar');
+  const select = document.getElementById('ec_personagem_select');
+
+  if (candidatos.length > 0) {
+    select.innerHTML = candidatos.map(p => `<option value="${esc(p.id)}">${esc(p.nome)}</option>`).join('')
+      + `<option value="__novo__">+ Criar um personagem novo</option>`;
+    selecionar.style.display = 'block';
+    criar.style.display = 'none';
+    select.onchange = () => {
+      criar.style.display = select.value === '__novo__' ? 'block' : 'none';
+    };
+  } else {
+    selecionar.style.display = 'none';
+    criar.style.display = 'block';
+  }
+
+  document.getElementById('ec_etapa_personagem').style.display = 'flex';
+  document.getElementById('ec_btn_buscar').style.display = 'none';
+  document.getElementById('ec_btn_entrar').style.display = 'inline-block';
+}
+
+// esc() já existe em outras páginas do app (campanha.html) mas não
+// neste arquivo — pequena função local só pra este trecho, evita
+// depender de innerHTML cru com dados vindos do banco (nome da
+// campanha, nome de personagem).
+function esc(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+async function confirmarEntrarCampanha() {
+  if (!_ecCampanhaEncontrada) return;
+
+  const usuario = usuarioLogado();
+  if (!usuario || !usuario.id) {
+    showToast('⚠ Sessão ainda carregando, tente novamente em um instante.', 'warning');
+    return;
+  }
+
+  const selecionarVisivel = document.getElementById('ec_wrap_selecionar').style.display !== 'none';
+  const select = document.getElementById('ec_personagem_select');
+  const usandoPersonagemExistente = selecionarVisivel && select.value !== '__novo__';
+
+  const btnEntrar = document.getElementById('ec_btn_entrar');
+  btnEntrar.disabled = true;
+
+  try {
+    let personagemId;
+
+    if (usandoPersonagemExistente) {
+      personagemId = select.value;
+    } else {
+      // Cria o personagem novo, solto, do mesmo sistema da campanha —
+      // mesmo padrão de _executarCriacaoPersonagem (nasce só com nome
+      // e sistema; resto é preenchido na ficha depois).
+      const nomeNovo = document.getElementById('ec_novo_personagem_nome').value.trim();
+      if (!nomeNovo) {
+        showToast('⚠ Dê um nome ao seu personagem.', 'warning');
+        btnEntrar.disabled = false;
+        return;
+      }
+
+      const { data: novoPersonagem, error: erroCriar } = await window.supabaseClient
+        .from('personagens')
+        .insert({ nome: nomeNovo, sistema: _ecCampanhaEncontrada.sistema, dono_id: usuario.id, campanha_id: null, dados: {} })
+        .select()
+        .single();
+
+      if (erroCriar) {
+        console.error('[forja] erro ao criar personagem para entrar na campanha:', erroCriar.message);
+        showToast('⚠ Erro ao criar personagem: ' + erroCriar.message, 'warning');
+        btnEntrar.disabled = false;
+        return;
+      }
+
+      PERSONAGENS.unshift(mapearPersonagemSupabase(novoPersonagem));
+      personagemId = novoPersonagem.id;
+    }
+
+    // Campanha aberta entra direto; fechada vira solicitação pendente.
+    // Ambas as functions já validam sistema/personagem no banco — não
+    // duplicamos essa checagem aqui, só escolhemos qual chamar.
+    const nomeFuncao = _ecCampanhaEncontrada.entrada_aberta ? 'entrar_em_campanha' : 'solicitar_entrada_campanha';
+    const { error: erroEntrar } = await window.supabaseClient
+      .rpc(nomeFuncao, { p_codigo_convite: _ecCodigoValidado, p_personagem_id: personagemId });
+
+    if (erroEntrar) {
+      console.error(`[forja] erro em ${nomeFuncao}:`, erroEntrar.message);
+      showToast('⚠ ' + erroEntrar.message, 'warning');
+      btnEntrar.disabled = false;
+      return;
+    }
+
+    closeModal('modalEntrarCampanha');
+
+    if (_ecCampanhaEncontrada.entrada_aberta) {
+      showToast(`⚔ Você entrou em "${esc(_ecCampanhaEncontrada.nome)}"!`, 'gold');
+      // Recarrega para refletir campanha_id atualizado no personagem
+      // e a campanha (agora visível via RLS) na lista.
+      await carregarDadosDoSupabase();
+      renderCampanhas();
+      renderPersonagens();
+    } else {
+      showToast(`✦ Pedido enviado! Aguarde a aprovação do mestre de "${esc(_ecCampanhaEncontrada.nome)}".`, 'gold');
+    }
+  } finally {
+    btnEntrar.disabled = false;
+  }
 }
 
 // =============================================================

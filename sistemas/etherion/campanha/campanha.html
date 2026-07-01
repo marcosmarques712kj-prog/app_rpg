@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Campanha — Etherion</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cinzel+Decorative:wght@400;700&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../../../core/css/ficha-base.css">
+<link rel="stylesheet" href="../styles/ficha.css">
 <style>
   /* ===========================================================
      Estilos específicos de campanha-etherion.html — tudo que não
@@ -13,6 +13,47 @@
      sistema Etherion (fundo #16110b, dourado #C9A84C, Cinzel +
      EB Garamond) coerente com o resto do app.
      =========================================================== */
+
+  /* FIX: .sheet-tabs (em ficha-base.css) usa position:sticky com
+     top:60px fixo, assumindo que .sheet-topbar (60px de altura) está
+     acima. Quando rodamos dentro do iframe do shell, o topbar interno
+     é escondido via display:none (o shell já mostra o seu próprio
+     topbar) — mas o top:60px do sticky continua reservando aquele
+     espaço vazio, já que não depende da presença real do elemento.
+     A classe abaixo (aplicada no <body> só quando rodandoNoIframe é
+     true, ver <script>) zera esse top. Não editamos o CSS
+     compartilhado porque outras páginas (fora do iframe) continuam
+     precisando do top:60px original. */
+  body.sem-topbar-interno .sheet-tabs {
+    top: 0;
+  }
+
+  /* .panel-title e .empty-state não existem em ficha.css (o CSS real
+     da ficha do Etherion) — são específicos desta página. .panel-title
+     é um título de SEÇÃO, um degrau acima de .box-title (que o CSS
+     real usa para títulos DENTRO de um .box); aqui titula o que vem
+     antes/acima do próprio .box. */
+  .panel-title {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 15px;
+    letter-spacing: 1px;
+    color: var(--gold);
+    text-shadow: 0 0 16px rgba(201,168,76,0.2);
+    margin: 24px 0 10px;
+  }
+  .panel-title:first-child { margin-top: 0; }
+
+  .empty-state {
+    padding: 24px 12px;
+    text-align: center;
+  }
+  .empty-state-text {
+    font-family: 'EB Garamond', serif;
+    font-style: italic;
+    font-size: 13px;
+    color: var(--parchment-dark);
+    opacity: 0.55;
+  }
 
   .dash-banner {
     width: 100%;
@@ -205,6 +246,73 @@
     vertical-align: middle;
   }
   .realtime-dot.off { background: #6b6b6b; box-shadow: none; }
+
+  .solicitacoes-badge {
+    display: inline-block;
+    background: #b5544a;
+    color: #f4ead0;
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    font-weight: 700;
+    min-width: 16px;
+    height: 16px;
+    line-height: 16px;
+    border-radius: 8px;
+    padding: 0 5px;
+    margin-left: 6px;
+    text-align: center;
+    vertical-align: middle;
+  }
+
+  .solicitacao-card {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(139,105,20,0.3);
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .solicitacao-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .solicitacao-avatar {
+    width: 38px; height: 38px; border-radius: 50%;
+    object-fit: cover; border: 1px solid var(--gold-dark);
+    background: rgba(0,0,0,0.4);
+  }
+  .solicitacao-nomes .personagem {
+    font-family: 'Cinzel Decorative', serif;
+    color: var(--gold);
+    font-size: 15px;
+  }
+  .solicitacao-nomes .jogador {
+    font-family: 'EB Garamond', serif;
+    font-style: italic;
+    color: var(--parchment-dark);
+    opacity: 0.75;
+    font-size: 12px;
+  }
+  .solicitacao-acoes {
+    display: flex;
+    gap: 8px;
+  }
+  .btn-aprovar {
+    background: rgba(127,174,111,0.12);
+    border: 1px solid #7fae6f88;
+    color: #9fcf8f;
+  }
+  .btn-aprovar:hover { background: rgba(127,174,111,0.22); }
+  .btn-rejeitar {
+    background: rgba(181,84,74,0.12);
+    border: 1px solid #b5544a88;
+    color: #d18b83;
+  }
+  .btn-rejeitar:hover { background: rgba(181,84,74,0.22); }
 
   /* -------- NPCs -------- */
   .npc-card {
@@ -416,6 +524,9 @@
     <button class="sheet-tab" data-tab="personagens" onclick="switchTab('personagens')">🧑‍🤝‍🧑 Personagens</button>
     <button class="sheet-tab" data-tab="diario" onclick="switchTab('diario')">📜 Diário</button>
     <button class="sheet-tab" data-tab="dados" onclick="switchTab('dados')">🎲 Dados</button>
+    <button class="sheet-tab tab-mestre" data-tab="solicitacoes" onclick="switchTab('solicitacoes')" style="display:none;">
+      🔔 Solicitações<span id="solicitacoesBadge" class="solicitacoes-badge" style="display:none;"></span>
+    </button>
     <button class="sheet-tab tab-mestre" data-tab="controle" onclick="switchTab('controle')" style="display:none;">🕯 Controle</button>
     <button class="sheet-tab tab-mestre" data-tab="npcs" onclick="switchTab('npcs')" style="display:none;">👥 NPCs</button>
     <button class="sheet-tab tab-mestre" data-tab="bestiario" onclick="switchTab('bestiario')" style="display:none;">🐉 Bestiário</button>
@@ -497,6 +608,16 @@
       </div>
     </div>
 
+    <!-- TELA: SOLICITAÇÕES (só mestre) -->
+    <div id="panel-solicitacoes" class="sheet-panel">
+      <div class="panel-title">Pedidos de Entrada</div>
+      <div class="box">
+        <div id="solicitacoesList">
+          <div class="empty-state"><div class="empty-state-text">Carregando solicitações...</div></div>
+        </div>
+      </div>
+    </div>
+
     <!-- TELA: CONTROLE (só mestre) -->
     <div id="panel-controle" class="sheet-panel">
       <div class="panel-title">
@@ -571,6 +692,7 @@
   let personagens = [];
   let npcs = [];
   let entradasDiario = [];
+  let solicitacoesPendentes = [];
   let ehMestre = false;
   let usuarioAtual = null;
   let canalRealtime = null;
@@ -669,6 +791,11 @@
     document.getElementById('btnVoltar').addEventListener('click', voltar);
     if (rodandoNoIframe) {
       document.getElementById('topbarInterno').style.display = 'none';
+      // O CSS de .sheet-tabs assume top:60px (altura do .sheet-topbar)
+      // para o sticky funcionar. Sem o topbar interno, isso deixava
+      // uma faixa vazia reservada no lugar dele — a classe abaixo faz
+      // o CSS ajustar esse top para 0 (ver bloco embutido no <head>).
+      document.body.classList.add('sem-topbar-interno');
     }
 
     // Login é obrigatório nesta página (diferente do hub, que é lazy).
@@ -811,6 +938,7 @@
       carregarNpcs(id),
       carregarDiario(id),
       ehMestre ? carregarNotasMestre(id) : Promise.resolve(),
+      ehMestre ? carregarSolicitacoes(id) : Promise.resolve(),
     ]);
 
     renderJogadores();
@@ -819,6 +947,7 @@
     renderDiario();
     if (ehMestre) {
       renderControle();
+      await renderSolicitacoes();
       configurarFormNpc();
       configurarNotasMestre();
       iniciarRealtime(id);
@@ -891,6 +1020,26 @@
       return;
     }
     document.getElementById('notas_conteudo').value = data?.conteudo || '';
+  }
+
+  async function carregarSolicitacoes(campanhaId) {
+    // RLS libera SELECT pro mestre em solicitacoes_entrada da própria
+    // campanha (ver migração 009). Filtramos por 'pendente' aqui —
+    // aprovadas/rejeitadas ficam na tabela como histórico, mas não
+    // precisam aparecer nesta lista de ação.
+    const { data, error } = await sb
+      .from('solicitacoes_entrada')
+      .select('*')
+      .eq('campanha_id', campanhaId)
+      .eq('status', 'pendente')
+      .order('criado_em', { ascending: true });
+
+    if (error) {
+      console.error('[campanha-etherion] erro ao carregar solicitações:', error.message);
+      solicitacoesPendentes = [];
+      return;
+    }
+    solicitacoesPendentes = data || [];
   }
 
   // -----------------------------------------------------------
@@ -1101,6 +1250,113 @@
     // limita histórico visível para não crescer indefinidamente na sessão
     const itens = hist.querySelectorAll('.dados-historico-item');
     if (itens.length > 30) itens[itens.length - 1].remove();
+  }
+
+  // -----------------------------------------------------------
+  // Solicitações de entrada — só mestre. Lista pedidos pendentes de
+  // campanhas com entrada_aberta = false (ver migração 009) e permite
+  // aprovar (vincula o personagem) ou rejeitar.
+  // -----------------------------------------------------------
+  function atualizarBadgeSolicitacoes() {
+    const badge = document.getElementById('solicitacoesBadge');
+    if (!badge) return;
+    if (solicitacoesPendentes.length > 0) {
+      badge.textContent = solicitacoesPendentes.length;
+      badge.style.display = 'inline-block';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  async function renderSolicitacoes() {
+    atualizarBadgeSolicitacoes();
+
+    if (solicitacoesPendentes.length === 0) {
+      mostrarVazio('solicitacoesList', 'Nenhum pedido de entrada pendente.');
+      return;
+    }
+
+    // solicitacoes_entrada só guarda personagem_id/solicitante_id —
+    // busca os personagens (ainda soltos, sem campanha_id) e os
+    // perfis dos solicitantes à parte, já que carregarPersonagens()
+    // só traz quem JÁ está na campanha.
+    const personagemIds = solicitacoesPendentes.map(s => s.personagem_id);
+    const solicitanteIds = [...new Set(solicitacoesPendentes.map(s => s.solicitante_id))];
+
+    const [{ data: personagensCandidatos, error: erroPersonagens }, { data: perfis, error: erroPerfis }] = await Promise.all([
+      sb.from('personagens').select('*').in('id', personagemIds),
+      sb.from('usuarios').select('*').in('id', solicitanteIds),
+    ]);
+
+    if (erroPersonagens) console.error('[campanha-etherion] erro ao carregar personagens das solicitações:', erroPersonagens.message);
+    if (erroPerfis) console.error('[campanha-etherion] erro ao carregar perfis dos solicitantes:', erroPerfis.message);
+
+    const personagensPorId = {};
+    (personagensCandidatos || []).forEach(p => { personagensPorId[p.id] = p; });
+    const perfisPorId = {};
+    (perfis || []).forEach(p => { perfisPorId[p.id] = p; });
+
+    const list = document.getElementById('solicitacoesList');
+    list.innerHTML = solicitacoesPendentes.map(s => {
+      const personagem = personagensPorId[s.personagem_id];
+      const perfil = perfisPorId[s.solicitante_id];
+      const nomePersonagem = esc(personagem?.nome || 'Personagem removido');
+      const nomeJogador = esc(perfil?.username || 'Jogador desconhecido');
+      const avatar = perfil?.avatar_url ? esc(perfil.avatar_url) : '';
+      return `
+      <div class="solicitacao-card" data-sid="${esc(s.id)}">
+        <div class="solicitacao-info">
+          ${avatar ? `<img class="solicitacao-avatar" src="${avatar}" alt="">` : `<div class="solicitacao-avatar"></div>`}
+          <div class="solicitacao-nomes">
+            <div class="personagem">${nomePersonagem}</div>
+            <div class="jogador">${nomeJogador}</div>
+          </div>
+        </div>
+        <div class="solicitacao-acoes">
+          <button class="btn-action btn-aprovar" data-aprovar-sid="${esc(s.id)}">Aprovar</button>
+          <button class="btn-action btn-rejeitar" data-rejeitar-sid="${esc(s.id)}">Rejeitar</button>
+        </div>
+      </div>`;
+    }).join('');
+
+    list.querySelectorAll('[data-aprovar-sid]').forEach(btn => {
+      btn.addEventListener('click', () => resolverSolicitacao(btn.dataset.aprovarSid, 'aprovar'));
+    });
+    list.querySelectorAll('[data-rejeitar-sid]').forEach(btn => {
+      btn.addEventListener('click', () => resolverSolicitacao(btn.dataset.rejeitarSid, 'rejeitar'));
+    });
+  }
+
+  async function resolverSolicitacao(solicitacaoId, acao) {
+    const card = document.querySelector(`.solicitacao-card[data-sid="${CSS.escape(solicitacaoId)}"]`);
+    const botoes = card ? card.querySelectorAll('button') : [];
+    botoes.forEach(b => b.disabled = true);
+
+    const nomeFuncao = acao === 'aprovar' ? 'aprovar_solicitacao_entrada' : 'rejeitar_solicitacao_entrada';
+    const { error } = await sb.rpc(nomeFuncao, { p_solicitacao_id: solicitacaoId });
+
+    if (error) {
+      console.error(`[campanha-etherion] erro ao ${acao} solicitação:`, error.message);
+      showToast(`⚠ Erro ao ${acao === 'aprovar' ? 'aprovar' : 'rejeitar'} solicitação.`);
+      botoes.forEach(b => b.disabled = false);
+      return;
+    }
+
+    solicitacoesPendentes = solicitacoesPendentes.filter(s => s.id !== solicitacaoId);
+    await renderSolicitacoes();
+
+    if (acao === 'aprovar') {
+      // O personagem aprovado agora pertence à campanha — recarrega
+      // a lista de personagens/jogadores para refletir o novo membro
+      // sem precisar dar F5 na página inteira.
+      await carregarPersonagens(campanha.id);
+      renderChars();
+      renderJogadores();
+      if (ehMestre) renderControle();
+      showToast('Jogador aprovado e adicionado à campanha!');
+    } else {
+      showToast('Solicitação rejeitada.');
+    }
   }
 
   // -----------------------------------------------------------
@@ -1347,6 +1603,24 @@
         const idx = personagens.findIndex(p => p.id === atualizado.id);
         if (idx !== -1) personagens[idx] = atualizado;
         atualizarCardPersonagemNaTela(atualizado);
+      })
+      // Só o mestre chega até aqui (iniciarRealtime só é chamada
+      // dentro de if (ehMestre) em carregarTudo), então não precisa
+      // de checagem extra — RLS também limitaria isto a quem tem
+      // SELECT em solicitacoes_entrada da campanha de qualquer forma.
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'solicitacoes_entrada',
+        filter: `campanha_id=eq.${campanhaId}`,
+      }, async (payload) => {
+        if (payload.new.status !== 'pendente') return;
+        // Evita duplicar se por algum motivo o evento chegar mais de
+        // uma vez, ou se já tínhamos carregado essa solicitação.
+        if (solicitacoesPendentes.some(s => s.id === payload.new.id)) return;
+        solicitacoesPendentes.push(payload.new);
+        await renderSolicitacoes();
+        showToast('🔔 Novo pedido de entrada na campanha!');
       })
       .subscribe((status) => {
         const dot = document.getElementById('realtimeDot');
