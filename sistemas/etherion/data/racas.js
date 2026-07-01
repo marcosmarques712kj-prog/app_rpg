@@ -82,6 +82,7 @@ const RACAS_DB = {
         resistencias: ['Magia (especialmente arcana)', 'Quedas e impacto de grandes alturas'],
         fraquezas: ['Menor resistência física', 'Menor Fortitude base'],
         regiao: 'Montanhas colossais, próximos às ilhas flutuantes, penhascos e cidades elevadas.',
+        pericias: ['atletismo', 'acrobacia'],
         habilidades: [
           { nome: 'Passo Leve', desc: 'Ignoram penalidades em terrenos elevados ou irregulares.' },
           { nome: 'Afinidade Celeste', desc: 'Redução de dano mágico recebido.' },
@@ -300,6 +301,7 @@ const RACAS_DB = {
         resistencias: ['Frio (Reduz em 5)', 'Imunidade a efeitos de silêncio e mudez mágica'],
         fraquezas: ['Presença Ameaçadora: -2 em Diplomacia com raças que não respeitam o poder bruto.', 'Sono Longo: precisam de hibernação anual de 1 semana, ou sofrem Exaustão progressiva.'],
         regiao: 'Continente gélido de Nyrvald, próximos aos domínios de Morvhaël',
+        pericias: ['percepcao', 'furtividade'],
         habilidades: [
           { nome: 'Sopro Congelante', desc: 'Uma vez por cena, cone de gelo que causa dano e reduz o deslocamento dos alvos pela metade por 1 rodada (Reflexos reduz o dano à metade).' },
           { nome: 'Vigília da Lua', desc: 'Visão perfeita no escuro mágico e não-mágico.' }
@@ -315,6 +317,7 @@ const RACAS_DB = {
         resistencias: ['Fogo (Imunidade)', 'Calor extremo'],
         fraquezas: ['Presença Ameaçadora: -2 em Diplomacia com raças que não respeitam o poder bruto.', 'Ira de Sahryx: em combate, sofrem Desvantagem em testes de Vontade para recuar ou negociar uma vez engajados.'],
         regiao: 'Continente árido de Morvath e regiões vulcânicas',
+        pericias: ['fortitude', 'intimidacao'],
         habilidades: [
           { nome: 'Sopro Primordial', desc: 'Uma vez por cena, cone de fogo que causa dano em área (Reflexos reduz à metade).' },
           { nome: 'Crescimento Acelerado', desc: 'Recupera 2 PV extras sempre que descansa sob luz solar direta.' }
@@ -330,6 +333,7 @@ const RACAS_DB = {
         resistencias: ['Elétrico (Reduz em 5)', 'Resistência a efeitos de transformação forçada ou polimorfia'],
         fraquezas: ['Presença Ameaçadora: -2 em Diplomacia com raças que não respeitam o poder bruto.', 'Instabilidade da Mudança: uma vez por sessão, ao sofrer dano crítico, uma característica menor (cor de escama, tom de voz) muda aleatoriamente até o próximo descanso longo.'],
         regiao: 'Continente de Arkhavel, junto às correntes voláteis de Aelthyr',
+        pericias: ['acrobacia', 'arcanismo'],
         habilidades: [
           { nome: 'Sopro Corrosivo', desc: 'Uma vez por cena, cone de energia instável que causa dano e reduz a proficiência de Defesa do alvo em -2 por 1 rodada (Reflexos evita a redução).' },
           { nome: 'Reflexo Adaptativo', desc: 'Uma vez por cena, como Reação, pode trocar uma resistência elemental já possuída por outra (Fogo, Frio, Ácido ou Elétrico) até o fim do combate.' }
@@ -345,6 +349,7 @@ const RACAS_DB = {
         resistencias: ['Sombrio (Reduz em 5)', 'Imunidade a magias que alteram memórias'],
         fraquezas: ['Presença Ameaçadora: -2 em Diplomacia com raças que não respeitam o poder bruto.', 'Melancolia do Declínio: Desvantagem em testes de Vontade contra medo ou desespero, exceto em combate.'],
         regiao: 'Continente de Valtheris, junto aos vales antigos de Calýndor',
+        pericias: ['tradicao', 'discernimento'],
         habilidades: [
           { nome: 'Rugido do Vento Dragônico', desc: 'Ação bônus para rugir; inimigos próximos fazem teste de Vontade ou perdem a ação de movimento.' },
           { nome: 'Memória das Eras', desc: 'Vantagem em testes de Conhecimento, História ou Religião ligados a eventos antigos ou perdidos.' }
@@ -514,6 +519,7 @@ const RACAS_DB = {
         resistencias: ['Fogo (metade)'],
         fraquezas: ['Eco do Pacto: entidades de Nythraxis reconhecem sua presença e podem tentar renegociar termos antigos em momentos de desespero.'],
         regiao: 'Variadas, com preferência por regiões próximas a fendas do Véu Trincado',
+        pericias: ['arcanismo', 'sintonia'],
         habilidades: [
           { nome: 'Chamas do Vazio', desc: '+4 dano de fogo/sombrio em qualquer ataque ou magia ofensiva.' },
           { nome: 'Sussurro do Pacto', desc: 'Uma vez por sessão, pode fazer uma pergunta a uma entidade de Nythraxis e receber uma resposta parcial e ambígua (a critério do mestre).' }
@@ -529,6 +535,7 @@ const RACAS_DB = {
         resistencias: ['Sombrio (metade)', 'Imunidade a Medo'],
         fraquezas: ['Frieza Emocional: Desvantagem em testes de Presença para expressar empatia genuína ou consolar outros.'],
         regiao: 'Variadas, com preferência por cemitérios, campos de batalha antigos e o Submundo',
+        pericias: ['discernimento', 'tradicao'],
         habilidades: [
           { nome: 'Domínio Mental', desc: 'Ação bônus para instigar medo (Teste de Presença vs Vontade).' },
           { nome: 'Toque da Ceifa', desc: 'Uma vez por cena, ataque contra alvo com menos da metade dos PV causa +6 de dano sombrio extra.' }
@@ -560,6 +567,7 @@ const RACAS_DB = {
         resistencias: ['Visão no Escuro total'],
         fraquezas: [],
         regiao: 'Pântanos',
+        pericias: ['furtividade', 'percepcao'],
         habilidades: [
           { nome: 'Caçador Silencioso', desc: 'Invisíveis submersos. Ataques furtivos causam +4 de dano extra.' }
         ]
@@ -575,6 +583,7 @@ const RACAS_DB = {
         resistencias: ['Fogo (Reduz em 5)'],
         fraquezas: [],
         regiao: 'Pântanos',
+        pericias: ['fortitude', 'intimidacao'],
         habilidades: [
           { nome: 'Fúria Vulcânica', desc: 'Evapora a água ao redor. Ataques corpo a corpo causam +4 de dano escaldante.' }
         ]
@@ -590,6 +599,7 @@ const RACAS_DB = {
         resistencias: ['Elétrico (Reduz em 5)'],
         fraquezas: [],
         regiao: 'Pântanos',
+        pericias: ['acrobacia', 'arcanismo'],
         habilidades: [
           { nome: 'Camuflagem Reativa', desc: 'Ação de movimento para mudar de cor (Vantagem em Furtividade e +4 em Acrobacia p/ escapar).' }
         ]
@@ -605,6 +615,7 @@ const RACAS_DB = {
         resistencias: ['Sombrio (Reduz em 5)'],
         fraquezas: [],
         regiao: 'Pântanos',
+        pericias: ['tradicao', 'discernimento'],
         habilidades: [
           { nome: 'Sopro das Eras', desc: 'Uma vez por cena, cone de neblina corrosiva: causa dano e quebra armadura/proteção por 1 rodada.' }
         ]
