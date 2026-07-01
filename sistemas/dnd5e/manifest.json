@@ -1,0 +1,20 @@
+{
+  "id": "dnd5e",
+  "nome": "D&D 5e",
+  "cor": "#C9A84C",
+  "icon": "/assets/icons/dnd.png",
+  "entrypoints": {
+    "ficha": "ficha/ficha.html",
+    "campanha": "campanha/campanha.html",
+    "personagens": "campanha/personagens.html",
+    "mesa": "mesa/mesa.html",
+    "hub": "/features/livros/sistema-hub.html?sys=dnd5e"
+  },
+  "scripts": [
+    "data/spells-data.js"
+  ],
+  "styles": [
+    "styles/campanha.css",
+    "styles/mesa.css"
+  ]
+}

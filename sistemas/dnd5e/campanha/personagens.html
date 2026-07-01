@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema D&D</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cinzel+Decorative:wght@400;700&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../../core/css/ficha-base.css">
+</head>
+<body>
+<!-- ===== TOP BAR ===== -->
+<div class="sheet-topbar">
+  <button class="sheet-back" onclick="window.location.href='/'">← Voltar à Forja</button>
+  <div class="sheet-identity">
+    <input class="sheet-name-input" id="camp_nome" type="text" placeholder="Nome do Caso" readonly>
+  </div>
+  <span class="sheet-save-indicator" id="saveIndicator">✓ Salvo</span>
+</div>
+
+<!-- ===== TABS ===== -->
+<nav class="sheet-tabs">
+  <button class="sheet-tab active" data-tab="estatisticas" onclick="switchTab('estatisticas')">📊 Estatísticas</button>
+  <button class="sheet-tab" data-tab="campanhas" onclick="switchTab('campanhas')">🗺️ Campanhas</button>
+  <button class="sheet-tab" data-tab="bestiario" onclick="switchTab('bestiario')">🐉 Bestiário</button>
+  <button class="sheet-tab" data-tab="magias" onclick="switchTab('magias')">✨ Magias</button>
+  <button class="sheet-tab" data-tab="equipamentos" onclick="switchTab('equipamentos')">🛡️ Equipamentos</button>
+  <button class="sheet-tab" data-tab="regras" onclick="switchTab('regras')">📜 Regras</button>
+</nav>
+
+<!-- ===== PAGE WRAP ===== -->
+<div class="sheet-wrap">
+  <img id="camp_banner" class="dash-banner" style="display:none;">
+
+  <!-- TELA 1: PERSONAGENS -->
+  <div id="panel-personagens" class="sheet-panel active">
+    <div class="panel-title">Esquadrão Destacado</div>
+    <div class="box">
+      <div id="charsList">
+        <div class="empty-state">
+          <div class="empty-state-text">Carregando agentes...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TELA 2: NPCs -->
+  <div id="panel-npcs" class="sheet-panel">
+    <div class="panel-title">Civis e Suspeitos</div>
+    <div class="box">
+      <div class="empty-state">
+        <div class="empty-state-text">Nenhum NPC registrado ainda. Esta área pode ser expandida no futuro.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TELA 3: COMBATES -->
+  <div id="panel-combates" class="sheet-panel">
+    <div class="panel-title">Controle de Ameaças (Iniciativa)</div>
+    <div class="box">
+      <div class="empty-state">
+        <div class="empty-state-text">A ordem de iniciativa e controle das criaturas do paranormal ficará aqui.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TELA 4: DADOS -->
+  <div id="panel-dados" class="sheet-panel">
+    <div class="panel-title">Rolador de Dados do Sistema</div>
+    <div class="box">
+      <div class="empty-state">
+        <div class="empty-state-text">Ferramentas de rolagem rápida e tabelas aleatórias em breve.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TELA 5: DIÁRIO / ANOTAÇÕES -->
+  <div id="panel-diario" class="sheet-panel">
+    <div class="panel-title">Relatório da Investigação</div>
+    <div class="box">
+      <textarea id="camp_diario" class="text-box" style="height: 500px; background:rgba(0,0,0,0.5);" placeholder="O que foi descoberto na última missão?"></textarea>
+      <button class="add-row-btn" style="margin-top:12px; width:auto; border-style:solid;" onclick="salvarDiario()">Gravar no Banco de Dados</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+  let campanha = null;
+  const CAMPANHAS = JSON.parse(localStorage.getItem('forja_campanhas') || '[]');
+  const PERSONAGENS = JSON.parse(localStorage.getItem('forja_personagens') || '[]');
+
+  function init() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const id = urlParams.get('id');
+    campanha = CAMPANHAS.find(c => c.id === id);
+
+    if(!campanha) {
+      document.getElementById('camp_nome').value = "Caso não encontrado";
+      return;
+    }
+
+    document.getElementById('camp_nome').value = campanha.nome;
+    if(campanha.banner) {
+      document.getElementById('camp_banner').src = campanha.banner;
+      document.getElementById('camp_banner').style.display = 'block';
+    }
+
+    document.getElementById('camp_diario').value = campanha.diario || '';
+
+    renderChars();
+  }
+
+  function renderChars() {
+    const charsList = document.getElementById('charsList');
+    const chars = PERSONAGENS.filter(p => (campanha.personagens||[]).includes(p.id));
+    
+    if(chars.length === 0) {
+      charsList.innerHTML = `<div class="empty-state"><div class="empty-state-text">Nenhum agente designado para este caso.</div></div>`;
+      return;
+    }
+
+    charsList.innerHTML = chars.map(p => `
+      <div class="char-mini-card">
+        <div style="flex:1;">
+          <div class="char-mini-name">${p.nome}</div>
+          <div class="char-mini-info">Classe: ${p.dados?.cls || '?'} | NEX: ${p.dados?.nex || 5}% | Origem: ${p.dados?.origem || '?'}</div>
+        </div>
+        <button class="btn-action" onclick="window.location.href='/core/ficha/ficha.html?id=${p.id}'">Acessar Ficha</button>
+      </div>
+    `).join('');
+  }
+
+  function switchTab(tabId) {
+    document.querySelectorAll('.sheet-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector(`.sheet-tab[data-tab="${tabId}"]`).classList.add('active');
+    
+    document.querySelectorAll('.sheet-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-' + tabId).classList.add('active');
+  }
+
+  function salvarDiario() {
+    if(!campanha) return;
+    campanha.diario = document.getElementById('camp_diario').value;
+    localStorage.setItem('forja_campanhas', JSON.stringify(CAMPANHAS));
+    showToast('Relatório atualizado com sucesso!');
+  }
+
+  function showToast(msg) {
+    const cont = document.getElementById('toastContainer');
+    const t = document.createElement('div');
+    t.className = 'toast';
+    t.innerHTML = msg;
+    cont.appendChild(t);
+    setTimeout(() => { t.style.opacity='0'; setTimeout(()=>t.remove(), 300); }, 3000);
+  }
+
+  window.onload = init;
+</script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "id": "tormenta",
+  "nome": "Tormenta 20",
+  "cor": "#C45A10",
+  "icon": "/assets/icons/tmt.png",
+  "entrypoints": {
+    "ficha": "ficha/ficha.html",
+    "campanha": "campanha/campanha.html",
+    "hub": "/features/livros/sistema-hub.html?sys=tormenta"
+  },
+  "scripts": [],
+  "styles": []
+}

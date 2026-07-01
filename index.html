@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Forja das Eras</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cinzel+Decorative:wght@400;700&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/home-screen.css">
+<link rel="stylesheet" href="core/css/home-screen.css">
 </head>
 <body>
 
@@ -287,81 +287,12 @@
 
 <div class="toast-container" id="toastContainer"></div>
 
+<script src="core/js/sistemas-registry.js"></script>
 <script>
 // =============================================================
 // SISTEMAS REGISTRADOS
 // =============================================================
-const SISTEMAS = [
-  {
-    id: 'dnd5e',
-    nome: 'D&D 5e',
-    desc: 'Dungeons & Dragons 5ª Edição — o sistema de fantasia medieval mais jogado do mundo.',
-    icon: 'D&D',
-    img: 'assets/icons/dnd.png',
-    cor: '#C9A84C',
-    corBg: 'rgba(201,168,76,0.08)',
-    ficha: 'rpg-interface.html',
-    urlCampanha: 'sistemas/dnd/campanha-dnd.html',
-    disponivel: false, // ficha ainda não migrada pro Supabase (usa localStorage antigo)
-    campos: [
-      { id: 'cls', label: 'Classe', tipo: 'select', opcoes: ['Bárbaro','Bardo','Clérigo','Druida','Feiticeiro','Guerreiro','Ladino','Mago','Monge','Paladino','Ranger','Bruxo'] },
-      { id: 'race', label: 'Raça', tipo: 'select', opcoes: ['Humano','Elfo','Anão','Halfling','Gnomo','Meio-Orc','Meio-Elfo','Tiefling','Draconato','Outro'] },
-      { id: 'level', label: 'Nível', tipo: 'number', min: 1, max: 20, default: 1 },
-      { id: 'align', label: 'Alinhamento', tipo: 'select', opcoes: ['Leal Bom','Neutro Bom','Caótico Bom','Leal Neutro','Neutro','Caótico Neutro','Leal Mau','Neutro Mau','Caótico Mau'] }
-    ]
-  },
-  {
-    id: 'op',
-    nome: 'Ordem Paranormal',
-    desc: 'Horror investigativo com agentes que enfrentam o paranormal. NEX, rituais e sanidade.',
-    icon: 'OP',
-    img: 'assets/icons/op.png',
-    cor: '#1BBFB5',
-    corBg: 'rgba(27,191,181,0.08)',
-    ficha: 'sistemas/ordem_paranormal/rpg-op.html',
-    urlCampanha: 'sistemas/ordem_paranormal/campanha-op.html',
-    disponivel: false, // ficha ainda não migrada pro Supabase (usa localStorage antigo)
-    campos: [
-      { id: 'cls', label: 'Classe', tipo: 'select', opcoes: ['Combatente','Especialista','Ocultista'] },
-      { id: 'origem', label: 'Origem', tipo: 'select', opcoes: ['Acadêmico','Amnésico','Artista','Atleta','Criança Prodígio','Detetive','Enfermeiro','Engenheiro','Executivo','Jornalista','Líder Comunitário','Lutador','Médico','Militar','Ocultista','Policial','Refugiado','Religioso','Servidor Público','Técnico'] },
-      { id: 'nex', label: 'NEX Inicial (%)', tipo: 'number', min: 5, max: 95, default: 5 }
-    ]
-  },
-  {
-    id: 'tormenta',
-    nome: 'Tormenta 20',
-    desc: 'Fantasy épico brasileiro. Sistema d20 com raças e classes únicas do cenário de Arton.',
-    icon: 'T20',
-    img: 'assets/icons/tmt.png',
-    cor: '#C45A10',
-    corBg: 'rgba(196,90,16,0.08)',
-    ficha: 'rpg-interface.html',
-    urlCampanha: 'sistemas/tormenta/campanha-tormenta.html',
-    disponivel: false, // ficha ainda não migrada pro Supabase (usa localStorage antigo)
-    campos: [
-      { id: 'cls', label: 'Classe', tipo: 'select', opcoes: ['Arcanista','Bárbaro','Bardo','Bucaneiro','Caçador','Cavaleiro','Clérigo','Druida','Guerreiro','Inventor','Ladino','Lutador','Nobre','Paladino'] },
-      { id: 'race', label: 'Raça', tipo: 'select', opcoes: ['Humano','Elfo','Anão','Halfling','Gnomo','Goblin','Lefou','Minotauro','Qareen','Sereia/Tritão','Sílfide','Suraggel','Tigrino'] },
-      { id: 'level', label: 'Nível', tipo: 'number', min: 1, max: 20, default: 1 }
-    ]
-  },
-  {
-    id: 'etherion',
-    nome: 'Etherion',
-    desc: 'Sistema heroico de alto poder — aventura clássica, exploração de ruínas e vida de mercenários em um mundo mágico com horrores antigos.',
-    icon: 'ETH',
-    img: 'assets/icons/eth.png',
-    cor: '#9B6FD4',
-    corBg: 'rgba(155,111,212,0.08)',
-    ficha: 'sistemas/etherion/etherion-ficha.html',
-    urlCampanha: 'sistemas/etherion/campanha-etherion.html',
-    disponivel: true, // único sistema com ficha migrada pro Supabase
-    campos: [
-      { id: 'cls',   label: 'Classe', tipo: 'select', opcoes: ['Guerreiro','Paladino','Ranger','Ladino','Mago','Feiticeiro','Clérigo','Druida','Bardo','Monge','Mercenário','Explorador','Outro'] },
-      { id: 'race',  label: 'Raça',   tipo: 'select', opcoes: ['Humano','Elfo','Elfo das Sombras','Anão','Halfling','Orken','Zirkin','Draconato','Tiefling','Aasimar','Feérico','Outro'] },
-      { id: 'level', label: 'Nível',  tipo: 'number', min: 1, max: 20, default: 1 }
-    ]
-  }
-];
+const SISTEMAS = window.SISTEMAS || [];
 
 // =============================================================
 // DADOS (localStorage)
@@ -1308,7 +1239,7 @@ function renderSistemas() {
       </div>
       ${desabilitado
         ? `<button class="sistema-btn" style="border-color:${s.cor}40;color:${s.cor};cursor:not-allowed;" onclick="showToast('🔧 Este sistema ainda está sendo migrado — em breve!','info')">Em breve</button>`
-        : `<button class="sistema-btn" style="border-color:${s.cor}40;color:${s.cor}" onclick="window.location.href='livros/sistema-hub.html?sys=${s.id}'">Ver Sistema →</button>`
+        : `<button class="sistema-btn" style="border-color:${s.cor}40;color:${s.cor}" onclick="window.location.href='features/livros/sistema-hub.html?sys=${s.id}'">Ver Sistema →</button>`
       }
     </div>`;
   }).join('') + `
@@ -1363,7 +1294,7 @@ function renderLivrosSistemasGrid() {
   grid.innerHTML = SISTEMAS.map((s, i) => {
     const livros = INDICE_LIVROS?.[s.id] || [];
     return `
-    <div class="sistema-card fade-in" style="animation-delay:${i*0.07}s; --sys-cor:${s.cor}" onclick="window.location.href='livros/livros-sistema.html?sys=${s.id}'">
+    <div class="sistema-card fade-in" style="animation-delay:${i*0.07}s; --sys-cor:${s.cor}" onclick="window.location.href='features/livros/livros-sistema.html?sys=${s.id}'">
       <div class="sistema-icon" style="color:${s.cor}">${sysIcon(s,'3.5em')}</div>
       <div class="sistema-nome">${s.nome}</div>
       <div class="sistema-desc">${s.desc}</div>
@@ -1513,7 +1444,7 @@ init();
   import {
     exigirLogin, logout, usuarioLogado, perfilLogado, onMudancaAuth,
     guardarAcaoPendente, consumirAcaoPendente, supabase
-  } from './js/auth-supabase.js';
+  } from './core/js/auth-supabase.js';
 
   window.exigirLogin = exigirLogin;
   window.logoutSupabase = logout;

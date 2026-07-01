@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Livros — Forja das Eras</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cinzel+Decorative:wght@400;700&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="livros.css">
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<header class="header">
+  <div class="header-logo">
+    <div class="logo-text">
+      <span class="logo-title">📚 Biblioteca</span>
+      <span class="logo-subtitle">Livros & Materiais de Jogo</span>
+    </div>
+  </div>
+  <button class="btn-voltar" onclick="window.location.href='../../index.html'">← Voltar</button>
+</header>
+
+<div class="page-wrap">
+
+  <!-- ========== BREADCRUMB ========== -->
+  <div class="breadcrumb" id="breadcrumb"></div>
+
+  <!-- ========== VIEW 1: LISTA DE SISTEMAS ========== -->
+  <section class="view active" id="view-sistemas">
+    <div class="sec-header">
+      <div>
+        <div class="sec-title">Biblioteca de Sistemas</div>
+        <div class="sec-desc">Escolha um sistema para ver os livros disponíveis.</div>
+      </div>
+    </div>
+    <div class="sistemas-grid" id="sistemasGrid"></div>
+  </section>
+
+  <!-- ========== VIEW 2: LIVROS DE UM SISTEMA ========== -->
+  <section class="view" id="view-livros">
+    <div class="sec-header">
+      <div>
+        <div class="sec-title" id="livrosSistemaTitulo">—</div>
+        <div class="sec-desc">Livros de regras, suplementos e materiais de campanha deste sistema.</div>
+      </div>
+      <button class="btn btn-gold" onclick="abrirModalNovoLivro()">+ Adicionar Livro</button>
+    </div>
+
+    <div class="busca-row">
+      <input type="text" class="busca-input" id="buscaLivrosInput" placeholder="Buscar livro pelo nome..." oninput="renderLivrosDoSistema()">
+    </div>
+
+    <div id="livrosContainer"></div>
+  </section>
+
+  <!-- ========== VIEW 3: LEITOR ========== -->
+  <section class="view" id="view-leitor">
+    <div class="sec-header">
+      <div>
+        <div class="sec-title" id="leitorTitulo">—</div>
+        <div class="sec-desc" id="leitorSubtitulo"></div>
+      </div>
+    </div>
+
+    <div id="leitorContainer" class="leitor-wrap">
+      <!-- preenchido via JS -->
+    </div>
+  </section>
+
+</div>
+
+<!-- ===== MODAL: ADICIONAR LIVRO ===== -->
+<div class="modal-backdrop" id="modalNovoLivro">
+  <div class="modal">
+    <div class="corner tl"></div><div class="corner tr"></div>
+    <div class="corner bl"></div><div class="corner br"></div>
+    <div class="modal-header">
+      <span class="modal-title">📖 ADICIONAR LIVRO</span>
+      <button class="modal-close" onclick="closeModal('modalNovoLivro')">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="modal-hint">
+        Esta janela registra um livro que você <strong>já extraiu</strong> com o script
+        <code>extrair_livro.py</code>. Ela não lê o PDF — isso é feito no script, fora do navegador.
+        Depois de rodar o script, o arquivo JSON já estará na pasta certa; aqui você só conecta
+        ele à interface.
+      </p>
+      <div class="form-group">
+        <label>TÍTULO DO LIVRO</label>
+        <input type="text" id="nl_titulo" class="form-input" placeholder="Ex: Manual dos Monstros">
+      </div>
+      <div class="form-group">
+        <label>TIPO</label>
+        <select id="nl_tipo" class="form-input">
+          <option value="basico">Livro Básico / Regras</option>
+          <option value="suplemento">Suplemento</option>
+          <option value="campanha">Livro de Campanha</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>NOME DO ARQUIVO JSON GERADO</label>
+        <input type="text" id="nl_arquivo" class="form-input" placeholder="Ex: manual-dos-monstros.json">
+        <p class="modal-hint" style="margin-top:6px">
+          É o nome que apareceu no terminal quando o script terminou, dentro de
+          <code id="nl_pasta_exemplo">assets/livros/dnd5e/</code>.
+        </p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalNovoLivro')">Cancelar</button>
+      <button class="btn btn-gold" onclick="confirmarNovoLivro()">+ Registrar Livro</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="../../core/js/sistemas-registry.js"></script>
+<script>
+// =============================================================
+// SISTEMAS (mesmo catálogo da home-screen — mantenha sincronizado
+// se você editar um lá, edite aqui também, ou extraia pra um
+// arquivo sistemas.js compartilhado entre as páginas)
+// =============================================================
+const SISTEMAS = window.SISTEMAS || [];
+
+function getSistema(id) { return SISTEMAS.find(s => s.id === id) || null; }
+
+// =============================================================
+// ESTADO DE NAVEGAÇÃO
+// =============================================================
+let INDICE_LIVROS = null;       // conteúdo de livros-index.json
+let sistemaAtual  = null;       // id do sistema selecionado
+let livroAtualObj = null;       // JSON completo do livro aberto no leitor
+let capituloAtualIdx = 0;
+
+// =============================================================
+// CARREGAR ÍNDICE
+// =============================================================
+async function carregarIndice() {
+  try {
+    const resp = await fetch('../../assets/livros/livros-index.json');
+    if (!resp.ok) throw new Error('Índice não encontrado');
+    INDICE_LIVROS = await resp.json();
+  } catch (e) {
+    console.error('Falha ao carregar livros-index.json:', e);
+    INDICE_LIVROS = { dnd5e: [], op: [], tormenta: [], etherion: [] };
+    showToast('⚠ Não consegui carregar o índice de livros.', 'warning');
+  }
+  renderSistemas();
+}
+
+// =============================================================
+// VIEW: GRID DE SISTEMAS
+// =============================================================
+function renderSistemas() {
+  const grid = document.getElementById('sistemasGrid');
+  grid.innerHTML = SISTEMAS.map((s, i) => {
+    const livros = (INDICE_LIVROS?.[s.id] || []);
+    return `
+    <div class="sistema-card fade-in" style="animation-delay:${i*0.07}s; --sys-cor:${s.cor}" onclick="abrirSistema('${s.id}')">
+      <div class="sistema-icon" style="color:${s.cor}">${s.icon}</div>
+      <div class="sistema-nome">${s.nome}</div>
+      <div class="sistema-stats">📚 ${livros.length} livro${livros.length !== 1 ? 's' : ''}</div>
+    </div>`;
+  }).join('');
+}
+
+function abrirSistema(sid) {
+  sistemaAtual = sid;
+  const s = getSistema(sid);
+  document.getElementById('livrosSistemaTitulo').textContent = `${s.icon}  ${s.nome}`;
+  document.getElementById('buscaLivrosInput').value = '';
+  switchView('view-livros');
+  renderBreadcrumb();
+  renderLivrosDoSistema();
+}
+
+// =============================================================
+// VIEW: LIVROS DE UM SISTEMA (agrupados por tipo)
+// =============================================================
+const ROTULOS_TIPO = { basico: '📘 Livros Básicos', suplemento: '📙 Suplementos', campanha: '🗺 Livros de Campanha' };
+
+function renderLivrosDoSistema() {
+  const termo = (document.getElementById('buscaLivrosInput').value || '').trim().toLowerCase();
+  const todos = (INDICE_LIVROS?.[sistemaAtual] || []);
+  const filtrados = termo ? todos.filter(l => l.titulo.toLowerCase().includes(termo)) : todos;
+
+  const container = document.getElementById('livrosContainer');
+
+  if (!todos.length) {
+    container.innerHTML = `
+      <div class="empty-state">
+        Nenhum livro cadastrado ainda para este sistema.<br>
+        Extraia um PDF com <code>extrair_livro.py</code> e clique em "+ Adicionar Livro" acima.
+      </div>`;
+    return;
+  }
+
+  if (termo && !filtrados.length) {
+    container.innerHTML = `<div class="empty-state">Nenhum livro encontrado para "${termo}".</div>`;
+    return;
+  }
+
+  const ordemTipos = ['basico', 'suplemento', 'campanha'];
+  container.innerHTML = ordemTipos.map(tipo => {
+    const doTipo = filtrados.filter(l => l.tipo === tipo);
+    if (!doTipo.length) return '';
+    return `
+    <div class="livros-grupo">
+      <div class="livros-grupo-titulo">${ROTULOS_TIPO[tipo]}</div>
+      <div class="livros-grid">
+        ${doTipo.map((l, i) => `
+          <div class="livro-card fade-in" style="animation-delay:${i*0.05}s" onclick="abrirLivro('${l.arquivo}')">
+            <div class="livro-icone">📖</div>
+            <div class="livro-titulo">${l.titulo}</div>
+            <div class="livro-meta">${l.paginas ? l.paginas + ' págs.' : ''}</div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// =============================================================
+// VIEW: LEITOR
+// =============================================================
+async function abrirLivro(caminhoArquivo) {
+  switchView('view-leitor');
+  document.getElementById('leitorTitulo').textContent = 'Carregando...';
+  document.getElementById('leitorContainer').innerHTML = `<div class="loading-msg">Abrindo o livro...</div>`;
+
+  try {
+    const resp = await fetch(`../../assets/livros/${caminhoArquivo}`);
+    if (!resp.ok) throw new Error('Arquivo não encontrado: ' + caminhoArquivo);
+    livroAtualObj = await resp.json();
+  } catch (e) {
+    console.error(e);
+    document.getElementById('leitorContainer').innerHTML = `<div class="loading-msg">⚠ Não consegui abrir este livro. Verifique se o arquivo "${caminhoArquivo}" existe em assets/livros/.</div>`;
+    return;
+  }
+
+  capituloAtualIdx = 0;
+  document.getElementById('leitorTitulo').textContent = livroAtualObj.titulo;
+  document.getElementById('leitorSubtitulo').textContent = `${livroAtualObj.capitulos.length} seções · ${livroAtualObj.totalPaginas || '?'} páginas`;
+  renderBreadcrumb();
+  renderLeitor();
+}
+
+function renderLeitor() {
+  const wrap = document.getElementById('leitorContainer');
+  wrap.innerHTML = `
+    <aside class="leitor-sumario">
+      <div class="leitor-sumario-titulo">Sumário</div>
+      <div id="sumarioLista"></div>
+      <div class="leitor-busca-row" style="margin-top:14px">
+        <input type="text" class="leitor-busca-input" id="leitorBuscaInput" placeholder="Buscar no livro..." oninput="buscarNoLivro()">
+      </div>
+      <div class="leitor-busca-resultados" id="leitorBuscaResultados"></div>
+    </aside>
+    <main class="leitor-conteudo" id="leitorConteudo"></main>
+  `;
+  renderSumario();
+  renderCapitulo(capituloAtualIdx);
+}
+
+function renderSumario() {
+  const lista = document.getElementById('sumarioLista');
+  lista.innerHTML = livroAtualObj.capitulos.map((c, i) => `
+    <button class="sumario-item ${i === capituloAtualIdx ? 'active' : ''}" onclick="renderCapitulo(${i})">
+      ${c.titulo}
+    </button>`).join('');
+}
+
+function renderCapitulo(idx) {
+  capituloAtualIdx = idx;
+  const cap = livroAtualObj.capitulos[idx];
+  const conteudo = document.getElementById('leitorConteudo');
+  conteudo.innerHTML = `
+    <div class="leitor-cap-titulo">${cap.titulo}</div>
+    <div class="leitor-cap-pagina">${cap.pagina_inicio ? 'Página ' + cap.pagina_inicio : ''}</div>
+    <div class="leitor-texto">${escaparHtml(cap.conteudo)}</div>
+    <div class="leitor-nav-botoes">
+      <button class="btn btn-ghost" ${idx === 0 ? 'disabled' : ''} onclick="renderCapitulo(${idx - 1})">← Seção anterior</button>
+      <button class="btn btn-ghost" ${idx === livroAtualObj.capitulos.length - 1 ? 'disabled' : ''} onclick="renderCapitulo(${idx + 1})">Próxima seção →</button>
+    </div>
+  `;
+  // re-marca o item ativo no sumário sem reconstruir tudo
+  document.querySelectorAll('.sumario-item').forEach((el, i) => el.classList.toggle('active', i === idx));
+  conteudo.scrollTop = 0;
+}
+
+function escaparHtml(texto) {
+  const div = document.createElement('div');
+  div.textContent = texto;
+  return div.innerHTML;
+}
+
+// =============================================================
+// BUSCA DENTRO DO LIVRO (procura em todos os capítulos)
+// =============================================================
+function buscarNoLivro() {
+  const termo = document.getElementById('leitorBuscaInput').value.trim();
+  const resultadosEl = document.getElementById('leitorBuscaResultados');
+  if (!termo || termo.length < 3) {
+    resultadosEl.innerHTML = termo ? `<div class="empty-state" style="font-size:12px">Digite ao menos 3 letras.</div>` : '';
+    return;
+  }
+
+  const termoLower = termo.toLowerCase();
+  const ocorrencias = [];
+
+  livroAtualObj.capitulos.forEach((cap, idxCap) => {
+    const textoLower = cap.conteudo.toLowerCase();
+    let pos = textoLower.indexOf(termoLower);
+    let contagem = 0;
+    while (pos !== -1 && contagem < 3) { // no máx 3 trechos por capítulo, pra não poluir
+      const inicio = Math.max(0, pos - 50);
+      const fim = Math.min(cap.conteudo.length, pos + termo.length + 70);
+      let trecho = cap.conteudo.slice(inicio, fim);
+      if (inicio > 0) trecho = '…' + trecho;
+      if (fim < cap.conteudo.length) trecho = trecho + '…';
+      ocorrencias.push({ idxCap, tituloCap: cap.titulo, trecho });
+      pos = textoLower.indexOf(termoLower, pos + termo.length);
+      contagem++;
+    }
+  });
+
+  if (!ocorrencias.length) {
+    resultadosEl.innerHTML = `<div class="empty-state" style="font-size:12px">Nada encontrado para "${termo}".</div>`;
+    return;
+  }
+
+  resultadosEl.innerHTML = ocorrencias.slice(0, 40).map(o => {
+    const trechoMarcado = marcarTermo(o.trecho, termo);
+    return `
+    <button class="busca-resultado-item" onclick="renderCapitulo(${o.idxCap})">
+      <span class="res-cap">${o.tituloCap}</span>
+      ${trechoMarcado}
+    </button>`;
+  }).join('');
+}
+
+function marcarTermo(textoBruto, termo) {
+  const escapado = escaparHtml(textoBruto);
+  // escapa o termo de busca pra regex e troca por <mark>, preservando o
+  // texto já escapado em HTML (a marcação roda DEPOIS do escape).
+  const termoEscapadoRegex = termo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${termoEscapadoRegex})`, 'gi');
+  return escapado.replace(regex, '<mark>$1</mark>');
+}
+
+// =============================================================
+// NAVEGAÇÃO ENTRE VIEWS / BREADCRUMB
+// =============================================================
+function switchView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function renderBreadcrumb() {
+  const bc = document.getElementById('breadcrumb');
+  const partes = [`<span class="crumb-link" onclick="voltarParaSistemas()">📚 Biblioteca</span>`];
+
+  if (sistemaAtual) {
+    const s = getSistema(sistemaAtual);
+    const viewLeitorAberta = document.getElementById('view-leitor').classList.contains('active');
+    partes.push(`<span class="crumb-sep">›</span>`);
+    if (viewLeitorAberta) {
+      partes.push(`<span class="crumb-link" onclick="voltarParaLivros()">${s.icon} ${s.nome}</span>`);
+      partes.push(`<span class="crumb-sep">›</span>`);
+      partes.push(`<span class="crumb-current">${livroAtualObj?.titulo || ''}</span>`);
+    } else {
+      partes.push(`<span class="crumb-current">${s.icon} ${s.nome}</span>`);
+    }
+  }
+  bc.innerHTML = partes.join(' ');
+}
+
+function voltarParaSistemas() {
+  sistemaAtual = null;
+  switchView('view-sistemas');
+  renderBreadcrumb();
+}
+
+function voltarParaLivros() {
+  switchView('view-livros');
+  renderBreadcrumb();
+  renderLivrosDoSistema();
+}
+
+// =============================================================
+// MODAL: ADICIONAR LIVRO (registra no índice em memória + localStorage
+// como camada extra por cima do livros-index.json; veja nota abaixo)
+// =============================================================
+function abrirModalNovoLivro() {
+  document.getElementById('nl_titulo').value = '';
+  document.getElementById('nl_arquivo').value = '';
+  document.getElementById('nl_pasta_exemplo').textContent = `assets/livros/${sistemaAtual}/`;
+  openModal('modalNovoLivro');
+}
+
+function confirmarNovoLivro() {
+  const titulo = document.getElementById('nl_titulo').value.trim();
+  const tipo = document.getElementById('nl_tipo').value;
+  let arquivo = document.getElementById('nl_arquivo').value.trim();
+
+  if (!titulo || !arquivo) { showToast('⚠ Preencha o título e o nome do arquivo.', 'warning'); return; }
+  if (!arquivo.endsWith('.json')) arquivo += '.json';
+
+  const entrada = {
+    id: arquivo.replace('.json', ''),
+    titulo, tipo,
+    arquivo: `${sistemaAtual}/${arquivo}`,
+    paginas: null
+  };
+
+  if (!INDICE_LIVROS[sistemaAtual]) INDICE_LIVROS[sistemaAtual] = [];
+  INDICE_LIVROS[sistemaAtual].push(entrada);
+
+  // Guarda esse registro extra no localStorage. Isso é uma CAMADA POR CIMA
+  // do arquivo livros-index.json: como a página não tem permissão de
+  // ESCREVER no disco a partir do navegador, esta é a forma de você
+  // registrar um livro sem precisar editar o JSON manualmente toda vez.
+  // O ideal a longo prazo ainda é colar a entrada (impressa pelo script)
+  // dentro do livros-index.json — assim ela fica permanente e visível pra
+  // qualquer pessoa que abrir o projeto, sem depender do navegador local.
+  const extras = JSON.parse(localStorage.getItem('forja_livros_extras') || '{}');
+  if (!extras[sistemaAtual]) extras[sistemaAtual] = [];
+  extras[sistemaAtual].push(entrada);
+  localStorage.setItem('forja_livros_extras', JSON.stringify(extras));
+
+  closeModal('modalNovoLivro');
+  renderLivrosDoSistema();
+  renderSistemas();
+  showToast(`📖 "${titulo}" adicionado!`, 'gold');
+}
+
+function carregarExtrasDoLocalStorage() {
+  const extras = JSON.parse(localStorage.getItem('forja_livros_extras') || '{}');
+  Object.keys(extras).forEach(sid => {
+    if (!INDICE_LIVROS[sid]) INDICE_LIVROS[sid] = [];
+    extras[sid].forEach(entrada => {
+      const jaExiste = INDICE_LIVROS[sid].some(l => l.arquivo === entrada.arquivo);
+      if (!jaExiste) INDICE_LIVROS[sid].push(entrada);
+    });
+  });
+}
+
+// =============================================================
+// MODAIS / TOAST (padrão idêntico ao da home-screen)
+// =============================================================
+function openModal(id) { document.getElementById(id).classList.add('open'); document.body.style.overflow = 'hidden'; }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); document.body.style.overflow = ''; }
+document.querySelectorAll('.modal-backdrop').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) closeModal(m.id); });
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.querySelectorAll('.modal-backdrop.open').forEach(m => closeModal(m.id));
+});
+
+function showToast(msg, type = '') {
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.innerHTML = msg;
+  if (type === 'gold') t.style.borderColor = 'var(--gold)';
+  if (type === 'warning') t.style.borderColor = 'var(--blood-light)';
+  c.appendChild(t);
+  setTimeout(() => {
+    t.style.opacity = '0'; t.style.transform = 'translateX(30px)'; t.style.transition = 'all 0.3s';
+    setTimeout(() => t.remove(), 300);
+  }, 2800);
+}
+
+// =============================================================
+// INIT
+// =============================================================
+async function init() {
+  await carregarIndice();
+  carregarExtrasDoLocalStorage();
+  renderSistemas();
+  renderBreadcrumb();
+}
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+{
+  "id": "etherion",
+  "nome": "Etherion",
+  "cor": "#9B6FD4",
+  "icon": "/assets/icons/eth.png",
+  "entrypoints": {
+    "ficha": "ficha/ficha.html",
+    "campanha": "campanha/campanha.html",
+    "hub": "/features/livros/sistema-hub.html?sys=etherion"
+  },
+  "scripts": [
+    "data/racas.js",
+    "data/magias.js",
+    "data/origens.js",
+    "data/classes.js",
+    "ficha/ficha.js"
+  ],
+  "styles": [
+    "styles/ficha.css"
+  ]
+}

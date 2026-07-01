@@ -1,0 +1,15 @@
+{
+  "id": "op",
+  "nome": "Ordem Paranormal",
+  "cor": "#1BBFB5",
+  "icon": "/assets/icons/op.png",
+  "entrypoints": {
+    "ficha": "ficha/ficha.html",
+    "campanha": "campanha/campanha.html",
+    "hub": "/features/livros/sistema-hub.html?sys=op"
+  },
+  "scripts": [],
+  "styles": [
+    "styles/ficha.css"
+  ]
+}

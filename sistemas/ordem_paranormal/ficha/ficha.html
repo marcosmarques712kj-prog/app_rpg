@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ordem Paranormal — Ficha de Agente</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Barlow:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../styles/ficha.css">
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<header class="header">
+  <div class="header-logo">
+    <!-- Ícone da plataforma Forja das Eras (discreto, estilo tech) -->
+    <a href="../../../index.html" class="forja-badge" title="Voltar à Forja das Eras">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="12,2 22,18 2,18" stroke="#3D5060" stroke-width="1" fill="none" opacity="0.7"/>
+        <polygon points="12,5 20,17 4,17" stroke="#617585" stroke-width="0.6" fill="rgba(97,117,133,0.06)"/>
+        <circle cx="12" cy="13" r="3.5" stroke="#617585" stroke-width="0.8" fill="none"/>
+        <circle cx="12" cy="13" r="1.5" fill="rgba(97,117,133,0.4)"/>
+      </svg>
+      <span class="forja-badge-label">FORJA DAS ERAS</span>
+    </a>
+
+    <div class="header-divider"></div>
+
+    <!-- Logo da campanha Ordem Paranormal (identidade própria mantida) -->
+    <svg class="logo-symbol" viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="22" cy="22" r="20" fill="none" stroke="#0E7A73" stroke-width="1"/>
+      <circle cx="22" cy="22" r="14" fill="none" stroke="#1BBFB5" stroke-width="0.5" stroke-dasharray="2 3"/>
+      <path d="M22 4 L22 40 M4 22 L40 22" stroke="#0E7A73" stroke-width="0.5" opacity="0.5"/>
+      <path d="M22 10 L26 18 L22 14 L18 18 Z" fill="#1BBFB5" opacity="0.8"/>
+      <circle cx="22" cy="22" r="4" fill="#1BBFB5" opacity="0.3"/>
+      <circle cx="22" cy="22" r="2" fill="#1BBFB5"/>
+      <path d="M10 32 L18 26 M34 32 L26 26" stroke="#0E7A73" stroke-width="0.8"/>
+      <circle cx="10" cy="32" r="1.5" fill="#9B40D4" opacity="0.8"/>
+      <circle cx="34" cy="32" r="1.5" fill="#9B40D4" opacity="0.8"/>
+    </svg>
+    <div class="logo-text">
+      <span class="logo-title">ORDEM PARANORMAL</span>
+      <span class="logo-sub">SISTEMA DE FICHA — AGENTE OPERATIVO</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="nex-display">
+      <span class="nex-label">NEX</span>
+      <span class="nex-value" id="headerNex">5</span>
+      <span class="nex-pct">%</span>
+    </div>
+    <button class="header-btn" onclick="rollD20()">🎲 d20</button>
+    <button class="header-btn" onclick="resetRound()">⊘ Reset</button>
+  </div>
+</header>
+
+<!-- BREADCRUMB -->
+<div class="breadcrumb-bar">
+  <a class="breadcrumb-item" href="../../../index.html">⌂ Início</a>
+  <span class="breadcrumb-sep">›</span>
+  <span class="breadcrumb-item breadcrumb-active">Ordem Paranormal — Ficha do Agente</span>
+</div>
+
+<!-- ===== NAVIGATION ===== -->
+<nav class="nav-tabs">
+  <button class="nav-tab active" data-tab="ficha" onclick="switchTab('ficha')">
+    <span>👤</span> FICHA
+  </button>
+  <button class="nav-tab" data-tab="pericias" onclick="switchTab('pericias')">
+    <span>📋</span> PERÍCIAS
+  </button>
+  <button class="nav-tab para-tab" data-tab="rituais" onclick="switchTab('rituais')">
+    <span>🌀</span> RITUAIS
+  </button>
+  <button class="nav-tab" data-tab="equipamentos" onclick="switchTab('equipamentos')">
+    <span>🔦</span> EQUIPAMENTOS
+  </button>
+  <button class="nav-tab" data-tab="nex" onclick="switchTab('nex')">
+    <span>📡</span> NEX
+  </button>
+  <button class="nav-tab" data-tab="sanidade" onclick="switchTab('sanidade')">
+    <span>🧠</span> SANIDADE
+  </button>
+  <button class="nav-tab" data-tab="anotacoes" onclick="switchTab('anotacoes')">
+    <span>📝</span> ANOTAÇÕES
+  </button>
+  <button class="nav-tab" data-tab="mestre" onclick="switchTab('mestre')">
+    <span>🎯</span> MESTRE
+  </button>
+</nav>
+
+<main class="main">
+
+  <!-- ===== FICHA ===== -->
+  <div id="tab-ficha" class="tab-panel active">
+
+    <!-- Recursos -->
+    <div class="resources-grid">
+      <div class="resource-block hp-block">
+        <span class="resource-label">PV — PONTOS DE VIDA</span>
+        <div class="resource-counters">
+          <input class="res-num-input" id="pvAtual" type="number" value="20" min="0" oninput="updateBar('pv')">
+          <span class="res-sep">/</span>
+          <span class="res-max" id="pvMax">20</span>
+        </div>
+        <div class="res-bar"><div class="res-bar-fill" id="pvBar" style="width:100%"></div></div>
+        <div class="res-btns">
+          <button class="res-btn" onclick="changeRes('pv',-1)">−1</button>
+          <button class="res-btn" onclick="changeRes('pv',-5)">−5</button>
+          <button class="res-btn" onclick="changeRes('pv',+5)">+5</button>
+          <button class="res-btn" onclick="changeRes('pv',+1)">+1</button>
+        </div>
+      </div>
+      <div class="resource-block pe-block">
+        <span class="resource-label">PE — PONTOS DE ESFORÇO</span>
+        <div class="resource-counters">
+          <input class="res-num-input" id="peAtual" type="number" value="8" min="0" style="color:var(--teal)" oninput="updateBar('pe')">
+          <span class="res-sep">/</span>
+          <span class="res-max" id="peMax">8</span>
+        </div>
+        <div class="res-bar"><div class="res-bar-fill" id="peBar" style="width:100%"></div></div>
+        <div class="res-btns">
+          <button class="res-btn" onclick="changeRes('pe',-1)">−1</button>
+          <button class="res-btn" onclick="changeRes('pe',-2)">−2</button>
+          <button class="res-btn" onclick="changeRes('pe',+2)">+2</button>
+          <button class="res-btn" onclick="changeRes('pe',+1)">+1</button>
+        </div>
+      </div>
+      <div class="resource-block san-block">
+        <span class="resource-label">SAN — SANIDADE</span>
+        <div class="resource-counters">
+          <input class="res-num-input" id="sanAtual" type="number" value="12" min="0" style="color:var(--san-green)" oninput="updateBar('san')">
+          <span class="res-sep">/</span>
+          <span class="res-max" id="sanMax">12</span>
+        </div>
+        <div class="res-bar"><div class="res-bar-fill" id="sanBar" style="width:100%"></div></div>
+        <div class="res-btns">
+          <button class="res-btn" onclick="changeRes('san',-1)">−1</button>
+          <button class="res-btn" onclick="changeRes('san',-3)">−3</button>
+          <button class="res-btn" onclick="changeRes('san',+3)">+3</button>
+          <button class="res-btn" onclick="changeRes('san',+1)">+1</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="char-layout">
+      <!-- Coluna esquerda: retrato + identidade -->
+      <div>
+        <div class="portrait-wrap" onclick="uploadPortrait()">
+          <div class="portrait-placeholder">
+            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="24" cy="16" r="8" stroke="#1BBFB5" stroke-width="1"/>
+              <path d="M6 44c0-9.94 8.06-18 18-18s18 8.06 18 18" stroke="#1BBFB5" stroke-width="1"/>
+            </svg>
+            <span>CLIQUE PARA FOTO</span>
+          </div>
+          <div class="portrait-overlay">
+            <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="#1BBFB5">
+              <path stroke-linecap="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+              <circle cx="12" cy="13" r="3" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="portrait-corner tl"></div>
+          <div class="portrait-corner tr"></div>
+          <div class="portrait-corner bl"></div>
+          <div class="portrait-corner br"></div>
+          <input type="file" id="portraitFile" accept="image/*" style="display:none" onchange="loadPortrait(event)">
+          <img id="portraitImg" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none">
+        </div>
+
+        <div class="panel" style="margin-bottom:0">
+          <div class="panel-header"><span class="panel-title">⬡ PRESTÍGIO</span></div>
+          <div class="panel-body">
+            <div style="display:flex;align-items:center;gap:14px">
+              <div class="pp-val" id="ppVal">0</div>
+              <div class="pp-info">
+                <div class="pp-patente" id="patente">RECRUTA</div>
+                <div class="pp-label">PONTOS DE PRESTÍGIO</div>
+              </div>
+            </div>
+            <div class="res-btns mt8">
+              <button class="res-btn" onclick="changePP(-5)">−5</button>
+              <button class="res-btn" onclick="changePP(-1)">−1</button>
+              <button class="res-btn" onclick="changePP(+1)">+1</button>
+              <button class="res-btn" onclick="changePP(+5)">+5</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Coluna direita: dados do agente -->
+      <div>
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">◉ IDENTIFICAÇÃO DO AGENTE</span></div>
+          <div class="panel-body">
+            <div class="field-row single" style="margin-bottom:14px">
+              <div class="field">
+                <label class="field-label">Nome do Agente</label>
+                <input class="field-input" id="charName" type="text" placeholder="Nome completo do agente" style="font-size:18px;font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--teal)" oninput="updateHeaderNex()">
+              </div>
+            </div>
+            <div class="field-row triple">
+              <div class="field">
+                <label class="field-label">Classe</label>
+                <select class="field-select" id="charClass" onchange="onClassChange()">
+                  <option>Combatente</option>
+                  <option>Especialista</option>
+                  <option>Ocultista</option>
+                </select>
+              </div>
+              <div class="field">
+                <label class="field-label">Trilha</label>
+                <input class="field-input" id="charTrilha" type="text" placeholder="ex: Soldado">
+              </div>
+              <div class="field">
+                <label class="field-label">NEX Atual (%)</label>
+                <input class="field-input" id="nexInput" type="number" value="5" min="5" max="99" step="5" oninput="updateNex(this.value)">
+              </div>
+            </div>
+            <div class="field-row">
+              <div class="field">
+                <label class="field-label">Origem</label>
+                <input class="field-input" id="charOrigem" type="text" placeholder="ex: Acadêmico, Militar, Investigador…">
+              </div>
+              <div class="field">
+                <label class="field-label">Motivação</label>
+                <input class="field-input" id="charMot" type="text" placeholder="Por que você enfrenta o Outro Lado?">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Atributos -->
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">◈ ATRIBUTOS</span>
+            <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim)">CLIQUE NOS LADOS PARA AJUSTAR</span>
+          </div>
+          <div class="panel-body">
+            <div class="attrs-grid">
+              <div class="attr-block" id="attrAgi">
+                <span class="attr-abbr">AGI</span>
+                <span class="attr-value" id="attrAgiVal">1</span>
+                <span class="attr-name">Agilidade</span>
+                <span class="attr-mod" id="attrAgiMod">+0</span>
+                <div class="attr-edit">
+                  <button class="attr-minus" onclick="changeAttr('Agi',-1)">−</button>
+                  <button class="attr-plus" onclick="changeAttr('Agi',+1)">+</button>
+                </div>
+              </div>
+              <div class="attr-block" id="attrFor">
+                <span class="attr-abbr">FOR</span>
+                <span class="attr-value" id="attrForVal">1</span>
+                <span class="attr-name">Força</span>
+                <span class="attr-mod" id="attrForMod">+0</span>
+                <div class="attr-edit">
+                  <button class="attr-minus" onclick="changeAttr('For',-1)">−</button>
+                  <button class="attr-plus" onclick="changeAttr('For',+1)">+</button>
+                </div>
+              </div>
+              <div class="attr-block" id="attrInt">
+                <span class="attr-abbr">INT</span>
+                <span class="attr-value" id="attrIntVal">1</span>
+                <span class="attr-name">Intelecto</span>
+                <span class="attr-mod" id="attrIntMod">+0</span>
+                <div class="attr-edit">
+                  <button class="attr-minus" onclick="changeAttr('Int',-1)">−</button>
+                  <button class="attr-plus" onclick="changeAttr('Int',+1)">+</button>
+                </div>
+              </div>
+              <div class="attr-block" id="attrPre">
+                <span class="attr-abbr">PRE</span>
+                <span class="attr-value" id="attrPreVal">1</span>
+                <span class="attr-name">Presença</span>
+                <span class="attr-mod" id="attrPreMod">+0</span>
+                <div class="attr-edit">
+                  <button class="attr-minus" onclick="changeAttr('Pre',-1)">−</button>
+                  <button class="attr-plus" onclick="changeAttr('Pre',+1)">+</button>
+                </div>
+              </div>
+              <div class="attr-block" id="attrVig">
+                <span class="attr-abbr">VIG</span>
+                <span class="attr-value" id="attrVigVal">1</span>
+                <span class="attr-name">Vigor</span>
+                <span class="attr-mod" id="attrVigMod">+0</span>
+                <div class="attr-edit">
+                  <button class="attr-minus" onclick="changeAttr('Vig',-1)">−</button>
+                  <button class="attr-plus" onclick="changeAttr('Vig',+1)">+</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats de Combate -->
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">⚔ COMBATE</span></div>
+          <div class="panel-body">
+            <div class="combat-stats">
+              <div class="combat-stat">
+                <span class="c-stat-label">DEFESA</span>
+                <span class="c-stat-val" id="defVal">10</span>
+              </div>
+              <div class="combat-stat">
+                <span class="c-stat-label">INICIATIVA</span>
+                <span class="c-stat-val" id="initVal">+1</span>
+              </div>
+              <div class="combat-stat">
+                <span class="c-stat-label">DESLOCAMENTO</span>
+                <span class="c-stat-val" style="font-size:18px">9m</span>
+              </div>
+              <div class="combat-stat">
+                <span class="c-stat-label">DADOS D20</span>
+                <span class="c-stat-val" id="d20pool">1d20</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== PERÍCIAS ===== -->
+  <div id="tab-pericias" class="tab-panel">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">📋 PERÍCIAS DO AGENTE</span>
+        <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim)">CLIQUE NOS PONTOS: D=DESTREINADO · T=TREINADO · V=VETERANO · E=EXPERT</span>
+      </div>
+      <div class="panel-body">
+        <div class="pericias-grid" id="periciasList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== RITUAIS ===== -->
+  <div id="tab-rituais" class="tab-panel">
+    <div class="panel paranormal-panel">
+      <div class="panel-header">
+        <span class="panel-title">🌀 RITUAIS CONHECIDOS</span>
+        <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--para-dark)">APENAS OCULTISTAS COMEÇAM COM RITUAIS</span>
+      </div>
+      <div class="panel-body">
+        <div class="ritual-grid" id="ritualList"></div>
+        <button class="add-ritual-btn" onclick="addRitual()">+ APRENDER NOVO RITUAL</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== EQUIPAMENTOS ===== -->
+  <div id="tab-equipamentos" class="tab-panel">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start">
+      <div>
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">⚔ ARMAS EQUIPADAS</span></div>
+          <div class="panel-body">
+            <div class="equip-slots">
+              <div class="equip-slot">
+                <span class="slot-label">ARMA PRINCIPAL</span>
+                <span class="slot-name" id="arm1">— vazio —</span>
+                <span class="slot-stat" id="arm1stat"></span>
+              </div>
+              <div class="equip-slot">
+                <span class="slot-label">ARMA SECUNDÁRIA</span>
+                <span class="slot-name" id="arm2">— vazio —</span>
+                <span class="slot-stat" id="arm2stat"></span>
+              </div>
+            </div>
+            <div class="equip-slot" style="margin-bottom:0">
+              <span class="slot-label">PROTEÇÃO</span>
+              <span class="slot-name" id="armorSlot">— sem proteção —</span>
+              <span class="slot-stat" id="armorStat"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">🎒 INVENTÁRIO</span>
+            <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim)">PP = CUSTO DE PRESTÍGIO</span>
+          </div>
+          <div class="panel-body">
+            <div class="inventory-list" id="itemList"></div>
+            <div class="inv-add-row mt12">
+              <input class="inv-add-input" id="newItem" type="text" placeholder="Nome do item…">
+              <button class="inv-add-btn" onclick="addItem()">+ ADICIONAR</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== NEX ===== -->
+  <div id="tab-nex" class="tab-panel">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">📡 NÍVEL DE EXPOSIÇÃO — NEX</span>
+        <div class="row" style="gap:8px">
+          <button class="btn sm" onclick="changeNex(-5)">− 5%</button>
+          <button class="btn sm" onclick="changeNex(+5)">+ 5%</button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="nex-track-outer">
+          <div class="nex-bar-row">
+            <span class="nex-bar-label">NEX ATUAL</span>
+            <div class="nex-bar-outer">
+              <div class="nex-bar-fill" id="nexBarFill" style="width:5%"></div>
+            </div>
+            <span class="nex-bar-pct"><span id="nexPctDisplay">5</span>%</span>
+          </div>
+          <p style="font-family:'Barlow',sans-serif;font-size:12px;color:var(--text-dim);margin-top:8px">
+            O NEX representa a exposição ao Outro Lado. Quanto maior o NEX, mais poder — e mais transformação.
+          </p>
+        </div>
+        <div class="section-div">
+          <div class="section-div-line"></div>
+          <span class="section-div-label">MARCOS DE NEX</span>
+          <div class="section-div-line"></div>
+        </div>
+        <div class="nex-milestones" id="nexMilestones"></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">⬡ HABILIDADES DESBLOQUEADAS</span></div>
+      <div class="panel-body">
+        <div id="nexAbilities" style="display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SANIDADE ===== -->
+  <div id="tab-sanidade" class="tab-panel">
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">🧠 ESTADO MENTAL</span></div>
+      <div class="panel-body">
+        <div class="san-status-bar" id="sanStages">
+          <div class="san-stage active-stage sane" onclick="setSanStage('sane')">
+            <span class="san-stage-label">ESTÁGIO I</span>
+            <span class="san-stage-name">Estável</span>
+          </div>
+          <div class="san-stage" onclick="setSanStage('perturb')">
+            <span class="san-stage-label">ESTÁGIO II</span>
+            <span class="san-stage-name">Perturbado</span>
+          </div>
+          <div class="san-stage" onclick="setSanStage('insane')">
+            <span class="san-stage-label">ESTÁGIO III</span>
+            <span class="san-stage-name">Enlouquecido</span>
+          </div>
+        </div>
+        <div style="padding:14px;border:1px solid var(--border);background:var(--void-light);margin-bottom:16px">
+          <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:2px;margin-bottom:8px">STATUS ATUAL</div>
+          <div id="sanDesc" style="font-size:13px;color:var(--text-dim);line-height:1.6">O agente se encontra estável. Nenhum efeito de insanidade ativo.</div>
+        </div>
+        <div class="section-div">
+          <div class="section-div-line"></div>
+          <span class="section-div-label">TRANSTORNOS ADQUIRIDOS</span>
+          <div class="section-div-line"></div>
+        </div>
+        <div class="transtorno-list" id="transtornoList">
+          <div style="text-align:center;padding:24px;opacity:0.3;font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:2px">NENHUM TRANSTORNO REGISTRADO</div>
+        </div>
+        <div class="inv-add-row mt12">
+          <input class="inv-add-input" id="newTranstorno" type="text" placeholder="Novo transtorno…">
+          <button class="inv-add-btn" onclick="addTranstorno()">+ REGISTRAR</button>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">👁 EXPOSIÇÃO AO OUTRO LADO</span></div>
+      <div class="panel-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+          <div style="border:1px solid var(--border);background:var(--void-light);padding:14px;text-align:center">
+            <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:2px;margin-bottom:8px">DANO MENTAL</div>
+            <div style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:26px;color:var(--san-crit)">d6</div>
+            <div style="font-family:'Barlow',sans-serif;font-size:11px;color:var(--text-dim);margin-top:4px">dano padrão de SAN</div>
+          </div>
+          <div style="border:1px solid var(--border);background:var(--void-light);padding:14px;text-align:center">
+            <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:2px;margin-bottom:8px">FUGA DE HORROR</div>
+            <div style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:26px;color:var(--warn)">DT 15</div>
+            <div style="font-family:'Barlow',sans-serif;font-size:11px;color:var(--text-dim);margin-top:4px">teste de Vontade</div>
+          </div>
+          <div style="border:1px solid var(--border);background:var(--void-light);padding:14px;text-align:center">
+            <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:2px;margin-bottom:8px">LIMITE DE SAN</div>
+            <div style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:26px;color:var(--san-green)" id="sanLimitDisplay">0</div>
+            <div style="font-family:'Barlow',sans-serif;font-size:11px;color:var(--text-dim);margin-top:4px">insanidade abaixo</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ANOTAÇÕES ===== -->
+  <div id="tab-anotacoes" class="tab-panel">
+    <div class="notes-area">
+      <div>
+        <div class="panel" style="margin-bottom:0">
+          <div class="panel-header"><span class="panel-title">📝 NOTAS DO AGENTE</span></div>
+          <div class="panel-body">
+            <textarea class="notes-textarea" placeholder="Anotações livres sobre investigações, pistas, teorias…" style="min-height:240px"></textarea>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">🎯 OBJETIVOS / MISSÕES</span></div>
+          <div class="panel-body">
+            <div class="mission-list" id="missionList"></div>
+            <div class="mission-add-row">
+              <input class="inv-add-input" id="missionInput" type="text" placeholder="Nova missão ou objetivo…" style="flex:1">
+              <button class="inv-add-btn" onclick="addMission()">+ ADICIONAR</button>
+            </div>
+          </div>
+        </div>
+        <div class="panel" style="margin-bottom:0">
+          <div class="panel-header"><span class="panel-title">🧑 NPCS CONHECIDOS</span></div>
+          <div class="panel-body">
+            <div id="npcKnown" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px"></div>
+            <div style="display:grid;grid-template-columns:1fr 130px auto;gap:8px">
+              <input class="inv-add-input" id="npcNameInput" type="text" placeholder="Nome do NPC…">
+              <select class="field-select" id="npcRelInput" style="font-size:13px;padding:8px 10px">
+                <option>Aliado</option>
+                <option>Inimigo</option>
+                <option>Neutro</option>
+                <option>Incerto</option>
+              </select>
+              <button class="inv-add-btn" onclick="addKnownNpc()">+</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MESTRE ===== -->
+  <div id="tab-mestre" class="tab-panel">
+    <div class="gm-layout">
+      <!-- Iniciativa -->
+      <div>
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">⚡ ORDEM DE INICIATIVA</span>
+            <div class="round-display" style="margin:0;border:none;background:none;padding:0">
+              <span class="round-label">RODADA</span>
+              <span class="round-num" id="roundNum">1</span>
+              <button class="next-turn-btn" onclick="nextTurn()">PRÓXIMO ▶</button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="init-list" id="initList">
+              <div style="text-align:center;padding:20px;opacity:0.3;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:2px">NENHUM COMBATENTE</div>
+            </div>
+            <div class="init-form">
+              <input class="init-input" id="initName" type="text" placeholder="Nome do combatente">
+              <input class="init-input" id="initVal" type="number" placeholder="INI">
+              <select class="init-select" id="initType">
+                <option value="player">Agente (PC)</option>
+                <option value="enemy">Inimigo</option>
+                <option value="neutral">Neutro</option>
+              </select>
+              <button class="btn" onclick="addInitiative()">+ ADD</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- NPCs / Entidades -->
+      <div>
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">👁 ENTIDADES & NPCs</span>
+            <button class="btn sm" onclick="addNpc()">+ ADICIONAR</button>
+          </div>
+          <div class="panel-body">
+            <div class="npc-cards" id="npcCards"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+// ============================================================
+//  STATE
+// ============================================================
+const state = {
+  nex: 5,
+  pp: 0,
+  pv: { atual: 20, max: 20 },
+  pe: { atual: 8, max: 8 },
+  san: { atual: 12, max: 12 },
+  attrs: { Agi:1, For:1, Int:1, Pre:1, Vig:1 },
+  pericias: buildPericias(),
+  rituais: [],
+  items: [
+    { icon:'🔦', name:'Lanterna tática', cat:'UTIL', pp:0 },
+    { icon:'💊', name:'Kit de Primeiros Socorros', cat:'MED', pp:1 },
+    { icon:'🧂', name:'Sal grosso (300g)', cat:'OCULT', pp:0 },
+    { icon:'🔫', name:'Pistola semiautomática', cat:'ARMA', pp:2 },
+    { icon:'📻', name:'Rádio comunicador', cat:'UTIL', pp:1 },
+    { icon:'💧', name:'Água benta (frasco)', cat:'OCULT', pp:0 },
+  ],
+  sanStage: 'sane',
+  transtornos: [],
+  missions: [
+    { text:'Investigar os desaparecimentos no armazém', done: false },
+    { text:'Contactar informante: Dr. Vasquez', done: false },
+  ],
+  knownNpcs: [
+    { name:'Dra. Helena Rios', rel:'Aliado' },
+    { name:'Cel. Barros', rel:'Neutro' },
+  ],
+  initiatives: [],
+  currentTurn: -1,
+  round: 1,
+  npcs: [
+    { name:'Espectro Errante', hp:18, maxHp:18, atk:'+4', dmg:'1d8+2', threat:'AMEAÇA I', notes:'Invisível até receber dano.' },
+    { name:'Cultista Fanático', hp:12, maxHp:12, atk:'+3', dmg:'1d6', threat:'AMEAÇA I', notes:'Age em grupo, nunca sozinho.' },
+  ]
+};
+
+function buildPericias() {
+  // name, attr, nivel (0=destreinado,1=treinado,2=veterano,3=expert)
+  return [
+    { name:'Atletismo',    attr:'FOR', nivel:0 },
+    { name:'Atualidades',  attr:'INT', nivel:0 },
+    { name:'Ciências',     attr:'INT', nivel:0 },
+    { name:'Diplomacia',   attr:'PRE', nivel:0 },
+    { name:'Enganação',    attr:'PRE', nivel:0 },
+    { name:'Fortitude',    attr:'VIG', nivel:0 },
+    { name:'Furtividade',  attr:'AGI', nivel:0 },
+    { name:'Intimidação',  attr:'PRE', nivel:0 },
+    { name:'Intuição',     attr:'PRE', nivel:0 },
+    { name:'Investigação', attr:'INT', nivel:0 },
+    { name:'Luta',         attr:'FOR', nivel:0 },
+    { name:'Medicina',     attr:'INT', nivel:0 },
+    { name:'Ocultismo',    attr:'INT', nivel:0 },
+    { name:'Percepção',    attr:'INT', nivel:0 },
+    { name:'Pilotagem',    attr:'AGI', nivel:0 },
+    { name:'Pontaria',     attr:'AGI', nivel:0 },
+    { name:'Prestidigitação', attr:'AGI', nivel:0 },
+    { name:'Profissão',    attr:'INT', nivel:0 },
+    { name:'Reflexos',     attr:'AGI', nivel:0 },
+    { name:'Religião',     attr:'INT', nivel:0 },
+    { name:'Tática',       attr:'INT', nivel:0 },
+    { name:'Tecnologia',   attr:'INT', nivel:0 },
+    { name:'Vontade',      attr:'PRE', nivel:0 },
+  ];
+}
+
+const PATENTES = [
+  { pp: 0, nome: 'RECRUTA' },
+  { pp: 1, nome: 'AGENTE' },
+  { pp: 5, nome: 'AGENTE SÊNIOR' },
+  { pp: 10, nome: 'VETERANO' },
+  { pp: 20, nome: 'ESPECIALISTA FIELD' },
+  { pp: 40, nome: 'OPERATIVO ALFA' },
+  { pp: 80, nome: 'AGENTE LENDÁRIO' },
+];
+
+const NEX_MILESTONES = [
+  { pct: 5,  label: 'Iniciante' },
+  { pct: 10, label: 'Novato' },
+  { pct: 15, label: 'Aprendiz' },
+  { pct: 20, label: 'Veterano' },
+  { pct: 25, label: '2º Círculo' },
+  { pct: 30, label: 'Mudança' },
+  { pct: 35, label: 'Cicatriz' },
+  { pct: 40, label: 'Trilha II' },
+  { pct: 45, label: 'Poder' },
+  { pct: 50, label: 'Meio Caminho' },
+  { pct: 55, label: '3º Círculo' },
+  { pct: 60, label: 'Elite' },
+  { pct: 65, label: 'Trilha III' },
+  { pct: 70, label: 'Grau Exp.' },
+  { pct: 75, label: 'Mestre' },
+  { pct: 85, label: '4º Círculo' },
+  { pct: 99, label: 'O Fim' },
+];
+
+const RITUAIS_EXEMPLO = [
+  { nome:'Chama Sagrada', circulo:1, exec:'Ação', alcance:'9m', duracao:'Imediata', pe:2, desc:'Você evoca uma chama de energia sagrada que queima entidades do Outro Lado. Causa 2d6 de dano de fogo.' },
+  { nome:'Purificação', circulo:1, exec:'Ação', alcance:'Toque', duracao:'Instantânea', pe:1, desc:'Remove efeitos de maldição leve de uma criatura tocada.' },
+  { nome:'Visão do Além', circulo:2, exec:'Ação', alcance:'Pessoal', duracao:'Cena', pe:3, desc:'Por uma cena, você consegue enxergar entidades invisíveis e auras paranormais.' },
+];
+
+// ============================================================
+//  INIT
+// ============================================================
+function init() {
+  renderPericias();
+  renderRituais();
+  renderItems();
+  renderNexMilestones();
+  renderNexAbilities();
+  renderMissions();
+  renderKnownNpcs();
+  renderNpcs();
+  renderInitiative();
+  updateAllBars();
+  updateCombatStats();
+}
+
+// ============================================================
+//  ATTRIBUTES
+// ============================================================
+function changeAttr(key, delta) {
+  const cur = state.attrs[key] || 1;
+  const next = Math.max(1, Math.min(5, cur + delta));
+  state.attrs[key] = next;
+  document.getElementById('attr' + key + 'Val').textContent = next;
+  document.getElementById('attr' + key + 'Mod').textContent = (next > 0 ? '+' : '') + (next - 1);
+  updateCombatStats();
+  renderPericias();
+  showToast('⬡ ' + key + ' → ' + next);
+}
+
+function updateCombatStats() {
+  const agi = state.attrs.Agi || 1;
+  const vig = state.attrs.Vig || 1;
+  document.getElementById('defVal').textContent = 10 + agi - 1;
+  document.getElementById('initVal').textContent = (agi - 1 >= 0 ? '+' : '') + (agi - 1);
+  document.getElementById('d20pool').textContent = (agi) + 'd20';
+  // Max PV / PE / SAN
+  updateMaxResources();
+}
+
+function updateMaxResources() {
+  const vig = state.attrs.Vig || 1;
+  const pre = state.attrs.Pre || 1;
+  const cls = document.getElementById('charClass') ? document.getElementById('charClass').value : 'Combatente';
+  const pvBase = cls === 'Combatente' ? 20 : cls === 'Especialista' ? 16 : 12;
+  const peBase = cls === 'Ocultista' ? 10 : cls === 'Especialista' ? 6 : 4;
+  const sanBase = cls === 'Ocultista' ? 8 : cls === 'Especialista' ? 12 : 16;
+  state.pv.max = pvBase + (vig - 1) * 4;
+  state.pe.max = peBase + (pre - 1) * 2;
+  state.san.max = sanBase + (pre - 1) * 2;
+  document.getElementById('pvMax').textContent = state.pv.max;
+  document.getElementById('peMax').textContent = state.pe.max;
+  document.getElementById('sanMax').textContent = state.san.max;
+  document.getElementById('sanLimitDisplay').textContent = Math.floor(state.san.max / 2);
+  updateAllBars();
+}
+
+function onClassChange() {
+  updateMaxResources();
+  showToast('Classe alterada — estatísticas recalculadas');
+}
+
+// ============================================================
+//  RESOURCES
+// ============================================================
+function updateBar(type) {
+  const actual = parseInt(document.getElementById(type + 'Atual').value) || 0;
+  const max = state[type].max;
+  const pct = Math.max(0, Math.min(100, (actual / max) * 100));
+  document.getElementById(type + 'Bar').style.width = pct + '%';
+  state[type].atual = actual;
+}
+
+function changeRes(type, delta) {
+  const inp = document.getElementById(type + 'Atual');
+  let v = parseInt(inp.value) || 0;
+  v = Math.max(0, Math.min(state[type].max, v + delta));
+  inp.value = v;
+  updateBar(type);
+  if (type === 'pv' && v === 0) showToast('☠ AGENTE INCAPACITADO!', 'danger');
+  if (type === 'san' && v <= Math.floor(state.san.max / 2)) showToast('⚠ SAN CRÍTICA — teste de Vontade!', 'warn');
+}
+
+function updateAllBars() {
+  ['pv','pe','san'].forEach(t => {
+    const actual = parseInt(document.getElementById(t + 'Atual').value) || 0;
+    const pct = Math.max(0, Math.min(100, (actual / state[t].max) * 100));
+    document.getElementById(t + 'Bar').style.width = pct + '%';
+  });
+}
+
+// ============================================================
+//  NEX
+// ============================================================
+function updateNex(val) {
+  const v = Math.max(5, Math.min(99, parseInt(val) || 5));
+  state.nex = v;
+  document.getElementById('headerNex').textContent = v;
+  document.getElementById('nexPctDisplay').textContent = v;
+  document.getElementById('nexInput').value = v;
+  document.getElementById('nexBarFill').style.width = v + '%';
+  renderNexMilestones();
+  renderNexAbilities();
+}
+
+function changeNex(delta) {
+  const cur = parseInt(document.getElementById('nexInput').value) || 5;
+  updateNex(cur + delta);
+}
+
+function renderNexMilestones() {
+  const list = document.getElementById('nexMilestones');
+  if (!list) return;
+  list.innerHTML = NEX_MILESTONES.map(m => `
+    <div class="nex-milestone ${state.nex >= m.pct ? 'reached' : ''}" onclick="updateNex(${m.pct})" title="NEX ${m.pct}%">
+      <span class="milestone-pct">${m.pct}%</span>
+      <span class="milestone-name">${m.label}</span>
+    </div>`).join('');
+}
+
+function renderNexAbilities() {
+  const el = document.getElementById('nexAbilities');
+  if (!el) return;
+  const abils = [
+    { nex: 5, text: 'Habilidades de NEX 5% da sua classe.', type:'class' },
+    { nex: 10, text: 'Habilidade de trilha (escolha sua trilha).', type:'trilha' },
+    { nex: 15, text: 'Poder de classe à sua escolha.', type:'class' },
+    { nex: 20, text: 'Aumento de atributo +1 (máx. 5).', type:'attr' },
+    { nex: 25, text: 'Rituais de 2º círculo desbloqueados (Ocultistas).', type:'ritual' },
+    { nex: 30, text: 'Talento de classe à sua escolha.', type:'class' },
+    { nex: 35, text: 'Grau de treinamento em 3+INT perícias aumenta em 1.', type:'skill' },
+    { nex: 40, text: 'Habilidade de trilha II.', type:'trilha' },
+    { nex: 50, text: 'Aumento de atributo +1 (máx. 5).', type:'attr' },
+    { nex: 55, text: 'Rituais de 3º círculo desbloqueados (Ocultistas).', type:'ritual' },
+    { nex: 65, text: 'Habilidade de trilha III.', type:'trilha' },
+    { nex: 70, text: 'Grau de treinamento aumenta em 1 (veterano → expert).', type:'skill' },
+    { nex: 85, text: 'Rituais de 4º círculo desbloqueados (Ocultistas).', type:'ritual' },
+    { nex: 99, text: 'Habilidade de trilha final — limiar do Outro Lado.', type:'trilha' },
+  ].filter(a => a.nex <= state.nex);
+  if (!abils.length) {
+    el.innerHTML = '<div style="opacity:0.3;font-family:\'Share Tech Mono\',monospace;font-size:10px;letter-spacing:2px;text-align:center;padding:16px">Sem habilidades adicionais ainda</div>';
+    return;
+  }
+  const colors = { class: 'var(--teal)', trilha: 'var(--paranormal)', attr: 'var(--warn)', ritual: 'var(--para-dark)', skill: 'var(--san-green)' };
+  el.innerHTML = abils.reverse().map(a => `
+    <div style="display:flex;gap:12px;align-items:center;padding:10px 14px;border:1px solid var(--border);background:var(--void-light)">
+      <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:${colors[a.type]};border:1px solid;padding:2px 6px;flex-shrink:0">${a.nex}%</span>
+      <span style="font-size:13px;color:var(--text-dim)">${a.text}</span>
+    </div>`).join('');
+}
+
+// ============================================================
+//  PRESTÍGIO
+// ============================================================
+function changePP(delta) {
+  state.pp = Math.max(0, state.pp + delta);
+  document.getElementById('ppVal').textContent = state.pp;
+  // patente
+  let pat = PATENTES[0];
+  for (const p of PATENTES) { if (state.pp >= p.pp) pat = p; }
+  document.getElementById('patente').textContent = pat.nome;
+}
+
+// ============================================================
+//  PERÍCIAS
+// ============================================================
+function renderPericias() {
+  const list = document.getElementById('periciasList');
+  if (!list) return;
+  const BONUSES = [0, 5, 10, 15]; // destreinado=0 (só atributo), treinado=+5, vet=+10, exp=+15
+  const LEVEL_LABELS = ['—', 'T', 'V', 'E'];
+  const attrMap = {
+    'FOR': state.attrs.For, 'AGI': state.attrs.Agi,
+    'INT': state.attrs.Int, 'PRE': state.attrs.Pre, 'VIG': state.attrs.Vig
+  };
+  list.innerHTML = state.pericias.map((p, i) => {
+    const attrVal = attrMap[p.attr] || 1;
+    const attrBonus = attrVal - 1;
+    const perBonus = BONUSES[p.nivel];
+    const total = attrBonus + perBonus;
+    const levelLabel = p.nivel > 0 ? `<span class="train-label ${p.nivel===1?'t':p.nivel===2?'v':'e'}">${LEVEL_LABELS[p.nivel]}</span>` : '';
+    return `
+    <div class="pericia-item" onclick="cyclePericia(${i})">
+      <div class="pericia-train">
+        <div class="train-dot ${p.nivel >= 1 ? (p.nivel >= 3 ? 'expert' : 'filled') : ''}" title="Treinado"></div>
+        <div class="train-dot ${p.nivel >= 2 ? (p.nivel >= 3 ? 'expert' : 'filled') : ''}" title="Veterano"></div>
+        <div class="train-dot ${p.nivel >= 3 ? 'expert' : ''}" title="Expert"></div>
+      </div>
+      <span class="pericia-name">${p.name}</span>
+      ${levelLabel}
+      <span class="pericia-attr">${p.attr}</span>
+      <span class="pericia-bonus">${total >= 0 ? '+' : ''}${total}</span>
+    </div>`;
+  }).join('');
+}
+
+function cyclePericia(i) {
+  state.pericias[i].nivel = (state.pericias[i].nivel + 1) % 4;
+  renderPericias();
+  const labels = ['Destreinado', 'Treinado', 'Veterano', 'Expert'];
+  showToast(`${state.pericias[i].name}: ${labels[state.pericias[i].nivel]}`);
+}
+
+// ============================================================
+//  RITUAIS
+// ============================================================
+function renderRituais() {
+  const list = document.getElementById('ritualList');
+  if (!list) return;
+  const data = state.rituais.length ? state.rituais : RITUAIS_EXEMPLO;
+  list.innerHTML = data.map((r, i) => `
+    <div class="ritual-card">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <div class="ritual-circle">${r.circulo}</div>
+        <div class="ritual-name">${r.nome}</div>
+      </div>
+      <span class="ritual-pe">${r.pe} PE</span>
+      <div class="ritual-meta">
+        <span class="ritual-tag">⏱ ${r.exec}</span>
+        <span class="ritual-tag">◎ ${r.alcance}</span>
+        <span class="ritual-tag">⏳ ${r.duracao}</span>
+      </div>
+      <div class="ritual-desc">${r.desc}</div>
+    </div>`).join('');
+}
+
+function addRitual() {
+  const nome = prompt('Nome do ritual:');
+  if (!nome) return;
+  const pe = parseInt(prompt('Custo de PE:') || '2');
+  const circulo = parseInt(prompt('Círculo (1–4):') || '1');
+  state.rituais.push({ nome, circulo, exec:'Ação', alcance:'9m', duracao:'Cena', pe, desc:'Descreva o efeito do ritual...' });
+  renderRituais();
+  showToast('🌀 Ritual aprendido: ' + nome, 'para');
+}
+
+// ============================================================
+//  ITENS
+// ============================================================
+function renderItems() {
+  const list = document.getElementById('itemList');
+  if (!list) return;
+  list.innerHTML = state.items.map((item, i) => `
+    <div class="inv-item" onclick="removeItem(${i})" title="Clique para remover">
+      <span class="inv-icon">${item.icon}</span>
+      <span class="inv-name">${item.name}</span>
+      <span class="inv-cat">${item.cat}</span>
+      <span class="inv-prestatio">${item.pp > 0 ? item.pp + ' PP' : '—'}</span>
+    </div>`).join('');
+}
+
+function addItem() {
+  const n = document.getElementById('newItem').value.trim();
+  if (!n) return;
+  state.items.push({ icon:'📦', name:n, cat:'UTIL', pp:0 });
+  document.getElementById('newItem').value = '';
+  renderItems();
+}
+
+function removeItem(i) {
+  const name = state.items[i].name;
+  state.items.splice(i, 1);
+  renderItems();
+  showToast('🗑 Removido: ' + name);
+}
+
+// ============================================================
+//  SANIDADE
+// ============================================================
+function setSanStage(stage) {
+  state.sanStage = stage;
+  const stages = document.querySelectorAll('.san-stage');
+  stages.forEach(s => s.className = 'san-stage');
+  const map = { sane: 0, perturb: 1, insane: 2 };
+  const idx = map[stage];
+  stages[idx].classList.add('active-stage', stage);
+  const descs = {
+    sane: 'O agente se encontra estável. Nenhum efeito de insanidade ativo.',
+    perturb: 'O agente está perturbado. Penalidade de -2 em testes de Presença e Vontade. Pode sofrer flashbacks.',
+    insane: 'O agente está enlouquecido. Sujeito a transtornos graves. Comportamento imprevisível. Consulte o Mestre.'
+  };
+  document.getElementById('sanDesc').textContent = descs[stage];
+  if (stage !== 'sane') showToast('🧠 Estado mental alterado!', stage === 'insane' ? 'danger' : 'warn');
+}
+
+function addTranstorno() {
+  const t = document.getElementById('newTranstorno').value.trim();
+  if (!t) return;
+  state.transtornos.push(t);
+  document.getElementById('newTranstorno').value = '';
+  renderTranstornos();
+}
+
+function renderTranstornos() {
+  const list = document.getElementById('transtornoList');
+  if (!list) return;
+  if (!state.transtornos.length) {
+    list.innerHTML = '<div style="text-align:center;padding:24px;opacity:0.3;font-family:\'Share Tech Mono\',monospace;font-size:11px;letter-spacing:2px">NENHUM TRANSTORNO REGISTRADO</div>';
+    return;
+  }
+  list.innerHTML = state.transtornos.map((t, i) => `
+    <div class="transtorno-item">
+      <span class="transtorno-tag">TRANSTORNO</span>
+      <span style="flex:1">${t}</span>
+      <button onclick="removeTranstorno(${i})" style="background:none;border:none;color:var(--danger);cursor:pointer;opacity:0.6;font-size:13px">✕</button>
+    </div>`).join('');
+}
+
+function removeTranstorno(i) {
+  state.transtornos.splice(i, 1);
+  renderTranstornos();
+}
+
+// ============================================================
+//  MISSIONS / ANOTAÇÕES
+// ============================================================
+function renderMissions() {
+  const list = document.getElementById('missionList');
+  if (!list) return;
+  list.innerHTML = state.missions.map((m, i) => `
+    <div class="mission-item">
+      <div class="mission-check ${m.done ? 'done' : ''}" onclick="toggleMission(${i})"></div>
+      <span class="mission-text ${m.done ? 'done' : ''}">${m.text}</span>
+      <button onclick="removeMission(${i})" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:12px;opacity:0.5">✕</button>
+    </div>`).join('');
+}
+
+function addMission() {
+  const t = document.getElementById('missionInput').value.trim();
+  if (!t) return;
+  state.missions.push({ text: t, done: false });
+  document.getElementById('missionInput').value = '';
+  renderMissions();
+}
+
+function toggleMission(i) {
+  state.missions[i].done = !state.missions[i].done;
+  renderMissions();
+}
+
+function removeMission(i) {
+  state.missions.splice(i, 1);
+  renderMissions();
+}
+
+// ============================================================
+//  NPCs CONHECIDOS
+// ============================================================
+function renderKnownNpcs() {
+  const list = document.getElementById('npcKnown');
+  if (!list) return;
+  const colors = { 'Aliado':'var(--san-green)', 'Inimigo':'var(--danger)', 'Neutro':'var(--warn)', 'Incerto':'var(--text-dim)' };
+  list.innerHTML = state.knownNpcs.map((n, i) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--border);background:var(--void-light)">
+      <span style="width:7px;height:7px;border-radius:50%;background:${colors[n.rel]||'var(--teal)'};flex-shrink:0"></span>
+      <span style="flex:1;font-size:13px">${n.name}</span>
+      <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:${colors[n.rel]||'var(--teal)'}">${n.rel}</span>
+      <button onclick="removeKnownNpc(${i})" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:12px">✕</button>
+    </div>`).join('');
+}
+
+function addKnownNpc() {
+  const name = document.getElementById('npcNameInput').value.trim();
+  const rel = document.getElementById('npcRelInput').value;
+  if (!name) return;
+  state.knownNpcs.push({ name, rel });
+  document.getElementById('npcNameInput').value = '';
+  renderKnownNpcs();
+}
+
+function removeKnownNpc(i) {
+  state.knownNpcs.splice(i, 1);
+  renderKnownNpcs();
+}
+
+// ============================================================
+//  INICIATIVA
+// ============================================================
+function renderInitiative() {
+  const list = document.getElementById('initList');
+  if (!list) return;
+  if (!state.initiatives.length) {
+    list.innerHTML = '<div style="text-align:center;padding:20px;opacity:0.3;font-family:\'Share Tech Mono\',monospace;font-size:10px;letter-spacing:2px">NENHUM COMBATENTE</div>';
+    return;
+  }
+  list.innerHTML = state.initiatives.map((init, i) => `
+    <div class="init-item ${i === state.currentTurn ? 'active' : ''}" onclick="setActiveTurn(${i})">
+      <span class="init-badge">${init.value}</span>
+      <span class="init-name">${init.name}</span>
+      <span class="init-tag ${init.type}">${init.type === 'player' ? 'PC' : init.type === 'enemy' ? 'INIMIGO' : 'NEU'}</span>
+      <button onclick="removeInit(event,${i})" style="background:none;border:none;color:var(--danger);cursor:pointer;opacity:0.5;font-size:14px">✕</button>
+    </div>`).join('');
+  document.getElementById('roundNum').textContent = state.round;
+}
+
+function addInitiative() {
+  const name = document.getElementById('initName').value.trim();
+  const val = parseInt(document.getElementById('initVal').value) || 0;
+  const type = document.getElementById('initType').value;
+  if (!name) return;
+  state.initiatives.push({ name, value: val, type });
+  state.initiatives.sort((a, b) => b.value - a.value);
+  document.getElementById('initName').value = '';
+  document.getElementById('initVal').value = '';
+  renderInitiative();
+  showToast('⚡ ' + name + ' entrou na ordem!');
+}
+
+function nextTurn() {
+  if (!state.initiatives.length) return;
+  state.currentTurn = (state.currentTurn + 1) % state.initiatives.length;
+  if (state.currentTurn === 0) state.round++;
+  renderInitiative();
+  showToast('⚡ Turno: ' + state.initiatives[state.currentTurn].name);
+}
+
+function setActiveTurn(i) { state.currentTurn = i; renderInitiative(); }
+
+function removeInit(e, i) {
+  e.stopPropagation();
+  state.initiatives.splice(i, 1);
+  if (state.currentTurn >= state.initiatives.length) state.currentTurn = 0;
+  renderInitiative();
+}
+
+function resetRound() {
+  state.round = 1;
+  state.currentTurn = -1;
+  renderInitiative();
+  showToast('Reset de combate realizado');
+}
+
+// ============================================================
+//  NPCs MESTRE
+// ============================================================
+function renderNpcs() {
+  const list = document.getElementById('npcCards');
+  if (!list) return;
+  list.innerHTML = state.npcs.map((npc, i) => `
+    <div class="npc-card">
+      <div class="npc-header">
+        <span class="npc-name">${npc.name}</span>
+        <span class="npc-threat">${npc.threat}</span>
+      </div>
+      <div class="npc-stats">
+        <span class="npc-stat">Ataque: <b>${npc.atk}</b></span>
+        <span class="npc-stat">Dano: <b>${npc.dmg}</b></span>
+      </div>
+      <div class="npc-hp-row">
+        <button class="npc-hp-btn" onclick="changeNpcHp(${i},-5)">−</button>
+        <div class="npc-hp-bar">
+          <div class="npc-hp-fill" id="npcHpFill_${i}" style="width:${(npc.hp/npc.maxHp)*100}%"></div>
+        </div>
+        <span class="npc-hp-text" id="npcHpText_${i}">${npc.hp}/${npc.maxHp}</span>
+        <button class="npc-hp-btn" onclick="changeNpcHp(${i},+5)">+</button>
+      </div>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:8px;font-style:italic">💬 ${npc.notes}</div>
+    </div>`).join('');
+}
+
+function changeNpcHp(i, delta) {
+  state.npcs[i].hp = Math.max(0, Math.min(state.npcs[i].maxHp, state.npcs[i].hp + delta));
+  const pct = (state.npcs[i].hp / state.npcs[i].maxHp) * 100;
+  document.getElementById('npcHpFill_' + i).style.width = pct + '%';
+  document.getElementById('npcHpText_' + i).textContent = state.npcs[i].hp + '/' + state.npcs[i].maxHp;
+  if (state.npcs[i].hp === 0) showToast('☠ ' + state.npcs[i].name + ' foi derrotado!', 'danger');
+}
+
+function addNpc() {
+  const name = prompt('Nome da entidade/NPC:');
+  if (!name) return;
+  const hp = parseInt(prompt('Pontos de Vida:') || '12');
+  state.npcs.push({ name, hp, maxHp: hp, atk:'+3', dmg:'1d6', threat:'AMEAÇA I', notes:'NPC recém-adicionado.' });
+  renderNpcs();
+}
+
+// ============================================================
+//  TABS
+// ============================================================
+function switchTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.querySelector(`[data-tab="${name}"]`).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ============================================================
+//  DICE
+// ============================================================
+function rollD20() {
+  const r = Math.ceil(Math.random() * 20);
+  const msg = r === 20 ? '🎯 CRÍTICO! d20 → 20!' : r === 1 ? '💀 DESASTRE! d20 → 1!' : `🎲 d20 → ${r}`;
+  const type = r === 20 ? 'teal' : r === 1 ? 'danger' : '';
+  showToast(msg, type);
+}
+
+// ============================================================
+//  PORTRAIT
+// ============================================================
+function uploadPortrait() {
+  document.getElementById('portraitFile').click();
+}
+function loadPortrait(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = document.getElementById('portraitImg');
+    img.src = e.target.result;
+    img.style.display = 'block';
+    document.querySelector('.portrait-placeholder').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+// ============================================================
+//  TOAST
+// ============================================================
+function showToast(msg, type) {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = 'toast' + (type ? ' ' + type : '');
+  toast.textContent = msg;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(20px)';
+    toast.style.transition = 'all 0.3s';
+    setTimeout(() => toast.remove(), 300);
+  }, 2200);
+}
+
+function updateHeaderNex() {}
+
+// ============================================================
+//  START
+// ============================================================
+init();
+</script>
+</body>
+</html>

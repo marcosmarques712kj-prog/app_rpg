@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ficha de Personagem — Etherion</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cinzel+Decorative:wght@400;700&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../styles/ficha.css">
+</head>
+<body>
+
+<!-- ===== TOP BAR ===== -->
+<div class="sheet-topbar">
+  <button class="sheet-back" onclick="voltarParaHome()">← Voltar</button>
+  <div class="sheet-identity">
+    <input class="sheet-name-input" id="f_nome" type="text" placeholder="Nome do Personagem" oninput="agendarSalvar()">
+  </div>
+  <span class="sheet-save-indicator" id="saveIndicator">✓ Salvo</span>
+</div>
+
+<!-- ===== TABS ===== -->
+<nav class="sheet-tabs">
+  <button class="sheet-tab active" data-tab="principal"  onclick="switchTab('principal')">✦ Principal</button>
+  <button class="sheet-tab" data-tab="pericias"   onclick="switchTab('pericias')">◈ Perícias</button>
+  <button class="sheet-tab" data-tab="grimorio"   onclick="switchTab('grimorio')">📕 Grimório Arcano</button>
+  <button class="sheet-tab" data-tab="combate"    onclick="switchTab('combate')">⚔ Combate</button>
+  <button class="sheet-tab" data-tab="inventario" onclick="switchTab('inventario')">⚜ Inventário</button>
+  <button class="sheet-tab" data-tab="biografia"  onclick="switchTab('biografia')">📖 Biografia</button>
+  <button class="sheet-tab" data-tab="notas"      onclick="switchTab('notas')">📜 Notas</button>
+</nav>
+
+<div class="sheet-wrap" id="sheetContent"></div>
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- MODAL DE CONFIRMAÇÃO DE ROLL -->
+<div class="roll-overlay" id="rollOverlay" onclick="fecharRoll()">
+  <div class="roll-modal" id="rollModal" onclick="event.stopPropagation()">
+    <div class="roll-modal-label" id="rollLabel">—</div>
+    <div class="roll-modal-result" id="rollResult">—</div>
+    <div class="roll-modal-detail" id="rollDetail">—</div>
+    <button class="roll-modal-close" onclick="fecharRoll()">Fechar</button>
+  </div>
+</div>
+
+<!-- IMPORTANTE: esta página roda dentro do <iframe id="sheet-frame"> do
+     shell (index.html). NÃO importar js/auth-supabase.js aqui de novo —
+     isso criaria uma SEGUNDA instância de GoTrueClient (cada import do
+     módulo roda createClient() de novo) e, mais grave, essa segunda
+     instância nunca fica pendurada em window.supabaseClient: quem faz
+     essa atribuição é só o bloco-ponte <script type="module"> dentro do
+     próprio index.html, que roda no window DO SHELL, não no window
+     deste documento (iframe tem window próprio). Resultado se
+     reimportássemos aqui: window.supabaseClient dentro do iframe ficaria
+     sempre undefined, mesmo logado, mesmo com o personagem existindo no
+     banco — era a causa do bug "Personagem não encontrado".
+     O jeito certo é ler o client já pronto do shell via
+     window.parent.supabaseClient (mesma origem, sandbox do iframe em
+     index.html já tem allow-same-origin, então isso funciona). Ver uso
+     em etherion-ficha.js, função obterSupabase(). -->
+<script src="../data/racas.js"></script>
+<script src="../data/magias.js"></script>
+<script src="../data/origens.js"></script>
+<script src="../data/classes.js"></script>
+<script src="ficha.js"></script>
+
+<!-- Quando esta página roda dentro do iframe do shell, o shell já mostra
+     seu próprio topbar (#topbar-sheet, com Voltar + título + indicador de
+     salvo via postMessage) — então escondemos o topbar interno daqui pra
+     não duplicar a barra "← Voltar" na tela. Mesmo padrão já usado em
+     campanha-dnd.html / campanha-op.html / campanha-tormenta.html /
+     campanha-etherion.html. Fica solto aqui no fim do body (depois do
+     etherion-ficha.js) só porque .sheet-topbar precisa já existir no
+     DOM — não depende de nada que etherion-ficha.js inicializa.
+
+     IMPORTANTE — por que também zeramos o `top` de .sheet-tabs aqui:
+     em etherion-ficha.css, .sheet-topbar tem height:60px e .sheet-tabs
+     é `position:sticky; top:60px;` — ou seja, as abas foram pensadas
+     pra grudar bem embaixo do topbar de 60px. Só esconder o topbar com
+     display:none NÃO muda esse top:60px do CSS: o sticky continua
+     reservando os mesmos 60px vazios no topo (porque a posição "presa"
+     dele é calculada a partir do viewport do PRÓPRIO iframe, sem saber
+     que o elemento que ela compensava sumiu) — isso é exatamente a
+     faixa em branco vazia que sobrava entre o topbar do shell e as
+     abas. Setamos top:0 inline aqui (maior especificidade que a regra
+     do CSS) só quando estamos no iframe, pra colapsar esse espaço. -->
+<script>
+  (function () {
+    const rodandoNoIframe = window.parent && window.parent !== window;
+    if (rodandoNoIframe) {
+      const topbar = document.querySelector('.sheet-topbar');
+      if (topbar) topbar.style.display = 'none';
+      const tabs = document.querySelector('.sheet-tabs');
+      if (tabs) tabs.style.top = '0';
+    }
+  })();
+</script>
+</body>
+</html>

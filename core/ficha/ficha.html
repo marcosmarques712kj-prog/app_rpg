@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ficha de Personagem — Forja das Eras</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cinzel+Decorative:wght@400;700&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/ficha-base.css">
+</head>
+<body>
+
+<!-- ===== TOP BAR ===== -->
+<div class="sheet-topbar">
+  <button class="sheet-back" onclick="voltarParaHome()">← Voltar</button>
+  <div class="sheet-identity">
+    <input class="sheet-name-input" id="f_nome" type="text" placeholder="Nome do Personagem" oninput="agendarSalvar()">
+  </div>
+  <span class="sheet-save-indicator" id="saveIndicator">✓ Salvo</span>
+</div>
+
+<!-- ===== TABS ===== -->
+<nav class="sheet-tabs">
+  <button class="sheet-tab active" data-tab="principal" onclick="switchTab('principal')">⚔ Principal</button>
+  <button class="sheet-tab" data-tab="pericias" onclick="switchTab('pericias')">🎯 Perícias</button>
+  <button class="sheet-tab" data-tab="combate" onclick="switchTab('combate')">💥 Combate</button>
+  <button class="sheet-tab" data-tab="inventario" onclick="switchTab('inventario')">🎒 Inventário</button>
+  <button class="sheet-tab" data-tab="biografia" onclick="switchTab('biografia')">📖 Biografia</button>
+  <button class="sheet-tab" data-tab="notas" onclick="switchTab('notas')">📜 Notas</button>
+</nav>
+
+<div class="sheet-wrap" id="sheetContent">
+<!-- conteúdo injetado via JS após carregar o personagem -->
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="ficha.js"></script>
+</body>
+</html>
