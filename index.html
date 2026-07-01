@@ -29,7 +29,7 @@
       <span class="logo-subtitle">Sistema de Campanhas & Personagens</span>
     </div>
   </div>
-  <span id="authStatus" style="margin-left:auto; color:var(--gold,#C9A84C); font-size:12px; letter-spacing:1px; opacity:0.85;"></span>
+  <div id="authStatus" style="margin-left:auto; display:flex; align-items:center; gap:10px;"></div>
 </header>
 
 <!-- ===== PRIMARY NAV — MODO HUB (visível por padrão) ===== -->
@@ -302,6 +302,7 @@ const SISTEMAS = [
     corBg: 'rgba(201,168,76,0.08)',
     ficha: 'rpg-interface.html',
     urlCampanha: 'sistemas/dnd/campanha-dnd.html',
+    disponivel: false, // ficha ainda não migrada pro Supabase (usa localStorage antigo)
     campos: [
       { id: 'cls', label: 'Classe', tipo: 'select', opcoes: ['Bárbaro','Bardo','Clérigo','Druida','Feiticeiro','Guerreiro','Ladino','Mago','Monge','Paladino','Ranger','Bruxo'] },
       { id: 'race', label: 'Raça', tipo: 'select', opcoes: ['Humano','Elfo','Anão','Halfling','Gnomo','Meio-Orc','Meio-Elfo','Tiefling','Draconato','Outro'] },
@@ -319,6 +320,7 @@ const SISTEMAS = [
     corBg: 'rgba(27,191,181,0.08)',
     ficha: 'sistemas/ordem_paranormal/rpg-op.html',
     urlCampanha: 'sistemas/ordem_paranormal/campanha-op.html',
+    disponivel: false, // ficha ainda não migrada pro Supabase (usa localStorage antigo)
     campos: [
       { id: 'cls', label: 'Classe', tipo: 'select', opcoes: ['Combatente','Especialista','Ocultista'] },
       { id: 'origem', label: 'Origem', tipo: 'select', opcoes: ['Acadêmico','Amnésico','Artista','Atleta','Criança Prodígio','Detetive','Enfermeiro','Engenheiro','Executivo','Jornalista','Líder Comunitário','Lutador','Médico','Militar','Ocultista','Policial','Refugiado','Religioso','Servidor Público','Técnico'] },
@@ -335,6 +337,7 @@ const SISTEMAS = [
     corBg: 'rgba(196,90,16,0.08)',
     ficha: 'rpg-interface.html',
     urlCampanha: 'sistemas/tormenta/campanha-tormenta.html',
+    disponivel: false, // ficha ainda não migrada pro Supabase (usa localStorage antigo)
     campos: [
       { id: 'cls', label: 'Classe', tipo: 'select', opcoes: ['Arcanista','Bárbaro','Bardo','Bucaneiro','Caçador','Cavaleiro','Clérigo','Druida','Guerreiro','Inventor','Ladino','Lutador','Nobre','Paladino'] },
       { id: 'race', label: 'Raça', tipo: 'select', opcoes: ['Humano','Elfo','Anão','Halfling','Gnomo','Goblin','Lefou','Minotauro','Qareen','Sereia/Tritão','Sílfide','Suraggel','Tigrino'] },
@@ -351,6 +354,7 @@ const SISTEMAS = [
     corBg: 'rgba(155,111,212,0.08)',
     ficha: 'sistemas/etherion/etherion-ficha.html',
     urlCampanha: 'sistemas/etherion/campanha-etherion.html',
+    disponivel: true, // único sistema com ficha migrada pro Supabase
     campos: [
       { id: 'cls',   label: 'Classe', tipo: 'select', opcoes: ['Guerreiro','Paladino','Ranger','Ladino','Mago','Feiticeiro','Clérigo','Druida','Bardo','Monge','Mercenário','Explorador','Outro'] },
       { id: 'race',  label: 'Raça',   tipo: 'select', opcoes: ['Humano','Elfo','Elfo das Sombras','Anão','Halfling','Orken','Zirkin','Draconato','Tiefling','Aasimar','Feérico','Outro'] },
@@ -389,10 +393,25 @@ async function carregarDadosDoSupabase() {
   const user = window.usuarioLogado ? window.usuarioLogado() : null;
   console.log('[diag] carregarDadosDoSupabase() chamada. user =', user ? user.id : null);
   if (!user) {
-    console.log('[diag] sem usuário — zerando CAMPANHAS/PERSONAGENS');
-    CAMPANHAS = [];
-    PERSONAGENS = [];
-    _dadosCarregados = true;
+    // Ao dar F5, o SDK do Supabase leva um instante pra processar o
+    // localStorage e confirmar a sessão — nesse intervalo,
+    // usuarioLogado() pode retornar null momentaneamente mesmo com o
+    // usuário de fato logado. Se ainda não tivemos NENHUMA carga de
+    // dados confirmada (_dadosCarregados === false), não zeramos nada
+    // agora — apenas aguardamos a próxima notificação de auth (que vai
+    // chegar com o usuário real assim que o SDK terminar). Só zeramos
+    // de fato quando já tínhamos dados carregados antes e a sessão
+    // realmente caiu (logout explícito, token expirado etc.) — nesse
+    // caso sim é um estado "visitante" real, não um flash de loading.
+    if (_dadosCarregados) {
+      console.log('[diag] sem usuário (sessão encerrada de fato) — zerando CAMPANHAS/PERSONAGENS');
+      CAMPANHAS = [];
+      PERSONAGENS = [];
+      renderCampanhas();
+      renderPersonagens();
+    } else {
+      console.log('[diag] sem usuário ainda (pode ser F5 processando sessão) — aguardando, NÃO zerando');
+    }
     return;
   }
 
@@ -995,6 +1014,15 @@ async function criarCampanha() {
 
   if (!nome || !sistema) { showToast('⚠ Preencha o nome e o sistema', 'warning'); return; }
 
+  // Defesa extra: mesmo que <option disabled> normalmente impeça
+  // seleção pela UI, o value poderia ser forçado via DevTools. Nunca
+  // confiar só na UI pra bloquear sistemas ainda não migrados.
+  const sistemaCampanha = getSistema(sistema);
+  if (!sistemaCampanha || sistemaCampanha.disponivel === false) {
+    showToast('⚠ Este sistema ainda não está disponível para campanhas.', 'warning');
+    return;
+  }
+
   const dadosForm = { nome, sistema, jogadores: parseInt(jogadores) || 4, desc, banner: _pendingBanner || null };
 
   // Guarda a intenção ANTES de exigir login — se precisar de redirect
@@ -1132,6 +1160,14 @@ async function criarPersonagem() {
   const sistema = document.getElementById('ch_system').value;
   if (!nome || !sistema) { showToast('⚠ Preencha o nome e o sistema', 'warning'); return; }
 
+  // Defesa extra: mesmo que <option disabled> normalmente impeça
+  // seleção pela UI, o value poderia ser forçado via DevTools.
+  const sistemaPersonagem = getSistema(sistema);
+  if (!sistemaPersonagem || sistemaPersonagem.disponivel === false) {
+    showToast('⚠ Este sistema ainda não está disponível para personagens.', 'warning');
+    return;
+  }
+
   // Classe/Raça/Nível/Alinhamento etc. NÃO são mais preenchidos aqui no
   // momento da criação (feature descontinuada de propósito — ver nota
   // acima de preencherSelectsSistema()). O personagem nasce só com nome
@@ -1259,8 +1295,10 @@ function renderSistemas() {
   grid.innerHTML = SISTEMAS.map((s, i) => {
     const camps = CAMPANHAS.filter(c => c.sistema === s.id).length;
     const chars = PERSONAGENS.filter(p => p.sistema === s.id).length;
+    const desabilitado = s.disponivel === false;
     return `
-    <div class="sistema-card fade-in" style="animation-delay:${i*0.07}s; --sys-cor:${s.cor}">
+    <div class="sistema-card fade-in" style="position:relative; animation-delay:${i*0.07}s; --sys-cor:${s.cor}; ${desabilitado ? 'opacity:0.45;' : ''}">
+      ${desabilitado ? `<div style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,0.6);color:${s.cor};font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;padding:3px 8px;border:1px solid ${s.cor}40;border-radius:2px;">Em breve</div>` : ''}
       <div class="sistema-icon" style="color:${s.cor}">${sysIcon(s,'3.5em')}</div>
       <div class="sistema-nome">${s.nome}</div>
       <div class="sistema-desc">${s.desc}</div>
@@ -1268,9 +1306,10 @@ function renderSistemas() {
         <span>⚔ ${camps} campanha${camps!==1?'s':''}</span>
         <span>🧙 ${chars} personagem${chars!==1?'s':''}</span>
       </div>
-      <button class="sistema-btn" style="border-color:${s.cor}40;color:${s.cor}" onclick="window.location.href='livros/sistema-hub.html?sys=${s.id}'">
-        Ver Sistema →
-      </button>
+      ${desabilitado
+        ? `<button class="sistema-btn" style="border-color:${s.cor}40;color:${s.cor};cursor:not-allowed;" onclick="showToast('🔧 Este sistema ainda está sendo migrado — em breve!','info')">Em breve</button>`
+        : `<button class="sistema-btn" style="border-color:${s.cor}40;color:${s.cor}" onclick="window.location.href='livros/sistema-hub.html?sys=${s.id}'">Ver Sistema →</button>`
+      }
     </div>`;
   }).join('') + `
     <div class="sistema-card sistema-add fade-in" onclick="showToast('🔧 Em breve você poderá adicionar sistemas customizados!','info')">
@@ -1343,7 +1382,9 @@ function preencherSelectsSistema() {
     SISTEMAS.forEach(s => {
       const opt = document.createElement('option');
       opt.value = s.id;
-      opt.textContent = s.icon + ' ' + s.nome;
+      const indisponivel = s.disponivel === false;
+      opt.textContent = s.icon + ' ' + s.nome + (indisponivel ? ' (Em breve)' : '');
+      opt.disabled = indisponivel;
       sel.appendChild(opt);
     });
   });
@@ -1482,19 +1523,35 @@ init();
   window.consumirAcaoPendente = consumirAcaoPendente;
   window.supabaseClient = supabase;
 
-  // Atualiza um indicador simples de login no header (se existir na
-  // página) toda vez que o estado de auth mudar. Ver bloco HTML do
-  // header — adicionamos um span#authStatus lá embaixo, opcional.
+  // Sanitização básica contra XSS — nome/avatar vêm de dados do
+  // usuário (Discord via Supabase), nunca inserir sem escapar.
+  function escHtml(str) {
+    return String(str || '')
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  // Atualiza o header: botão "Entrar com Discord" quando deslogado,
+  // avatar + nome + botão "Sair" quando logado. Antes disso só havia
+  // um texto discreto que só aparecia depois de já logado — sem
+  // nenhum indicativo visual claro de como logar antes disso.
   onMudancaAuth((user, perfil) => {
     const el = document.getElementById('authStatus');
     if (!el) return;
     if (user) {
-      el.textContent = '✦ ' + (perfil?.username || 'Logado');
-      el.onclick = async () => { await logout(); window.location.reload(); };
-      el.style.cursor = 'pointer';
+      const avatar = escHtml(perfil?.avatar_url || 'https://cdn.discordapp.com/embed/avatars/0.png');
+      const nome = escHtml(perfil?.username || user.user_metadata?.name || 'Aventureiro');
+      el.innerHTML = `
+        <img src="${avatar}" alt="" style="width:26px;height:26px;border-radius:50%;border:1px solid rgba(201,168,76,0.4);">
+        <span style="color:var(--gold,#C9A84C);font-size:12px;letter-spacing:1px;">${nome}</span>
+        <button id="btnSair" style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:1.5px;color:var(--gold,#C9A84C);background:none;border:1px solid rgba(201,168,76,0.3);padding:5px 12px;cursor:pointer;text-transform:uppercase;border-radius:2px;">Sair</button>
+      `;
+      document.getElementById('btnSair').onclick = async () => { await logout(); window.location.reload(); };
     } else {
-      el.textContent = '';
-      el.onclick = null;
+      el.innerHTML = `
+        <button id="btnEntrar" style="font-family:'Cinzel',serif;font-size:11px;letter-spacing:1.5px;color:var(--gold,#C9A84C);background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.4);padding:8px 20px;cursor:pointer;text-transform:uppercase;border-radius:2px;transition:all 0.2s;">✦ Entrar com Discord</button>
+      `;
+      document.getElementById('btnEntrar').onclick = () => exigirLogin('Bem-vindo à Forja das Eras');
     }
   });
 

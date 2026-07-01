@@ -46,7 +46,21 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 const SUPABASE_URL = 'https://qqaatpndnngdczatpjxf.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_zhHOZiEV-YipHcW8GNPwvQ_F4s40QmK';
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+// Opções explícitas de persistência de sessão. persistSession,
+// autoRefreshToken e detectSessionInUrl já são true por padrão no SDK
+// v2 — deixamos explícito aqui pra ficar claro no código que a
+// persistência entre fechamentos de navegador/F5 é intencional e não
+// pode ser removida sem entender o impacto (login teria que ser
+// refeito toda vez). storageKey customizado só documenta que essa
+// chave pertence à Forja — não muda comportamento de fato.
+export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    storageKey: 'forja-auth-token',
+  }
+});
 
 // ------------------------------------------------------------
 // Estado de sessão em memória — espelha o que o Supabase Auth
