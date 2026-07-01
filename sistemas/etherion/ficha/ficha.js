@@ -212,6 +212,19 @@ async function carregarPersonagem() {
       if (idEncontrado) d.classeEspec = idEncontrado;
     }
   }
+
+  // Migração: preenche/atualiza d.classeNome (label legível) para
+  // personagens que ainda não tinham esse campo, ou cujo classeBase/
+  // classeEspec foi normalizado acima — mesmo padrão de d.raca logo
+  // abaixo. Isso garante que campanha.html (que não carrega classes.js)
+  // consiga mostrar o nome da classe assim que o jogador reabrir a
+  // ficha uma vez, mesmo sem editar nada.
+  if (d.classeBase && typeof classesRPG !== 'undefined' && classesRPG[d.classeBase]) {
+    const base = classesRPG[d.classeBase];
+    const espec = d.classeEspec ? (base.especializacoes || {})[d.classeEspec] : null;
+    d.classeNome = espec ? espec.nome : base.nome;
+  }
+
   if (!d.origemId) d.origemId = '';
   if (!d.origemPericiasEscolhidas) d.origemPericiasEscolhidas = [];
   if (!d.classePericiasAtivas) d.classePericiasAtivas = [];
@@ -2600,6 +2613,11 @@ function onMudarClasseBase(val) {
   removerPericiasDeClasse();
   d.classeBase = val;
   d.classeEspec = '';
+  // Mantém um label legível em d.classeNome (mesmo padrão de d.raca em
+  // aplicarRaca()) — permite que outras telas (ex: campanha.html, que
+  // não carrega classes.js) mostrem o nome da classe sem duplicar o
+  // banco de classesRPG.
+  d.classeNome = (typeof classesRPG !== 'undefined' && classesRPG[val]) ? classesRPG[val].nome : '';
   recalcularEAplicarRecursos();
   agendarSalvar();
   renderPrincipal();
@@ -2611,6 +2629,14 @@ function aplicarEspecializacao(val) {
   removerPericiasDeClasse();
   d.classeEspec = val;
   if (val) aplicarPericiasDeClasse(d.classeBase, val);
+  // Mesmo raciocínio de onMudarClasseBase: guarda o nome legível da
+  // especialização (ou volta ao nome da classe base, se a especialização
+  // foi desmarcada) para leitura fora do contexto de classesRPG.
+  if (typeof classesRPG !== 'undefined' && classesRPG[d.classeBase]) {
+    const base = classesRPG[d.classeBase];
+    const espec = val ? (base.especializacoes || {})[val] : null;
+    d.classeNome = espec ? espec.nome : base.nome;
+  }
   recalcularEAplicarRecursos();
   agendarSalvar();
   renderPrincipal();

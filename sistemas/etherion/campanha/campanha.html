@@ -123,12 +123,16 @@
     margin-left: 6px;
   }
 
-  /* -------- Personagens: cards de recursos -------- */
+  /* -------- Personagens: grid de cards unificado (recursos + atributos + controle inline) -------- */
+  .chars-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 14px;
+  }
   .char-card {
     background: rgba(0,0,0,0.3);
     border: 1px solid rgba(139,105,20,0.3);
     padding: 14px 16px;
-    margin-bottom: 12px;
   }
   .char-card-head {
     display: flex;
@@ -149,6 +153,8 @@
     font-style: italic;
     opacity: 0.85;
   }
+
+  /* Recursos (Vida/Sanidade/Sopro/Mácula) — pills de leitura */
   .recursos-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -179,6 +185,99 @@
   .recurso-pill.sopro .valor { color: #7fae6f; }
   .recurso-pill.macula .valor { color: #9a6fae; }
 
+  /* Recursos — versão editável inline (mestre, ou jogador no próprio card) */
+  .recursos-editaveis {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .recurso-editavel {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(139,105,20,0.25);
+    padding: 6px 4px;
+    text-align: center;
+  }
+  .recurso-editavel label {
+    display: block;
+    font-family: 'Cinzel', serif;
+    font-size: 8px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--gold-dark);
+    margin-bottom: 4px;
+  }
+  .recurso-editavel .par {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+  }
+  .recurso-editavel input {
+    width: 38px;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(139,105,20,0.35);
+    color: var(--parchment-dark);
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    padding: 4px 2px;
+    text-align: center;
+  }
+  .recurso-editavel input:focus { outline: none; border-color: var(--gold); }
+  .recurso-editavel .max {
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    color: var(--gold-dark);
+    opacity: 0.8;
+  }
+
+  /* Atributos — grid compacto de 6 (FOR/COS/AGI/INT/SAB/CAR) */
+  .attrs-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .attr-pill {
+    background: rgba(0,0,0,0.35);
+    border: 1px solid rgba(139,105,20,0.2);
+    padding: 5px 2px;
+    text-align: center;
+  }
+  .attr-pill .label {
+    font-family: 'Cinzel', serif;
+    font-size: 8px;
+    letter-spacing: 1px;
+    color: var(--gold-dark);
+    display: block;
+  }
+  .attr-pill .valor {
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    color: var(--parchment-dark);
+  }
+
+  /* Defesa (CA) + Deslocamento — linha de stats secundários */
+  .char-substats {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    color: var(--parchment-dark);
+  }
+  .char-substats span { opacity: 0.85; }
+  .char-substats b { color: var(--gold); font-weight: 600; }
+
+  .status-indicator {
+    font-family: 'EB Garamond', serif;
+    font-size: 11px;
+    font-style: italic;
+    color: var(--gold);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .status-indicator.show { opacity: 0.8; }
+
   .btn-action {
     background: rgba(0,0,0,0.5);
     border: 1px solid var(--gold-dark);
@@ -191,53 +290,6 @@
     white-space: nowrap;
   }
   .btn-action:hover { background: rgba(201,168,76,0.1); color: var(--gold-light); }
-
-  /* -------- Controle (só mestre): edição inline de recursos -------- */
-  .controle-card {
-    background: rgba(0,0,0,0.3);
-    border: 1px solid rgba(139,105,20,0.3);
-    padding: 14px 16px;
-    margin-bottom: 12px;
-  }
-  .controle-campos {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
-    margin-top: 10px;
-  }
-  .controle-campo label {
-    display: block;
-    font-family: 'Cinzel', serif;
-    font-size: 8px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    color: var(--gold-dark);
-    margin-bottom: 4px;
-  }
-  .controle-campo input {
-    width: 100%;
-    background: rgba(0,0,0,0.5);
-    border: 1px solid rgba(139,105,20,0.35);
-    color: var(--parchment-dark);
-    font-family: 'Cinzel', serif;
-    font-size: 14px;
-    padding: 6px 8px;
-    text-align: center;
-  }
-  .controle-campo input:focus {
-    outline: none;
-    border-color: var(--gold);
-  }
-  .controle-status {
-    font-family: 'EB Garamond', serif;
-    font-size: 11px;
-    font-style: italic;
-    color: var(--gold);
-    opacity: 0;
-    transition: opacity 0.3s;
-    margin-left: 8px;
-  }
-  .controle-status.show { opacity: 0.8; }
 
   .realtime-dot {
     width: 7px; height: 7px; border-radius: 50%;
@@ -484,7 +536,9 @@
   }
 
   @media (max-width: 720px) {
-    .recursos-grid, .controle-campos { grid-template-columns: repeat(2, 1fr); }
+    .recursos-grid, .recursos-editaveis { grid-template-columns: repeat(2, 1fr); }
+    .attrs-grid { grid-template-columns: repeat(3, 1fr); }
+    .chars-grid { grid-template-columns: 1fr; }
     .form-npc, .form-diario-row { grid-template-columns: 1fr; }
   }
 </style>
@@ -527,7 +581,6 @@
     <button class="sheet-tab tab-mestre" data-tab="solicitacoes" onclick="switchTab('solicitacoes')" style="display:none;">
       🔔 Solicitações<span id="solicitacoesBadge" class="solicitacoes-badge" style="display:none;"></span>
     </button>
-    <button class="sheet-tab tab-mestre" data-tab="controle" onclick="switchTab('controle')" style="display:none;">🕯 Controle</button>
     <button class="sheet-tab tab-mestre" data-tab="npcs" onclick="switchTab('npcs')" style="display:none;">👥 NPCs</button>
     <button class="sheet-tab tab-mestre" data-tab="bestiario" onclick="switchTab('bestiario')" style="display:none;">🐉 Bestiário</button>
     <button class="sheet-tab tab-mestre" data-tab="notas" onclick="switchTab('notas')" style="display:none;">🖋 Notas do Mestre</button>
@@ -561,9 +614,11 @@
 
     <!-- TELA: PERSONAGENS -->
     <div id="panel-personagens" class="sheet-panel">
-      <div class="panel-title">O Grupo de Aventureiros</div>
+      <div class="panel-title">
+        <span class="realtime-dot tab-mestre" id="realtimeDot" style="display:none;"></span>O Grupo de Aventureiros
+      </div>
       <div class="box">
-        <div id="charsList">
+        <div id="charsList" class="chars-grid">
           <div class="empty-state"><div class="empty-state-text">Carregando heróis...</div></div>
         </div>
       </div>
@@ -618,18 +673,6 @@
       </div>
     </div>
 
-    <!-- TELA: CONTROLE (só mestre) -->
-    <div id="panel-controle" class="sheet-panel">
-      <div class="panel-title">
-        <span class="realtime-dot" id="realtimeDot"></span>Painel de Controle
-      </div>
-      <div class="box">
-        <div id="controleList">
-          <div class="empty-state"><div class="empty-state-text">Carregando personagens...</div></div>
-        </div>
-      </div>
-    </div>
-
     <!-- TELA: NPCs (só mestre) -->
     <div id="panel-npcs" class="sheet-panel">
       <div class="panel-title">NPCs da Campanha</div>
@@ -661,7 +704,7 @@
 
     <!-- TELA: NOTAS DO MESTRE (só mestre) -->
     <div id="panel-notas" class="sheet-panel">
-      <div class="panel-title">Notas do Mestre <span class="controle-status" id="notasStatus">salvando...</span></div>
+      <div class="panel-title">Notas do Mestre <span class="status-indicator" id="notasStatus">salvando...</span></div>
       <div class="box">
         <textarea id="notas_conteudo" class="text-box" style="height: 500px; background:rgba(0,0,0,0.5);" placeholder="Segredos, planos e anotações que só você pode ver."></textarea>
       </div>
@@ -690,6 +733,15 @@
 
   let campanha = null;
   let personagens = [];
+  // Lista pública e mínima de jogadores da campanha (id/nome/dono_id),
+  // vinda de listar_jogadores_campanha (SECURITY DEFINER) — usada só por
+  // renderJogadores() na aba Início. Diferente de `personagens`, que
+  // continua vindo da query direta em `personagens` e, para jogadores
+  // comuns, é filtrada pelo RLS ao próprio personagem (correto e
+  // intencional para a aba Personagens, que expõe `dados` completo —
+  // vida/sanidade/sopro/mácula/atributos — e não deve vazar recursos de
+  // outros jogadores para quem não é mestre).
+  let jogadoresPublicos = [];
   let npcs = [];
   let entradasDiario = [];
   let solicitacoesPendentes = [];
@@ -933,8 +985,11 @@
 
     // Carrega tudo que a página precisa em paralelo. RLS filtra o que
     // cada role pode ver (ex: notas_mestre só retorna algo se ehMestre).
+    // carregarJogadoresPublicos roda encadeada depois de carregarPersonagens
+    // (não em paralelo com ela) porque seu fallback de erro lê `personagens`
+    // — precisa que essa já tenha terminado de popular.
     await Promise.all([
-      carregarPersonagens(id),
+      carregarPersonagens(id).then(() => carregarJogadoresPublicos(id)),
       carregarNpcs(id),
       carregarDiario(id),
       ehMestre ? carregarNotasMestre(id) : Promise.resolve(),
@@ -946,7 +1001,6 @@
     renderNpcs();
     renderDiario();
     if (ehMestre) {
-      renderControle();
       await renderSolicitacoes();
       configurarFormNpc();
       configurarNotasMestre();
@@ -969,6 +1023,26 @@
       return;
     }
     personagens = data || [];
+  }
+
+  // Lista pública de jogadores (aba Início) via function SECURITY DEFINER
+  // — contorna o RLS restritivo de `personagens` para jogadores comuns
+  // sem enfraquecer a policy real da tabela. Ver migração
+  // 011_listar_jogadores_campanha.sql.
+  async function carregarJogadoresPublicos(campanhaId) {
+    const { data, error } = await sb
+      .rpc('listar_jogadores_campanha', { p_campanha_id: campanhaId });
+
+    if (error) {
+      console.error('[campanha-etherion] erro ao carregar jogadores da campanha:', error.message);
+      // Fallback: melhor mostrar ao menos o que a query direta trouxe
+      // (o próprio personagem, no caso de um jogador comum) do que uma
+      // lista vazia — cobre o caso da function ainda não ter sido
+      // criada no banco (migração 011 não rodada ainda).
+      jogadoresPublicos = personagens.map(p => ({ personagem_id: p.id, personagem_nome: p.nome, dono_id: p.dono_id }));
+      return;
+    }
+    jogadoresPublicos = data || [];
   }
 
   async function carregarNpcs(campanhaId) {
@@ -1046,14 +1120,14 @@
   // RENDER: Início — lista de jogadores
   // -----------------------------------------------------------
   function renderJogadores() {
-    if (personagens.length === 0) {
+    if (jogadoresPublicos.length === 0) {
       mostrarVazio('jogadoresList', 'Nenhum jogador entrou nesta campanha ainda.');
       return;
     }
 
     // Um "jogador" aqui é um personagem vinculado à campanha — busca
     // os perfis (nome/avatar) dos donos únicos.
-    const donoIds = [...new Set(personagens.map(p => p.dono_id).filter(Boolean))];
+    const donoIds = [...new Set(jogadoresPublicos.map(p => p.dono_id).filter(Boolean))];
 
     sb.from('usuarios').select('*').in('id', donoIds).then(({ data: perfis, error }) => {
       if (error) console.error('[campanha-etherion] erro ao carregar perfis de jogadores:', error.message);
@@ -1061,7 +1135,7 @@
       (perfis || []).forEach(p => { perfisPorId[p.id] = p; });
 
       const list = document.getElementById('jogadoresList');
-      list.innerHTML = personagens.map(p => {
+      list.innerHTML = jogadoresPublicos.map(p => {
         const perfil = perfisPorId[p.dono_id];
         const nome = esc(perfil?.username || 'Jogador desconhecido');
         const avatar = perfil?.avatar_url ? esc(perfil.avatar_url) : '';
@@ -1069,27 +1143,98 @@
         return `
         <div class="jogador-row">
           ${avatar ? `<img class="jogador-avatar" src="${avatar}" alt="">` : `<div class="jogador-avatar"></div>`}
-          <div class="jogador-nome">${nome}${ehDonoMestre ? '<span class="tag-mestre">MESTRE</span>' : ''} — <span style="opacity:0.7;">${esc(p.nome)}</span></div>
+          <div class="jogador-nome">${nome}${ehDonoMestre ? '<span class="tag-mestre">MESTRE</span>' : ''} — <span style="opacity:0.7;">${esc(p.personagem_nome)}</span></div>
         </div>`;
       }).join('');
     });
   }
 
   // -----------------------------------------------------------
-  // RENDER: Personagens — card por jogador com recursos + Abrir Ficha
+  // RENDER: Personagens — card unificado por jogador: identidade,
+  // atributos, defesa/deslocamento e recursos (editáveis para quem tem
+  // permissão de escrita: mestre em qualquer card, jogador no próprio).
+  // Unifica o que antes eram duas abas separadas (Personagens + Controle).
   // -----------------------------------------------------------
+  const RECURSOS_INFO = [
+    { chave: 'vida', label: 'Vida' },
+    { chave: 'san', label: 'Sanidade' },
+    { chave: 'sopro', label: 'Sopro' },
+    { chave: 'macula', label: 'Mácula' },
+  ];
+
+  // Versão somente-leitura dos recursos (pills) — usada quando quem olha
+  // não tem permissão de editar aquele card específico.
   function pillsRecursos(d) {
-    // Campos esperados em personagens.dados para Etherion: vida, vidaMax,
-    // sanidade, sanidadeMax, sopro, soproMax, macula, maculaMax. Usamos
-    // '—' quando ausente em vez de 0, para não sugerir "zerado" quando
-    // é apenas "não preenchido ainda" (ex: personagem recém-criado).
-    const par = (v, vMax) => (v === undefined || v === null) ? '—' : `${v}${vMax !== undefined && vMax !== null ? '/' + vMax : ''}`;
+    // Estrutura real gravada por ficha.js: dados.recursos = { vida: {cur,max},
+    // san: {cur,max}, sopro: {cur,max}, macula: {cur,max} }. A chave de
+    // sanidade é 'san', não 'sanidade' — confirmado em ficha.js (função
+    // calcularRecursosMaximos / recalcularEAplicarRecursos). Usamos '—'
+    // quando ausente em vez de 0, para não sugerir "zerado" quando é
+    // apenas "não preenchido ainda" (ex: personagem recém-criado, ainda
+    // sem d.recursos definido).
+    const r = d.recursos || {};
+    const par = (rec) => (!rec || rec.cur === undefined || rec.cur === null)
+      ? '—'
+      : `${rec.cur}${rec.max !== undefined && rec.max !== null ? '/' + rec.max : ''}`;
     return `
       <div class="recursos-grid">
-        <div class="recurso-pill vida"><span class="label">Vida</span><span class="valor">${esc(par(d.vida, d.vidaMax))}</span></div>
-        <div class="recurso-pill san"><span class="label">Sanidade</span><span class="valor">${esc(par(d.sanidade, d.sanidadeMax))}</span></div>
-        <div class="recurso-pill sopro"><span class="label">Sopro</span><span class="valor">${esc(par(d.sopro, d.soproMax))}</span></div>
-        <div class="recurso-pill macula"><span class="label">Mácula</span><span class="valor">${esc(par(d.macula, d.maculaMax))}</span></div>
+        <div class="recurso-pill vida"><span class="label">Vida</span><span class="valor">${esc(par(r.vida))}</span></div>
+        <div class="recurso-pill san"><span class="label">Sanidade</span><span class="valor">${esc(par(r.san))}</span></div>
+        <div class="recurso-pill sopro"><span class="label">Sopro</span><span class="valor">${esc(par(r.sopro))}</span></div>
+        <div class="recurso-pill macula"><span class="label">Mácula</span><span class="valor">${esc(par(r.macula))}</span></div>
+      </div>`;
+  }
+
+  // Versão editável dos recursos — inputs numéricos para o `cur` de cada
+  // recurso, com o `max` atual mostrado ao lado só como referência (não
+  // editável aqui: max é calculado pela própria ficha a partir de
+  // nível/atributos/classe, então este painel não deve sobrescrevê-lo).
+  function recursosEditaveisHTML(p) {
+    const r = (p.dados || {}).recursos || {};
+    const campos = RECURSOS_INFO.map(c => {
+      const rec = r[c.chave] || {};
+      const maxAtual = rec.max ?? '—';
+      return `
+      <div class="recurso-editavel ${c.chave}">
+        <label>${c.label}</label>
+        <div class="par">
+          <input type="number" data-pid="${esc(p.id)}" data-campo="${c.chave}" value="${rec.cur ?? ''}">
+          <span class="max">/ ${esc(maxAtual)}</span>
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="recursos-editaveis">${campos}</div>`;
+  }
+
+  // Grid dos 6 atributos do Etherion (FOR/COS/AGI/INT/SAB/CAR).
+  function attrsGridHTML(d) {
+    const a = d.attrs || {};
+    const attrs = [
+      { chave: 'for', label: 'FOR' }, { chave: 'cos', label: 'COS' }, { chave: 'agi', label: 'AGI' },
+      { chave: 'int', label: 'INT' }, { chave: 'sab', label: 'SAB' }, { chave: 'car', label: 'CAR' },
+    ];
+    return `
+      <div class="attrs-grid">
+        ${attrs.map(at => `
+          <div class="attr-pill">
+            <span class="label">${at.label}</span>
+            <span class="valor">${a[at.chave] !== undefined && a[at.chave] !== null ? esc(a[at.chave]) : '—'}</span>
+          </div>`).join('')}
+      </div>`;
+  }
+
+  // Defesa (CA) e Deslocamento — campos calculados e gravados pela
+  // própria ficha.js (função renderCombate: d.ca, d.deslocamento), lidos
+  // aqui prontos. campanha.html não recalcula CA/Deslocamento porque
+  // essa lógica depende de classesRPG/racasRPG (data/classes.js e
+  // data/racas.js), que só a ficha carrega.
+  function substatsHTML(d) {
+    const ca = (d.ca !== undefined && d.ca !== null) ? d.ca : '—';
+    const desloc = d.deslocamento || '—';
+    return `
+      <div class="char-substats">
+        <span>Defesa: <b>${esc(ca)}</b></span>
+        <span>Deslocamento: <b>${esc(desloc)}</b></span>
       </div>`;
   }
 
@@ -1113,29 +1258,63 @@
     charsList.innerHTML = lista.map(p => {
       const d = p.dados || {};
       const raca = esc(d.raca || d.race || 'Desconhecido');
-      const classe = esc(d.classe || d.cls || '');
+      // d.classeNome é o label legível gravado por ficha.js (onMudarClasseBase
+      // / aplicarEspecializacao) — d.classeBase/d.classeEspec são chaves
+      // internas (ex: 'vanguarda'), não texto de exibição.
+      const classe = esc(d.classeNome || '');
       const nivel = esc(d.nivel ?? d.level ?? 1);
       const nome = esc(p.nome);
+      // Quem pode editar este card: o mestre (em qualquer card) ou o
+      // próprio jogador (no seu próprio personagem).
+      const podeEditar = ehMestre || p.dono_id === usuarioAtual?.id;
       return `
       <div class="char-card" data-pid="${esc(p.id)}">
         <div class="char-card-head">
           <div>
             <div class="char-mini-name">${nome}</div>
-            <div class="char-mini-info">${raca} ${classe} — Nível ${nivel}</div>
+            <div class="char-mini-info">${raca}${classe ? ' ' + classe : ''} — Nível ${nivel}</div>
           </div>
-          <button class="btn-action" data-pid="${esc(p.id)}">Abrir Ficha</button>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="status-indicator" data-status-pid="${esc(p.id)}">salvo</span>
+            <button class="btn-action" data-pid="${esc(p.id)}">Abrir Ficha</button>
+          </div>
         </div>
-        ${pillsRecursos(d)}
+        ${attrsGridHTML(d)}
+        ${substatsHTML(d)}
+        <div style="margin-top:10px;">
+          ${podeEditar ? recursosEditaveisHTML(p) : pillsRecursos(d)}
+        </div>
       </div>`;
     }).join('');
 
     charsList.querySelectorAll('.btn-action[data-pid]').forEach(btn => {
       btn.addEventListener('click', () => abrirFichaPersonagem(btn.dataset.pid));
     });
+
+    anexarListenersRecursosEditaveis(charsList);
+  }
+
+  // Debounce por personagem: espera a pessoa parar de digitar antes de
+  // gravar, evitando um UPDATE a cada tecla. `timersPorPersonagem` fica
+  // em escopo de módulo (não local a renderChars) porque esta função
+  // também é chamada de atualizarCardPersonagemNaTela, depois que o
+  // Realtime reconstrói um card individual — os dois pontos de chamada
+  // precisam compartilhar os mesmos timers por personagem.
+  const timersPorPersonagem = {};
+  function anexarListenersRecursosEditaveis(escopo) {
+    escopo.querySelectorAll('input[data-pid][data-campo]').forEach(input => {
+      input.addEventListener('input', () => {
+        const pid = input.dataset.pid;
+        const statusEl = document.querySelector(`[data-status-pid="${CSS.escape(pid)}"]`);
+        if (statusEl) { statusEl.textContent = 'editando...'; statusEl.classList.add('show'); }
+        clearTimeout(timersPorPersonagem[pid]);
+        timersPorPersonagem[pid] = setTimeout(() => salvarRecursosPersonagem(pid), 700);
+      });
+    });
   }
 
   function abrirFichaPersonagem(pid) {
-    const url = `../ficha/ficha.html?id=${encodeURIComponent(pid)}`;
+    const url = `/sistemas/etherion/ficha/ficha.html?id=${encodeURIComponent(pid)}`;
     if (rodandoNoIframe) {
       avisarShell('ficha:abrir', url);
     } else {
@@ -1145,12 +1324,36 @@
 
   // Atualiza um card de personagem já renderizado sem re-render total
   // (usado pelo Realtime — troca instantânea sem "piscar" a lista).
+  // Só troca os recursos (leitura ou editável, conforme o card já estava)
+  // — atributos/CA/deslocamento não mudam por esta via porque Realtime só
+  // dispara em UPDATE de `personagens.dados`, que nesta página só é
+  // escrito por salvarRecursosPersonagem (edita só `recursos`, nunca
+  // attrs/ca/deslocamento — esses só mudam dentro da própria ficha).
   function atualizarCardPersonagemNaTela(personagemAtualizado) {
     const card = document.querySelector(`.char-card[data-pid="${CSS.escape(personagemAtualizado.id)}"]`);
     if (!card) return;
     const d = personagemAtualizado.dados || {};
-    const grid = card.querySelector('.recursos-grid');
-    if (grid) grid.outerHTML = pillsRecursos(d);
+
+    // Se algum input deste card estiver com foco agora, quem está vendo
+    // a tela está editando ativamente — não sobrescreve via outerHTML
+    // (perderia o foco e o valor sendo digitado). O update do Realtime
+    // fica represado até o próximo re-render (troca de aba, F5, ou o
+    // próprio salvarRecursosPersonagem local, que não reconstrói o DOM).
+    if (card.contains(document.activeElement) && document.activeElement.tagName === 'INPUT') return;
+
+    // Card pode estar em modo editável (recursos-editaveis) ou
+    // somente-leitura (recursos-grid), dependendo de quem está vendo —
+    // reconstrói com o mesmo modo que já estava.
+    const editavelEl = card.querySelector('.recursos-editaveis');
+    if (editavelEl) {
+      editavelEl.outerHTML = recursosEditaveisHTML(personagemAtualizado);
+      // Reanexa o listener de debounce no(s) input(s) recém-criado(s) —
+      // outerHTML destrói os listeners antigos.
+      anexarListenersRecursosEditaveis(card);
+    } else {
+      const grid = card.querySelector('.recursos-grid');
+      if (grid) grid.outerHTML = pillsRecursos(d);
+    }
   }
 
   // -----------------------------------------------------------
@@ -1348,11 +1551,12 @@
     if (acao === 'aprovar') {
       // O personagem aprovado agora pertence à campanha — recarrega
       // a lista de personagens/jogadores para refletir o novo membro
-      // sem precisar dar F5 na página inteira.
-      await carregarPersonagens(campanha.id);
+      // sem precisar dar F5 na página inteira. Encadeado (não paralelo)
+      // pelo mesmo motivo do carregamento inicial: o fallback de erro
+      // de carregarJogadoresPublicos lê `personagens`.
+      await carregarPersonagens(campanha.id).then(() => carregarJogadoresPublicos(campanha.id));
       renderChars();
       renderJogadores();
-      if (ehMestre) renderControle();
       showToast('Jogador aprovado e adicionado à campanha!');
     } else {
       showToast('Solicitação rejeitada.');
@@ -1489,71 +1693,34 @@
   }
 
   // -----------------------------------------------------------
-  // Controle — só mestre. Edição direta de vida/san/sopro/mácula de
-  // qualquer jogador, sem abrir a ficha. Mudanças propagam via
-  // Realtime para os cards na aba Personagens de todos os presentes.
+  // Salva o `cur` de vida/sanidade/sopro/mácula editados inline no card
+  // (mestre em qualquer personagem, ou o próprio dono no seu). Mudanças
+  // propagam via Realtime para os cards de todos os presentes.
   // -----------------------------------------------------------
-  const CAMPOS_RECURSO = [
-    { chave: 'vida', chaveMax: 'vidaMax', label: 'Vida' },
-    { chave: 'sanidade', chaveMax: 'sanidadeMax', label: 'Sanidade' },
-    { chave: 'sopro', chaveMax: 'soproMax', label: 'Sopro' },
-    { chave: 'macula', chaveMax: 'maculaMax', label: 'Mácula' },
-  ];
-
-  function renderControle() {
-    if (personagens.length === 0) {
-      mostrarVazio('controleList', 'Nenhum personagem nesta campanha ainda.');
-      return;
-    }
-
-    const list = document.getElementById('controleList');
-    list.innerHTML = personagens.map(p => {
-      const d = p.dados || {};
-      const campos = CAMPOS_RECURSO.map(c => `
-        <div class="controle-campo">
-          <label>${c.label}</label>
-          <input type="number" data-pid="${esc(p.id)}" data-campo="${c.chave}" value="${d[c.chave] ?? ''}">
-        </div>`).join('');
-      return `
-      <div class="controle-card" data-pid="${esc(p.id)}">
-        <div class="char-card-head">
-          <div class="char-mini-name">${esc(p.nome)}</div>
-          <span class="controle-status" data-status-pid="${esc(p.id)}">salvo</span>
-        </div>
-        <div class="controle-campos">${campos}</div>
-      </div>`;
-    }).join('');
-
-    // Debounce por personagem: espera a pessoa parar de digitar antes
-    // de gravar, evitando um UPDATE a cada tecla.
-    const timersPorPersonagem = {};
-    list.querySelectorAll('input[data-pid][data-campo]').forEach(input => {
-      input.addEventListener('input', () => {
-        const pid = input.dataset.pid;
-        const statusEl = list.querySelector(`[data-status-pid="${CSS.escape(pid)}"]`);
-        if (statusEl) { statusEl.textContent = 'editando...'; statusEl.classList.add('show'); }
-        clearTimeout(timersPorPersonagem[pid]);
-        timersPorPersonagem[pid] = setTimeout(() => salvarRecursosPersonagem(pid), 700);
-      });
-    });
-  }
-
   async function salvarRecursosPersonagem(pid) {
     const personagem = personagens.find(p => p.id === pid);
     if (!personagem) return;
 
     const statusEl = document.querySelector(`[data-status-pid="${CSS.escape(pid)}"]`);
-    const card = document.querySelector(`.controle-card[data-pid="${CSS.escape(pid)}"]`);
+    const card = document.querySelector(`.char-card[data-pid="${CSS.escape(pid)}"]`);
     if (!card) return;
 
+    // Estrutura real (ver ficha.js): dados.recursos[chave] = { cur, max }.
+    // Aqui só editamos o `cur` — o `max` é recalculado pela própria ficha
+    // (calcularRecursosMaximos) a partir de nível/atributos/classe, então
+    // não deve ser sobrescrito por este painel de edição rápida.
     const novosDados = { ...(personagem.dados || {}) };
-    card.querySelectorAll('input[data-campo]').forEach(input => {
+    novosDados.recursos = { ...(novosDados.recursos || {}) };
+    card.querySelectorAll('.recursos-editaveis input[data-campo]').forEach(input => {
+      const chave = input.dataset.campo;
       const valor = input.value === '' ? undefined : Number(input.value);
-      if (valor === undefined) {
-        delete novosDados[input.dataset.campo];
-      } else if (!Number.isNaN(valor)) {
-        novosDados[input.dataset.campo] = valor;
+      const recursoAtual = novosDados.recursos[chave] || {};
+      if (valor === undefined || Number.isNaN(valor)) {
+        // Mantém o recurso como está (não apaga max, e não deixa 'cur'
+        // indefinido de forma inconsistente com o que a ficha espera).
+        return;
       }
+      novosDados.recursos[chave] = { ...recursoAtual, cur: valor };
     });
 
     if (statusEl) statusEl.textContent = 'salvando...';
@@ -1571,12 +1738,12 @@
     }
 
     personagem.dados = novosDados;
-    // Atualiza também o card correspondente na aba Personagens, caso
-    // o mestre alterne entre abas sem recarregar — o Realtime cobriria
-    // isso pra outros usuários, mas para o PRÓPRIO mestre (que fez a
-    // mudança) o evento Realtime não é necessário já que já temos o
-    // dado em mãos aqui.
-    atualizarCardPersonagemNaTela(personagem);
+    // Não chamamos atualizarCardPersonagemNaTela aqui: faria outerHTML no
+    // próprio input que acabou de disparar o debounce, tirando o foco do
+    // campo bem no meio da edição. Os valores já estão corretos no DOM
+    // (foram eles que geraram este save) — só o indicador de status
+    // precisa mudar. O Realtime cobre a sincronização para OUTROS
+    // usuários olhando a mesma campanha.
 
     if (statusEl) {
       statusEl.textContent = '✓ salvo';
