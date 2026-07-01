@@ -124,19 +124,41 @@ async function _aplicarSessao(session) {
   _notificarOuvintes();
 }
 
-supabase.auth.onAuthStateChange(async (_evento, session) => {
+// FIX DEADLOCK (causa raiz do bug de sessão não persistindo): este
+// callback NUNCA pode ser async nem chamar diretamente nenhuma função
+// do client Supabase (nem uma query simples em .from()) — o SDK
+// executa onAuthStateChange enquanto ainda segura um lock interno
+// (Web Locks API) usado pra sincronizar leitura/escrita da sessão no
+// storage. Uma chamada Supabase feita DENTRO do callback (como a
+// query a `usuarios` dentro de _aplicarSessao) tenta readquirir esse
+// mesmo lock e trava pra sempre — sem erro, sem log, só nunca resolve.
+// É um bug documentado e ainda não corrigido do supabase-js:
+//   https://github.com/supabase/gotrue-js/issues/762
+//   https://supabase.com/docs/guides/troubleshooting/why-is-my-supabase-api-call-not-returning-PGzXw0
+//   https://supabase.com/docs/reference/javascript/auth-onauthstatechange
+// A correção recomendada pela própria Supabase: adiar a parte
+// assíncrona com setTimeout(fn, 0), que só roda depois que o callback
+// (e o lock que ele segura) já retornou. Isso explica o sintoma: na
+// carga com hard refresh, o INITIAL_SESSION chegava com sessão válida,
+// _aplicarSessao() travava pra sempre no await da query, _usuarioAtual
+// nunca era setado, e a UI ficava presa em "deslogado" (o branch de
+// sessão nula é síncrono e não sofre o deadlock, por isso ele sempre
+// "funcionava" — só o caminho de sessão válida travava).
+supabase.auth.onAuthStateChange((_evento, session) => {
   console.log('[auth-supabase] onAuthStateChange evento =', _evento, 'session =', session ? session.user.id : null);
-  if (session) {
-    await _aplicarSessao(session);
-  } else {
-    // Mesma proteção de geração do logout: avança a geração para que
-    // qualquer _aplicarSessao() antiga ainda "em voo" seja descartada
-    // ao terminar, em vez de reviver um usuário que já deslogou.
-    ++_geracaoSessao;
-    _usuarioAtual = null;
-    _perfilAtual = null;
-    _notificarOuvintes();
-  }
+  setTimeout(() => {
+    if (session) {
+      _aplicarSessao(session);
+    } else {
+      // Mesma proteção de geração do logout: avança a geração para que
+      // qualquer _aplicarSessao() antiga ainda "em voo" seja descartada
+      // ao terminar, em vez de reviver um usuário que já deslogou.
+      ++_geracaoSessao;
+      _usuarioAtual = null;
+      _perfilAtual = null;
+      _notificarOuvintes();
+    }
+  }, 0);
 });
 
 // ------------------------------------------------------------
