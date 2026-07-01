@@ -1,12 +1,3 @@
-// origens.js — Aetherion RPG System
-// 38 Origens Oficiais | Gerado conforme instrucoes_claude_origens_completo.md
-//
-// REGRA DE TOLERÂNCIA DE DUPLICIDADE (Flexibilidade Temática):
-// Se o jogador escolher uma Origem cujo poolPericias sobreponha uma perícia já
-// treinada pela Classe, o sistema NÃO trava nem bloqueia. A interface oferece
-// amigavelmente a opção de substituição, mas se o jogador confirmar a duplicidade
-// por escolha narrativa, a engine aceita e cria o personagem normalmente.
-
 const origensRPG = {
 
   // ───────────────────────────────────────────────────────────────────────────
