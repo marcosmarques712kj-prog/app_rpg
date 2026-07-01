@@ -54,6 +54,7 @@ const RACAS_DB = {
         resistencias: [],
         fraquezas: [],
         regiao: 'Todos os continentes',
+        pericias: ['sintonia', 'vontade'],
         habilidades: [
           { nome: 'Proficiência de Sintonia e Vontade', desc: '+2 na proficiência de Sintonia e +2 na proficiência de Vontade.' },
           { nome: 'Idiomas', desc: 'Valarin, Comum e mais 2 à escolha do jogador.' },
@@ -98,6 +99,7 @@ const RACAS_DB = {
         resistencias: ['Fogo (muito elevada)', 'Calor extremo e magma'],
         fraquezas: ['Vulnerabilidade a frio intenso', 'Ambientes sem calor reduzem sua eficiência'],
         regiao: 'Cidades de Forja, regiões vulcânicas, próximos a rios de magma.',
+        pericias: ['fortitude'],
         habilidades: [
           { nome: 'Fortitude Elevada', desc: 'Fortitude +2' },
           { nome: 'Chama de Pyraël', desc: 'Pode imbuir armas e o seu corpo com dano de fogo temporário.' },
@@ -117,6 +119,7 @@ const RACAS_DB = {
         resistencias: ['Terra (maior eficácia)', 'Pressão e ambientes extremos subterrâneos'],
         fraquezas: ['Velocidade reduzida', 'Dificuldade em terrenos instáveis (areia, lama, gelo)'],
         regiao: 'Cidadelas Abissais, túneis ancestrais esquecidos, próximos ao núcleo do mundo.',
+        pericias: ['fortitude'],
         habilidades: [
           { nome: 'Fortitude Elevada', desc: 'Fortitude +4 e resistência adicional a dano físico.' },
           { nome: 'Pele de Basalto', desc: 'Reduz dano físico recebido.' },
@@ -144,6 +147,7 @@ const RACAS_DB = {
         resistencias: ['Resistência a dano de Frio (Reduz em 5)'],
         fraquezas: ['Sensibilidade à Luz Extrema: -2 em percepção e ataques sob luz solar direta.'],
         regiao: 'Continente gélido de Nyrvald',
+        pericias: ['furtividade', 'acrobacia'],
         habilidades: [
           { nome: 'Filhos da Noite', desc: 'Visão perfeita no escuro mágico e não-mágico.' },
           { nome: 'Passo do Véu', desc: 'Como Ação Bônus, entram no véu. Até o fim do turno, ignoram ataques de oportunidade e terreno difícil.' },
@@ -162,6 +166,7 @@ const RACAS_DB = {
         resistencias: ['Imunidade a magias que alteram memórias ou causam confusão mental.'],
         fraquezas: ['Maldição do Nômade: Se dormirem no mesmo local por mais de 1 mês, perdem 1 de Vigor/Constituição permanentemente até viajarem.'],
         regiao: 'Nômades por natureza',
+        pericias: ['sintonia', 'tradicao', 'diplomacia'],
         habilidades: [
           { nome: 'Leveza dos Ventos', desc: 'Deslocamento base aumentado em 3 metros.' },
           { nome: 'Ecos da Criação', desc: 'Uma vez por sessão, podem transformar uma falha em Conhecimento, História ou Religião em Acerto Crítico.' },
@@ -181,6 +186,7 @@ const RACAS_DB = {
         resistencias: ['Fogo (Reduz em 5) e imunidade a calor extremo.'],
         fraquezas: ['Arrogância Solar: Desvantagem em testes de Vontade contra encantamentos de ego/controle mental.'],
         regiao: 'Continente árido de Morvath',
+        pericias: ['exploracao', 'percepcao'],
         habilidades: [
           { nome: 'Aura Iluminada', desc: 'Brilham levemente no escuro (ilumina 3m, impede furtividade total).' },
           { nome: 'Fúria de Pyraël', desc: 'Uma vez por turno (ação livre), imbuir armas com chamas douradas (+4 de dano).' },
@@ -207,6 +213,7 @@ const RACAS_DB = {
         resistencias: ['Dano Sombrio', 'Imunidade a Venenos não-mágicos', '+2 Vontade contra controle mental (exceto Nythraxis)'],
         fraquezas: ['Marca de Nythraxis: Cura recebida de Magias Sagradas cai pela metade, e dano sagrado causa o dobro de impacto.'],
         regiao: 'Áreas amaldiçoadas e através do Véu Trincado',
+        pericias: ['furtividade', 'exploracao'],
         habilidades: [
           { nome: 'Sacrifício Abissal', desc: 'Sacrifica PV (ex: 10 PV) para causar o triplo como Dano Sombrio extra (+30 dano) que ignora resistências físicas.' },
           { nome: 'Fome Indescritível', desc: 'Ao derrotar inimigo orgânico, consome sua essência para recuperar 5 PV imediatamente.' },
@@ -224,6 +231,7 @@ const RACAS_DB = {
         resistencias: ['Imunidade a Medo e Pânico', '+2 de Defesa Natural permanente'],
         fraquezas: ['Código de Honra: Incapazes de atacar inimigo desarmado/rendido. Quebrar resulta na perda dos bônus raciais.'],
         regiao: 'Exércitos estruturados de Aetherion',
+        pericias: ['intimidacao', 'tatica'],
         habilidades: [
           { nome: 'Avanço Tático', desc: 'Ação bônus para dar ordem. Um aliado ganha +4 em dano ou Defesa no próximo ataque.' },
           { nome: 'Golpe da Justiça', desc: 'Uma vez por cena, atacar inimigo que causou dano a um aliado causa +4 de dano fixo que ignora resistências físicas.' },
@@ -242,6 +250,7 @@ const RACAS_DB = {
         resistencias: ['Imunidade total a fogo natural e mágico'],
         fraquezas: ['Sangue Frio: Em frio extremo ou escuridão, deslocamento reduz pela metade e perdem imunidade a Fogo.'],
         regiao: 'Regiões vulcânicas e desérticas extremas',
+        pericias: ['atletismo', 'fortitude'],
         habilidades: [
           { nome: 'Vigor Solar', desc: 'Recuperam 2 PV sempre que começam o turno em ambiente com luz direta do sol.' },
           { nome: 'Coração de Fogo', desc: 'Uma vez por cena, inflama ataques corpo a corpo (+4 dano de fogo) por 3 rodadas.' },
@@ -261,6 +270,7 @@ const RACAS_DB = {
         resistencias: ['Dano Elétrico', '+2 em esquiva ou reflexos contra área', 'Vantagem na Iniciativa'],
         fraquezas: ['Hiperatividade: Não conseguem ficar parados. Sofrem -4 em testes de Furtividade.'],
         regiao: 'Montanhas',
+        pericias: ['atletismo', 'acrobacia'],
         habilidades: [
           { nome: 'Investida do Trovão', desc: 'Se mover 6m em linha reta antes de atacar, causa +4 dano elétrico extra e empurra 3m.' },
           { nome: 'Grito da Tempestade', desc: 'Uma vez por sessão, grito que atordoa alvos próximos por 1 rodada (Fortitude evita).' },
@@ -278,6 +288,7 @@ const RACAS_DB = {
       { nome: 'Sangue Dracônico', desc: '+2 de Defesa Natural permanente.' },
       { nome: 'Proficiências', desc: '+4 em Intimidação e Atletismo.' }
     ],
+    pericias: ['intimidacao', 'atletismo'],
     subracas: {
       drakar_norte: {
         nome: 'Drakar do Norte (Morvhaël)',
