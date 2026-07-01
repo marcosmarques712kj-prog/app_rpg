@@ -65,6 +65,7 @@ const ALINHAMENTOS = [
 
 const PONTOS_INICIAIS = 6;
 const ATRIB_BASE     = 1;
+const ATRIB_CAP       = 20; // teto atual de atributo — método de compra além do cap ainda será definido
 
 // =============================================================
 // STORAGE
@@ -317,9 +318,24 @@ function recalcularEAplicarRecursos() {
   const novosMax = { vida: vidaMax, san: sanMax, sopro: soproMax, macula: maculaMax };
 
   Object.entries(novosMax).forEach(([id, novoMax]) => {
-    if (!d.recursos[id]) d.recursos[id] = { cur: novoMax, max: novoMax };
-    d.recursos[id].max = novoMax;
-    // Garante que cur não ultrapasse o novo max
+    if (!d.recursos[id]) {
+      d.recursos[id] = { cur: novoMax, max: novoMax };
+    } else {
+      // Se o max subiu (ex: subiu de nível, ganhou atributo, trocou de
+      // classe), soma a diferença no cur também — em vez de deixar o cur
+      // parado no valor antigo. Isso preserva o déficit que já existia
+      // (dano sofrido, sopro gasto etc.) ao invés de fazer o jogador
+      // "perder" o ganho do novo nível. Ex: 8/10 vida, sobe nível e o
+      // max vai pra 15 → devia virar 13/15 (ganhou os mesmos +5 do max),
+      // não ficar travado em 8/15.
+      const maxAntigo = d.recursos[id].max;
+      const delta = novoMax - maxAntigo;
+      if (delta > 0) {
+        d.recursos[id].cur = Math.min(novoMax, d.recursos[id].cur + delta);
+      }
+      d.recursos[id].max = novoMax;
+    }
+    // Garante que cur não ultrapasse o novo max (cobre o caso do max ter diminuído)
     if (d.recursos[id].cur > novoMax) d.recursos[id].cur = novoMax;
 
     // Atualiza DOM inline se os campos já existirem na tela
@@ -327,7 +343,7 @@ function recalcularEAplicarRecursos() {
     const curEl = document.getElementById('rcur_' + id);
     const barEl = document.getElementById('rbar_' + id);
     if (maxEl) maxEl.value = novoMax;
-    if (curEl && parseInt(curEl.value) > novoMax) curEl.value = d.recursos[id].cur;
+    if (curEl) { curEl.value = d.recursos[id].cur; curEl.max = novoMax; }
     if (barEl) {
       const pct = novoMax > 0 ? Math.min(100, Math.round((d.recursos[id].cur / novoMax) * 100)) : 0;
       barEl.style.width = pct + '%';
@@ -827,7 +843,7 @@ function renderPrincipal() {
           return `
           <div class="atrib-card">
             <div class="atrib-label">${a.nome}</div>
-            <input class="atrib-value" type="number" min="${piso}" max="20" value="${val}" id="atrib_${a.id}" oninput="atualizarAtrib('${a.id}',this.value)">
+            <input class="atrib-value" type="number" min="${piso}" max="${ATRIB_CAP}" value="${val}" id="atrib_${a.id}" oninput="atualizarAtrib('${a.id}',this.value)">
             <div class="atrib-mod">${a.full}${piso > ATRIB_BASE ? ` <span style="opacity:0.55">(piso racial ${piso})</span>` : ''}</div>
             <button class="atrib-roll-btn" onclick="rolarD20(${val},'${a.full}')" title="Rolar d20 + ${val}">⚄</button>
           </div>`;
@@ -868,11 +884,12 @@ function recursoHTML(id, label, cls, rec) {
   <div class="recurso-card">
     <div class="recurso-label ${cls}">${label}</div>
     <div class="recurso-values">
-      <input class="recurso-cur" type="number" value="${rec.cur}" id="rcur_${id}"
+      <input class="recurso-cur" type="number" value="${rec.cur}" id="rcur_${id}" min="0" max="${rec.max}"
         oninput="atualizarRecurso('${id}','cur',this.value)">
       <span class="recurso-sep">/</span>
-      <input class="recurso-max" type="number" value="${rec.max}" id="rmax_${id}" readonly
-        title="Calculado automaticamente pela classe e atributos" style="opacity:0.6;cursor:default">
+      <input class="recurso-max" type="number" value="${rec.max}" id="rmax_${id}" readonly tabindex="-1"
+        onwheel="event.preventDefault(); this.blur()"
+        title="Calculado automaticamente pela classe e atributos — não editável" style="opacity:0.6;cursor:not-allowed">
     </div>
     <div class="recurso-bar-track">
       <div class="recurso-bar-fill ${cls}" id="rbar_${id}" style="width:${pct}%"></div>
@@ -882,7 +899,29 @@ function recursoHTML(id, label, cls, rec) {
 
 function atualizarRecurso(id, campo, valor) {
   const d = PERSONAGEM.dados;
-  d.recursos[id][campo] = parseInt(valor) || 0;
+
+  // O max é sempre calculado automaticamente (nível/atributos/classe) em
+  // recalcularEAplicarRecursos — o jogador nunca escreve nele. O input já é
+  // readonly no HTML, mas travamos aqui também como segunda camada de defesa,
+  // caso algo chame esta função com campo 'max' no futuro.
+  if (campo === 'max') return;
+
+  if (campo === 'cur') {
+    const max = d.recursos[id].max;
+    let novoCur = parseInt(valor);
+    if (isNaN(novoCur)) novoCur = 0;
+    novoCur = Math.max(0, Math.min(max, novoCur)); // trava entre 0 e o max — não deixa passar do teto
+
+    d.recursos[id].cur = novoCur;
+
+    // Se o valor digitado foi travado (ex: usuário tentou passar do max),
+    // sincroniza o campo na tela pra refletir o valor real salvo.
+    const curEl = document.getElementById('rcur_' + id);
+    if (curEl && parseInt(curEl.value) !== novoCur) curEl.value = novoCur;
+  } else {
+    d.recursos[id][campo] = parseInt(valor) || 0;
+  }
+
   const pct = d.recursos[id].max > 0
     ? Math.min(100, Math.round((d.recursos[id].cur / d.recursos[id].max) * 100))
     : 0;
@@ -2080,9 +2119,24 @@ function atualizarCampoSimples(campo, valor) {
 }
 
 function atualizarAtrib(id, valor) {
+  const d = PERSONAGEM.dados;
   const piso = getPisoAtrib(id);
-  const v = Math.max(piso, parseInt(valor) || piso);
-  PERSONAGEM.dados.attrs[id] = v;
+  let v = parseInt(valor);
+  if (isNaN(v)) v = piso;
+
+  // Quantos pontos já estão comprometidos pelos OUTROS atributos (sem
+  // contar o valor antigo deste, que está sendo substituído agora).
+  const valorAntigo = parseInt(d.attrs[id]) || piso;
+  const pontosOutros = pontosGastos() - Math.max(0, valorAntigo - piso);
+  const pontosDisponiveisParaEste = Math.max(0, PONTOS_INICIAIS - pontosOutros);
+
+  // Trava tripla: nunca abaixo do piso racial, nunca acima do teto atual
+  // (ATRIB_CAP), e nunca além do que os pontos restantes realmente pagam —
+  // essa última é a que faltava e permitia "Pontos Restantes" negativo.
+  const tetoOrcamento = piso + pontosDisponiveisParaEste;
+  v = Math.max(piso, Math.min(v, ATRIB_CAP, tetoOrcamento));
+
+  d.attrs[id] = v;
 
   // Re-renderiza o card pra refletir o valor travado (caso o jogador
   // tenha tentado descer abaixo do piso racial)
