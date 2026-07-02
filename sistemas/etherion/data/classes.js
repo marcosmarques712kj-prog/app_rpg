@@ -21,6 +21,8 @@ const classesRPG = {
     circuloMaximo: 4,
     // Trava 3 (verbos permitidos): dano físico direto e defesa.
     verbosPermitidos: ['destruir', 'cortar', 'proteger'],
+    // Trava 1 (aprendizado livre): marcial pura — sem vagas de escolha livre de aspecto.
+    aspectosAprendizado: 0,
     habilidadesComuns: [
       {
         nome: 'Corpo de Aço',
@@ -39,6 +41,8 @@ const classesRPG = {
         aliases: ['paladino', 'guardião', 'protetor sagrado'],
         citacao: 'Não existe martírio mais nobre do que ser o último escudo entre o abismo e os inocentes.',
         pericias: ['teologia', 'fortitude'],
+        // Trava 1: força pura / escudo místico — bate com o conceito de "último escudo".
+        aspectoPadrao: 'sopro_archeon',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -49,6 +53,8 @@ const classesRPG = {
         aliases: ['guerreiro', 'lâmina implacável', 'tempestade de aço'],
         citacao: 'Não preciso entender por que minha lâmina corta fundo. Só preciso continuar avançando.',
         pericias: ['atletismo', 'tatica'],
+        // Trava 1: fúria de combate direta — fogo que não perdoa, avanço implacável.
+        aspectoPadrao: 'sol_pyrael',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -59,6 +65,8 @@ const classesRPG = {
         aliases: ['tecelão', 'mago espadachim', 'lâmina arcana'],
         citacao: 'Eles esperavam encontrar um guerreiro ou um mago. Encontraram a fusão inevitável dos dois.',
         pericias: ['arcanismo', 'atletismo'],
+        // Trava 1: aspecto mais claramente "arcano/livresco" — coerente com o override de círculo maior abaixo.
+        aspectoPadrao: 'saber_aethrys',
         afinidadesRaciais: [],
         habilidades: [],
         // Override da trava 2: especialização mais arcana da Vanguarda — atraso menor, teto maior que a classe base.
@@ -72,6 +80,8 @@ const classesRPG = {
         aliases: ['comandante', 'líder', 'general', 'estrategista'],
         citacao: 'Uma batalha vencida pela força dura um dia; vencida pela mente, uma era.',
         pericias: ['tatica', 'diplomacia'],
+        // Trava 1: nome da especialização cita a divindade da Ordem diretamente.
+        aspectoPadrao: 'ordem_ordelyne',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -82,6 +92,8 @@ const classesRPG = {
         aliases: ['algoz', 'carrasco abissal', 'verdugo'],
         citacao: 'Aprendi com as sombras que o medo é a única armadura que o inimigo nunca consegue remover.',
         pericias: ['intimidacao', 'fortitude'],
+        // Trava 1: escuridão e dreno de sanidade — combina com o uso do medo como arma.
+        aspectoPadrao: 'trevas_kharvion',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -92,6 +104,8 @@ const classesRPG = {
         aliases: ['flagelo', 'servo de zyrhun', 'campeão corrompido'],
         citacao: 'Zyrhûn não me ofereceu poder — ele me mostrou o poder que sempre existiu sob a carne.',
         pericias: ['ocultismo', 'fortitude'],
+        // Trava 1: citação nomeia a divindade diretamente — sem ambiguidade.
+        aspectoPadrao: 'caos_zyrhun',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -102,6 +116,8 @@ const classesRPG = {
         aliases: ['escudo vivo', 'muralha', 'tanque de terra'],
         citacao: 'A montanha não pede desculpas por estar no caminho — ela apenas está.',
         pericias: ['fortitude', 'vontade'],
+        // Trava 1: nome da especialização cita a divindade diretamente.
+        aspectoPadrao: 'terra_maelthra',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -113,6 +129,8 @@ const classesRPG = {
         citacao: 'Não controlo minha fúria. Apenas escolho onde ela vai bater primeiro.',
         // Assinatura do Vento Sul (Sahryx): fortitude + intimidação
         pericias: ['fortitude', 'intimidacao'],
+        // Trava 1: energia bruta e impetuosa — trovão/ira combinam com berserker.
+        aspectoPadrao: 'trovao_karyon',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -124,6 +142,8 @@ const classesRPG = {
         citacao: 'O inverno não grita antes de congelar um exército inteiro.',
         // Assinatura do Vento Norte (Morvhaël): percepção + furtividade
         pericias: ['percepcao', 'furtividade'],
+        // Trava 1: tema gelado explícito + guardião silencioso bate com a lore de Nyvelis.
+        aspectoPadrao: 'gelo_nyvelis',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -134,6 +154,8 @@ const classesRPG = {
         aliases: ['corpo abissal', 'tanque corrompido', 'carne mutada'],
         citacao: 'Ofereci minha carne ao Véu Trincado. Em troca, ela parou de poder ser cortada.',
         pericias: ['fortitude', 'ocultismo'],
+        // Trava 1: mutação de carne é o tema central do Caos de Zyrhûn.
+        aspectoPadrao: 'caos_zyrhun',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -158,6 +180,8 @@ const classesRPG = {
     circuloMaximo: 5,
     // Trava 3 (verbos permitidos): ataque furtivo, mobilidade, manipulação leve.
     verbosPermitidos: ['cortar', 'deslocar', 'alterar'],
+    // Trava 1 (aprendizado livre): marcial ágil com ponta de arcanismo — 1 vaga.
+    aspectosAprendizado: 1,
     habilidadesComuns: [
       {
         nome: 'Esquiva Reflexiva',
@@ -176,6 +200,8 @@ const classesRPG = {
         aliases: ['caçador', 'rastreador', 'atirador de elite'],
         citacao: 'A presa nunca vê o vento antes de sentir o corte.',
         pericias: ['percepcao', 'exploracao'],
+        // Trava 1: vínculo com fauna e rastreio — não há aspecto de "vento" puro, Nyvelis encaixa melhor.
+        aspectoPadrao: 'gelo_nyvelis',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -186,6 +212,8 @@ const classesRPG = {
         aliases: ['dervixe', 'dançarino de batalha', 'acrobata'],
         citacao: 'Sou o olho do furacão — tudo ao meu redor é caos, mas eu sou o silêncio dentro dele.',
         pericias: ['acrobacia', 'furtividade'],
+        // Trava 1: tempestade/imprevisibilidade mantendo Trilha Pura (caos_zyrhun seria Mácula).
+        aspectoPadrao: 'trovao_karyon',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -196,6 +224,8 @@ const classesRPG = {
         aliases: ['asceta', 'monge', 'lutador desarmado'],
         citacao: 'Depurando o corpo, encontrei o que os magos buscam por uma vida inteira em seus grimórios.',
         pericias: ['vontade', 'acrobacia'],
+        // Trava 1: nome já cita "Sopro"; força pura canalizada pelo próprio corpo.
+        aspectoPadrao: 'sopro_archeon',
         afinidadesRaciais: [],
         habilidades: [],
         // Override da trava 2: disciplina interna chega a um patamar mágico equivalente ao de um conjurador dedicado.
@@ -209,6 +239,8 @@ const classesRPG = {
         aliases: ['esgrimista', 'duelista', 'espadachim elegante'],
         citacao: 'Há uma arte em matar com estilo — e eu a pratiquei até se tornar indistinguível de uma dança.',
         pericias: ['acrobacia', 'diplomacia'],
+        // Trava 1: elegância/dança mortal como estética de combate — tema de Lyrëa.
+        aspectoPadrao: 'beleza_lyrea',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -219,6 +251,8 @@ const classesRPG = {
         aliases: ['assassino', 'sombra do véu', 'matador'],
         citacao: 'O Véu Trincado não é uma barreira — é uma porta pela qual entro sem ser convidado.',
         pericias: ['furtividade', 'ladinagem'],
+        // Trava 1: escuridão/furtividade — move-se pelas sombras do Véu.
+        aspectoPadrao: 'trevas_kharvion',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -229,6 +263,8 @@ const classesRPG = {
         aliases: ['gatuno', 'ladrão', 'infiltrador das sombras'],
         citacao: 'A noite não me esconde — somos velhos cúmplices, ela e eu.',
         pericias: ['ladinagem', 'enganacao'],
+        // Trava 1: sombra/noite — mesmo tema de assassino_do_veu.
+        aspectoPadrao: 'trevas_kharvion',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -239,6 +275,8 @@ const classesRPG = {
         aliases: ['punho', 'lutador abissal', 'berserker ágil'],
         citacao: 'Nythraxis não me deu garras — me fez perceber que minhas mãos sempre foram suficientes.',
         pericias: ['intimidacao', 'atletismo'],
+        // Trava 1: Nythraxis nasce do Caos de Zyrhûn (ver lore do próprio aspecto).
+        aspectoPadrao: 'caos_zyrhun',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -249,6 +287,8 @@ const classesRPG = {
         aliases: ['toxicomante', 'envenenador', 'alquimista das esporas'],
         citacao: 'Um cogumelo não avisa antes de matar. Eu aprendi a linguagem do silêncio dele.',
         pericias: ['artificio', 'exploracao'],
+        // Trava 1: veneno como parte do ciclo biológico/natural, mantendo Trilha Pura (teia_mabryth seria Mácula).
+        aspectoPadrao: 'vida_elyssera',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -259,6 +299,8 @@ const classesRPG = {
         aliases: ['duende trapaceiro', 'ladino feérico', 'pregador de peças'],
         citacao: 'Troquei sua bota pela minha sombra. Você só vai perceber quando tentar correr.',
         pericias: ['furtividade', 'enganacao'],
+        // Trava 1: sedução/ilusão feérica — travessuras e encantos.
+        aspectoPadrao: 'beleza_lyrea',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -283,6 +325,8 @@ const classesRPG = {
     circuloMaximo: 6,
     // Trava 3 (verbos permitidos): criação, ajuste de mecanismos, invocação de constructos/venenos.
     verbosPermitidos: ['manifestar', 'alterar', 'invocar'],
+    // Trava 1 (aprendizado livre): híbrida, ponta de arcanismo — 1 vaga.
+    aspectosAprendizado: 1,
     habilidadesComuns: [
       {
         nome: 'Análise Tática',
@@ -301,6 +345,8 @@ const classesRPG = {
         aliases: ['cronista', 'bardo', 'contador de histórias'],
         citacao: 'Os Feyrin me ensinaram que uma história mal contada mata mais devagar do que um veneno — mas com mais dor.',
         pericias: ['tradicao', 'diplomacia'],
+        // Trava 1: tradição e conhecimento são o tema central de Aethrýs.
+        aspectoPadrao: 'saber_aethrys',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -311,6 +357,8 @@ const classesRPG = {
         aliases: ['engenheiro', 'inventor', 'mecânico'],
         citacao: 'Qualquer idiota destrói. Requer gênio — e um bom par de alicates — para reconstruir.',
         pericias: ['artificio', 'investigacao'],
+        // Trava 1: artifício e construção física — perícia artificio já pertence ao próprio aspecto.
+        aspectoPadrao: 'terra_maelthra',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -321,6 +369,8 @@ const classesRPG = {
         aliases: ['alquimista', 'químico', 'boticário de guerra'],
         citacao: 'A diferença entre veneno e remédio é apenas a dose — e a minha intenção.',
         pericias: ['artificio', 'socorrismo'],
+        // Trava 1: química biológica de dupla face, mantendo Trilha Pura.
+        aspectoPadrao: 'vida_elyssera',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -331,6 +381,8 @@ const classesRPG = {
         aliases: ['sabotador', 'demolidor', 'agente duplo'],
         citacao: 'Não destruo por raiva nem por lucro. Destruo porque é a única linguagem que todos entendem.',
         pericias: ['investigacao', 'enganacao'],
+        // Trava 1: destruição corrosiva e cínica — tema do Caos de Zyrhûn.
+        aspectoPadrao: 'caos_zyrhun',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -341,6 +393,8 @@ const classesRPG = {
         aliases: ['infiltrador', 'espião', 'agente do submundo'],
         citacao: 'As pessoas protegem ouro e joias, mas nunca seus segredos — e segredos valem muito mais.',
         pericias: ['malandragem', 'enganacao'],
+        // Trava 1: sombra e dreno de sanidade — espião que vive nos segredos do submundo.
+        aspectoPadrao: 'trevas_kharvion',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -351,6 +405,8 @@ const classesRPG = {
         aliases: ['trapaceiro', 'apostador', 'vigarista'],
         citacao: 'O acaso não existe — existe apenas quem entende as regras e quem ainda não percebeu que as regras mudam.',
         pericias: ['malandragem', 'discernimento'],
+        // Trava 1: fios de destino/manipulação sutil — quem "tece as regras" do jogo.
+        aspectoPadrao: 'teia_mabryth',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -361,6 +417,8 @@ const classesRPG = {
         aliases: ['diplomata', 'negociador', 'face do grupo'],
         citacao: 'Três impérios se tornaram um só reino porque alguém, primeiro, soube ouvir.',
         pericias: ['diplomacia', 'discernimento'],
+        // Trava 1: persuasão e carisma — encantamento sedutor como ferramenta diplomática.
+        aspectoPadrao: 'beleza_lyrea',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -371,6 +429,8 @@ const classesRPG = {
         aliases: ['artífice', 'construtor de golens', 'engenheiro arcano'],
         citacao: 'Não dou vida às minhas criações. Só lembro à matéria que ela já esteve viva antes.',
         pericias: ['artificio', 'arcanismo'],
+        // Trava 1: a lore do próprio Saber de Aethrýs cita os Myrran — coerência direta.
+        aspectoPadrao: 'saber_aethrys',
         afinidadesRaciais: [],
         habilidades: [],
         // Override da trava 2: especialização mais próxima de conjuração real dentro da Especialista.
@@ -384,6 +444,8 @@ const classesRPG = {
         aliases: ['socorrista', 'médico de campo', 'curandeiro não-mágico'],
         citacao: 'Não preciso de um deus me observando para saber estancar um sangramento.',
         pericias: ['socorrismo', 'investigacao'],
+        // Trava 1: cura biológica é o tema exato, mesmo numa abordagem "não-mágica".
+        aspectoPadrao: 'vida_elyssera',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -408,6 +470,8 @@ const classesRPG = {
     circuloMaximo: 8,
     // Trava 3 (verbos permitidos): bênçãos, votos, barreiras sagradas.
     verbosPermitidos: ['proteger', 'selar', 'vincular'],
+    // Trava 1 (aprendizado livre): conjurador divino — 2 vagas.
+    aspectosAprendizado: 2,
     habilidadesComuns: [
       {
         nome: 'Canalização Sagrada',
@@ -426,6 +490,8 @@ const classesRPG = {
         aliases: ['sacerdote', 'curandeiro', 'padre da luz'],
         citacao: 'A luz não pede permissão para iluminar — e nem eu peço para curar.',
         pericias: ['teologia', 'socorrismo'],
+        // Trava 1: luz radiante é o tema explícito da especialização.
+        aspectoPadrao: 'ordem_ordelyne',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -436,6 +502,8 @@ const classesRPG = {
         aliases: ['teurgo', 'estudioso divino', 'guardião do legado'],
         citacao: 'Os Primordiais não morreram — vivem em cada palavra antiga que alguém ainda se atreve a pronunciar.',
         pericias: ['legado', 'teologia'],
+        // Trava 1: perícia legado já pertence ao próprio Tempo de Khaíros; tema histórico/temporal.
+        aspectoPadrao: 'tempo_khairos',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -446,6 +514,8 @@ const classesRPG = {
         aliases: ['inquisidor', 'juiz', 'purificador'],
         citacao: 'A fé sem tribunal é piedade. A fé com tribunal é ordem.',
         pericias: ['intimidacao', 'teologia'],
+        // Trava 1: Kharvion é o "Senhor das Punições" na própria lore — punição/julgamento severo.
+        aspectoPadrao: 'trevas_kharvion',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -456,6 +526,8 @@ const classesRPG = {
         aliases: ['profeta', 'vidente da dor', 'oráculo corrompido'],
         citacao: 'Cada visão que recebo é uma cicatriz nova na alma — mas nenhuma delas mentiu até hoje.',
         pericias: ['ocultismo', 'discernimento'],
+        // Trava 1: dreno de sanidade e visões sombrias, mantendo Trilha Corrompida.
+        aspectoPadrao: 'trevas_kharvion',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -466,6 +538,8 @@ const classesRPG = {
         aliases: ['clérigo de guerra', 'cruzado solar', 'punho sagrado'],
         citacao: 'Pyraël não me deu um cajado. Me deu punhos e disse: "faça o sol nascer com eles".',
         pericias: ['fortitude', 'teologia'],
+        // Trava 1: nome da especialização cita a divindade diretamente.
+        aspectoPadrao: 'sol_pyrael',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -476,6 +550,8 @@ const classesRPG = {
         aliases: ['oráculo', 'vidente', 'profeta do tempo'],
         citacao: 'Vejo o amanhã do mesmo jeito que vejo o ontem — como algo que já aconteceu.',
         pericias: ['teologia', 'discernimento'],
+        // Trava 1: nome da especialização cita a divindade diretamente.
+        aspectoPadrao: 'tempo_khairos',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -486,6 +562,8 @@ const classesRPG = {
         aliases: ['guardião da morte', 'sacerdote funerário', 'guardião das almas'],
         citacao: 'Morvethra não teme a morte. Ela é a única que sabe exatamente quanto tempo cada um tem.',
         pericias: ['teologia', 'vontade'],
+        // Trava 1: ampulheta = tempo de vida, mantendo Trilha Pura (morte_morvethra seria Mácula).
+        aspectoPadrao: 'tempo_khairos',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -496,6 +574,8 @@ const classesRPG = {
         aliases: ['escriba', 'sábio devoto', 'guardião da sabedoria'],
         citacao: 'Aethrýs me deu a língua universal. Eu apenas decidi que valia a pena usá-la para ensinar.',
         pericias: ['teologia', 'arcanismo'],
+        // Trava 1: nome da especialização cita a divindade diretamente.
+        aspectoPadrao: 'saber_aethrys',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -520,6 +600,8 @@ const classesRPG = {
     circuloMaximo: 10,
     // Trava 3 (verbos permitidos): acesso amplo por definição de conjurador puro.
     verbosPermitidos: ['manifestar', 'alterar', 'vincular', 'selar', 'destruir', 'invocar', 'cortar', 'proteger', 'deslocar'],
+    // Trava 1 (aprendizado livre): conjurador puro — maior número de vagas do jogo.
+    aspectosAprendizado: 3,
     habilidadesComuns: [
       {
         nome: 'Erudição Arcana',
@@ -538,6 +620,8 @@ const classesRPG = {
         aliases: ['mago', 'arcanista académico', 'estudioso da torre'],
         citacao: 'A Torre Mágica não forma magos — forma instrumentos capazes de suportar o peso do conhecimento sem quebrar.',
         pericias: ['arcanismo', 'investigacao'],
+        // Trava 1: erudição e estudo rigoroso são o tema central de Aethrýs.
+        aspectoPadrao: 'saber_aethrys',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -548,6 +632,8 @@ const classesRPG = {
         aliases: ['feiticeiro', 'nascido com magia', 'centelha viva'],
         citacao: 'Nunca aprendi magia — ela sempre esteve aqui, esperando que eu parasse de ter medo dela.',
         pericias: ['sintonia', 'tradicao'],
+        // Trava 1: a própria lore de Archëon fala em "centelha que antecede toda a criação".
+        aspectoPadrao: 'sopro_archeon',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -558,6 +644,8 @@ const classesRPG = {
         aliases: ['tecelão de ilusão', 'ilusionista', 'artífice de sonhos'],
         citacao: 'A verdade é apenas a miragem que mais pessoas concordaram em acreditar ao mesmo tempo.',
         pericias: ['arcanismo', 'enganacao'],
+        // Trava 1: ilusão e espelhos são o tema central de Lyrëa.
+        aspectoPadrao: 'beleza_lyrea',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -568,6 +656,8 @@ const classesRPG = {
         aliases: ['cronomante', 'manipulador do tempo', 'viajante de khairos'],
         citacao: 'Khairos não me ensinou a prever o futuro — me ensinou que o passado ainda não terminou de acontecer.',
         pericias: ['arcanismo', 'percepcao'],
+        // Trava 1: nome da especialização cita a divindade diretamente.
+        aspectoPadrao: 'tempo_khairos',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -578,6 +668,8 @@ const classesRPG = {
         aliases: ['bruxo', 'sangromante', 'feiticeiro de sangue'],
         citacao: 'O sangue é o único contrato que Nythraxis aceita — e ele sempre cobra com juros.',
         pericias: ['ocultismo', 'fortitude'],
+        // Trava 1: dreno de vida através do sangue é o tema mais próximo de Morvethra.
+        aspectoPadrao: 'morte_morvethra',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -588,6 +680,8 @@ const classesRPG = {
         aliases: ['arcanista corrompido', 'deformador', 'mutador arcano'],
         citacao: 'A carne é apenas o rascunho — e eu aprendi a reescrever.',
         pericias: ['ocultismo', 'atletismo'],
+        // Trava 1: mutação instável é o tema central e explícito de Zyrhûn.
+        aspectoPadrao: 'caos_zyrhun',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -598,6 +692,8 @@ const classesRPG = {
         aliases: ['invocador abissal', 'demonologista', 'convocador de nythraxis'],
         citacao: 'Não invoco demônios — firmo acordos com entidades que os demônios temem.',
         pericias: ['ocultismo', 'intimidacao'],
+        // Trava 1: pactos e fios que conectam o Véu Trincado a ofertas de poder — tema de Mabryth.
+        aspectoPadrao: 'teia_mabryth',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -608,6 +704,8 @@ const classesRPG = {
         aliases: ['evocador', 'canalizador de raio', 'punho do trovão'],
         citacao: 'O trovão chega depois do raio. Eu prefiro ser a parte que ninguém vê vindo.',
         pericias: ['arcanismo', 'percepcao'],
+        // Trava 1: eletricidade é o tema exato de Káryon Thraël.
+        aspectoPadrao: 'trovao_karyon',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -618,6 +716,8 @@ const classesRPG = {
         aliases: ['pactuante feérico', 'invocador de fadas', 'convocador élfico'],
         citacao: 'Lyrëa não concede poder — empresta, e cobra em favores que só ela sabe pedir.',
         pericias: ['sintonia', 'diplomacia'],
+        // Trava 1: nome da especialização cita a divindade diretamente.
+        aspectoPadrao: 'beleza_lyrea',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -628,6 +728,8 @@ const classesRPG = {
         aliases: ['enchanter', 'tecelão de bênçãos', 'suporte arcano'],
         citacao: 'Toda magia que lanço em um aliado é, na verdade, um acordo — e eu sempre cumpro minha parte.',
         pericias: ['arcanismo', 'sintonia'],
+        // Trava 1: certeza de que todo ato tem consequência — cumprir o acordo é o tema de Ordelyne.
+        aspectoPadrao: 'ordem_ordelyne',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -652,6 +754,8 @@ const classesRPG = {
     circuloMaximo: 9,
     // Trava 3 (verbos permitidos): criação de vida, invocação de bestas, transformação, força elemental.
     verbosPermitidos: ['manifestar', 'invocar', 'alterar', 'destruir'],
+    // Trava 1 (aprendizado livre): conjurador natural amplo — 2 vagas.
+    aspectosAprendizado: 2,
     habilidadesComuns: [
       {
         nome: 'Sangue do Mundo',
@@ -670,6 +774,8 @@ const classesRPG = {
         aliases: ['tecelão de archeon', 'criador', 'servo do motor'],
         citacao: 'Archëon não criou o mundo de uma vez — ele ainda o está criando, e eu sou parte desse processo.',
         pericias: ['sintonia', 'adaptacao'],
+        // Trava 1: nome da especialização cita a divindade diretamente.
+        aspectoPadrao: 'sopro_archeon',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -680,6 +786,8 @@ const classesRPG = {
         aliases: ['invocador', 'senhor das feras', 'domador'],
         citacao: 'Os animais não precisam de palavras para dizer a verdade — e isso os torna mais honestos do que qualquer homem.',
         pericias: ['adestramento', 'exploracao'],
+        // Trava 1: vínculo com a fauna é o tema exato de Nyvelis.
+        aspectoPadrao: 'gelo_nyvelis',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -693,6 +801,8 @@ const classesRPG = {
         // específico (percepção+furtividade / fortitude+intimidação / acrobacia+arcanismo /
         // tradição+discernimento) — mantidas as perícias de sintonia ampla original.
         pericias: ['adaptacao', 'sintonia'],
+        // Trava 1: tempestade/força elemental bruta — o mais amplo entre os aspectos de sopro natural.
+        aspectoPadrao: 'trovao_karyon',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -703,6 +813,8 @@ const classesRPG = {
         aliases: ['senhor do caos', 'destruidor', 'catalisador'],
         citacao: 'Não trago o fim do mundo — trago o fim do mundo que vocês conhecem.',
         pericias: ['ocultismo', 'adaptacao'],
+        // Trava 1: tema explícito de caos e destruição total.
+        aspectoPadrao: 'caos_zyrhun',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -713,6 +825,8 @@ const classesRPG = {
         aliases: ['calamidade', 'terremoto vivo', 'força geológica'],
         citacao: 'A terra tem memória mais longa do que qualquer civilização — e ela se lembra de cada injustiça.',
         pericias: ['ocultismo', 'atletismo'],
+        // Trava 1: força destrutiva/corrosiva mantendo Trilha Corrompida (terra_maelthra seria Pura).
+        aspectoPadrao: 'caos_zyrhun',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -723,6 +837,8 @@ const classesRPG = {
         aliases: ['druida curador', 'guardião verde', 'curandeira da floresta'],
         citacao: 'Uma ferida, pra mim, é só uma pergunta que a floresta ainda não respondeu.',
         pericias: ['socorrismo', 'sintonia'],
+        // Trava 1: cura biológica é o tema exato de Elysséra.
+        aspectoPadrao: 'vida_elyssera',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -733,6 +849,8 @@ const classesRPG = {
         aliases: ['metamorfo', 'sangue dracônico', 'forma bestial'],
         citacao: 'Quatro dragões moldaram meus ancestrais. Eu ainda não decidi qual forma é a minha de verdade.',
         pericias: ['adaptacao', 'atletismo'],
+        // Trava 1: metamorfose orgânica benéfica — não há aspecto dracônico dedicado nos 16 existentes.
+        aspectoPadrao: 'vida_elyssera',
         afinidadesRaciais: [],
         habilidades: [],
       },
@@ -743,6 +861,8 @@ const classesRPG = {
         aliases: ['praga viva', 'pântano corrompido', 'doença ambulante'],
         citacao: 'Não trago a peste. Eu sou a pergunta que a terra faz quando já não aguenta mais ficar saudável.',
         pericias: ['ocultismo', 'exploracao'],
+        // Trava 1: pragas místicas é tema explícito e literal de Mabryth.
+        aspectoPadrao: 'teia_mabryth',
         afinidadesRaciais: [],
         habilidades: [],
       },

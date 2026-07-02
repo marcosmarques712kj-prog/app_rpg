@@ -228,11 +228,14 @@ async function carregarPersonagem() {
   if (!d.origemId) d.origemId = '';
   if (!d.origemPericiasEscolhidas) d.origemPericiasEscolhidas = [];
   if (!d.classePericiasAtivas) d.classePericiasAtivas = [];
-  if (!d.grimorio) d.grimorio = { ultimaCombo: { aspecto: '', verbo: '', mod: '', manifestacao: '', circulo: 1 }, magiasSalvas: [] };
+  if (!d.grimorio) d.grimorio = { ultimaCombo: { aspecto: '', verbo: '', mod: '', manifestacao: '', circulo: 1 }, magiasSalvas: [], aspectosLivres: [] };
   // Migração: combos antigos não tinham o campo 'manifestacao'
   if (d.grimorio.ultimaCombo && d.grimorio.ultimaCombo.manifestacao === undefined) {
     d.grimorio.ultimaCombo.manifestacao = '';
   }
+  // Migração: fichas antigas não tinham aspectosLivres (Trava 1 —
+  // aspectos escolhidos livremente dentro das vagas da classe).
+  if (!Array.isArray(d.grimorio.aspectosLivres)) d.grimorio.aspectosLivres = [];
 
   // Migração: personagens antigos só tinham d.raca (texto livre).
   // Tenta casar com o banco de raças pra preencher família/sub-raça.
@@ -1096,6 +1099,56 @@ function atualizarFoco(id, val) {
 }
 
 // =============================================================
+// GRIMÓRIO ARCANO — Camada de Elegibilidade (Travas 1-4)
+// =============================================================
+// Ponte entre a ficha e sistemaMagia.resolverElegibilidade() (magias.js).
+// Monta o "contexto de personagem" (nível, classe, especialização,
+// aspectos conhecidos) a partir de PERSONAGEM.dados + racas.js/classes.js,
+// e devolve o resultado já pronto pra filtrar os selects do Grimório.
+//
+// Trava 4 (modificadorPermitido) hoje sempre libera enquanto
+// trilhaPermitida não estiver preenchida em todos os modificadores de
+// magias.js (fallback documentado na própria função, dentro do motor).
+// Nada a fazer aqui quando esses dados chegarem — o motor já resolve.
+function resolverElegibilidadeAtual() {
+  const d = PERSONAGEM.dados;
+  const semDados = { aspectosPermitidos: [], verbosPermitidos: [], circuloMaxNivel: 0, circuloMaxPorAspecto: () => 0, modificadorPermitido: () => true };
+
+  if (typeof sistemaMagia === 'undefined' || typeof classesRPG === 'undefined') return semDados;
+
+  const classeObj = d.classeBase ? classesRPG[d.classeBase] : null;
+  if (!classeObj) return semDados;
+
+  const especObj = d.classeEspec ? (classeObj.especializacoes || {})[d.classeEspec] : null;
+
+  const subraca = (typeof getSubraca === 'function') ? getSubraca(d.racaFamilia, d.racaSubraca) : null;
+  const aspectoRacial = subraca ? subraca.aspectoPadrao : null;
+  const aspectoEspecializacao = especObj ? especObj.aspectoPadrao : null;
+
+  const aspectosConhecidos = sistemaMagia.montarAspectosConhecidos({
+    aspectoRacial: aspectoRacial || null,
+    aspectoEspecializacao: aspectoEspecializacao || null,
+    aspectosLivres: d.grimorio.aspectosLivres || [],
+  });
+
+  const nivel = parseInt(d.level) || 1;
+
+  return sistemaMagia.resolverElegibilidade({ nivel, classeObj, especObj, aspectosConhecidos });
+}
+
+// Quantas vagas de aspecto livre a classe atual concede, e quantas já
+// foram usadas — usado pelo painel de gerenciamento de aspectos
+// conhecidos (ver renderPericias/renderGrimorio) pra travar o botão
+// de adicionar quando o limite é atingido.
+function vagasAspectoLivre() {
+  const d = PERSONAGEM.dados;
+  if (typeof classesRPG === 'undefined' || !d.classeBase || !classesRPG[d.classeBase]) return { usadas: 0, total: 0 };
+  const total = classesRPG[d.classeBase].aspectosAprendizado || 0;
+  const usadas = (d.grimorio.aspectosLivres || []).length;
+  return { usadas, total };
+}
+
+// =============================================================
 // GRIMÓRIO ARCANO — integração com motor sistemaMagia (magias.js V2)
 // =============================================================
 
@@ -1103,9 +1156,21 @@ function atualizarFoco(id, val) {
 // preservando a chave original como value. Não há nada hardcoded aqui:
 // se você adicionar um aspecto/verbo/modificador novo no magias.js, ele
 // aparece automaticamente no seletor na próxima renderização.
-function montarOpcoesSelect(objeto, valorSelecionado) {
+//
+// `chavesPermitidas` (opcional): array ou função de filtro. Quando
+// fornecido, chaves fora da lista/filtro são OMITIDAS do select
+// (escondidas, não desabilitadas — decisão de UX confirmada). Se
+// `chavesPermitidas` for undefined, mantém o comportamento antigo
+// (mostra tudo) — usado só como fallback de segurança se a camada de
+// elegibilidade não estiver disponível por algum motivo.
+function montarOpcoesSelect(objeto, valorSelecionado, chavesPermitidas) {
   if (!objeto) return '';
+  const filtro = Array.isArray(chavesPermitidas)
+    ? (chave) => chavesPermitidas.includes(chave)
+    : (typeof chavesPermitidas === 'function' ? chavesPermitidas : null);
+
   return Object.keys(objeto)
+    .filter(chave => (filtro ? filtro(chave) : true))
     .map(chave => {
       const item = objeto[chave];
       const sel = chave === valorSelecionado ? 'selected' : '';
@@ -1281,9 +1346,22 @@ function atualizarPreviewMagia() {
   const verboId        = document.getElementById('grim_verbo').value;
   const modId          = document.getElementById('grim_mod').value;
   const manifestacaoId = (document.getElementById('grim_manifest') || {}).value || '';
-  const circulo        = parseInt(document.getElementById('grim_circulo').value) || 1;
+
+  // Recalcula o teto do slider (Trava 1 x Trava 2) toda vez que o
+  // aspecto muda — cada aspecto conhecido pode ter uma origem/teto
+  // diferente (racial=10, especialização=9, livre=6), sempre limitado
+  // pelo teto de nível por cima.
+  const eleg = resolverElegibilidadeAtual();
+  const circuloTeto = aspectoId ? Math.max(1, eleg.circuloMaxPorAspecto(aspectoId)) : Math.max(1, eleg.circuloMaxNivel || 10);
+
+  const circuloInput = document.getElementById('grim_circulo');
+  circuloInput.max = circuloTeto;
+  const circulo = Math.min(parseInt(circuloInput.value) || 1, circuloTeto);
+  circuloInput.value = circulo;
 
   document.getElementById('grim_circulo_valor').textContent = circulo;
+  const tetoLabel = document.getElementById('grim_circulo_teto');
+  if (tetoLabel) tetoLabel.textContent = circuloTeto;
 
   let magia = null;
   if (aspectoId && verboId && modId) {
@@ -1338,19 +1416,42 @@ function gerarMagiaSegura(aspectoId, verboId, modId, circulo, manifestacaoId) {
 function renderGrimorio() {
   const d = PERSONAGEM.dados;
   const combo = d.grimorio.ultimaCombo || { aspecto: '', verbo: '', mod: '', manifestacao: '', circulo: 1 };
+  const eleg = resolverElegibilidadeAtual();
 
-  const opcoesAspecto  = montarOpcoesSelect(sistemaMagia.aspectos, combo.aspecto);
-  const opcoesVerbo    = montarOpcoesSelect(sistemaMagia.verbos, combo.verbo);
-  const opcoesMod      = montarOpcoesSelect(sistemaMagia.modificadores, combo.mod);
+  // Se o personagem não tem classe/raça o suficiente para calcular
+  // elegibilidade, não bloqueia a tela — mostra tudo (comportamento
+  // antigo) com um aviso, em vez de deixar os selects vazios.
+  const semElegibilidade = eleg.aspectosPermitidos.length === 0 && eleg.verbosPermitidos.length === 0;
+
+  const opcoesAspecto  = montarOpcoesSelect(sistemaMagia.aspectos, combo.aspecto, semElegibilidade ? undefined : eleg.aspectosPermitidos);
+  const opcoesVerbo    = montarOpcoesSelect(sistemaMagia.verbos, combo.verbo, semElegibilidade ? undefined : eleg.verbosPermitidos);
+  const opcoesMod      = montarOpcoesSelect(sistemaMagia.modificadores, combo.mod, semElegibilidade ? undefined : (modId) => eleg.modificadorPermitido(modId));
   const opcoesManifest = montarOpcoesSelect(sistemaMagia.manifestacoes || {}, combo.manifestacao || '');
+
+  // Teto do slider de círculo: depende do aspecto escolhido (Trava 1)
+  // cruzado com o nível (Trava 2). Sem aspecto escolhido ainda, usa só
+  // o teto de nível como referência (o teto real é recalculado quando
+  // o jogador escolher o aspecto, via atualizarPreviewMagia()).
+  const circuloTeto = combo.aspecto && !semElegibilidade
+    ? Math.max(1, eleg.circuloMaxPorAspecto(combo.aspecto))
+    : Math.max(1, eleg.circuloMaxNivel || 10);
+  const circuloAtual = Math.min(parseInt(combo.circulo) || 1, circuloTeto);
+
+  const vagas = vagasAspectoLivre();
+  const avisoElegibilidade = semElegibilidade
+    ? `<div class="grimorio-aprender-aviso">Defina Raça e Classe (com Especialização) na aba Principal para liberar os Aspectos, Verbos e Círculos disponíveis para este personagem.</div>`
+    : '';
 
   document.getElementById('panel-grimorio').innerHTML = `
     <div class="box-title" style="margin-bottom:14px;border-bottom:none">Grimório Arcano</div>
+    ${avisoElegibilidade}
     <div class="grimorio-grid">
 
       <!-- COLUNA 1 — Painel de Criação -->
       <div class="box grimorio-criacao">
         <div class="box-title">Composição do Feitiço</div>
+
+        ${!semElegibilidade ? gerarBlocoAprenderAspecto() : ''}
 
         <div class="identity-field" style="margin-bottom:14px">
           <label class="identity-label">Aspecto (Deus/Primal)</label>
@@ -1358,6 +1459,7 @@ function renderGrimorio() {
             <option value="">— Selecione —</option>
             ${opcoesAspecto}
           </select>
+          ${!semElegibilidade ? `<div class="identity-hint" style="font-size:11px;opacity:0.6;margin-top:4px">Aspectos livres: ${vagas.usadas} / ${vagas.total} vagas usadas</div>` : ''}
         </div>
 
         <div class="identity-field" style="margin-bottom:14px">
@@ -1386,10 +1488,10 @@ function renderGrimorio() {
 
         <div class="identity-field">
           <label class="identity-label">
-            Círculo Injetado — <span id="grim_circulo_valor">${combo.circulo || 1}</span> / 10
+            Círculo Injetado — <span id="grim_circulo_valor">${circuloAtual}</span> / <span id="grim_circulo_teto">${circuloTeto}</span>
           </label>
-          <input type="range" id="grim_circulo" min="1" max="10" step="1"
-            value="${combo.circulo || 1}" class="grimorio-slider"
+          <input type="range" id="grim_circulo" min="1" max="${circuloTeto}" step="1"
+            value="${circuloAtual}" class="grimorio-slider"
             oninput="atualizarPreviewMagia()">
         </div>
       </div>
@@ -1450,6 +1552,84 @@ function magiaJaAprendida(aspecto, mod, manifestacao) {
   );
 }
 
+// =============================================================
+// APRENDER ASPECTO — vagas livres concedidas pela classe (Trava 1)
+// =============================================================
+// Diferente de "Aprender Magia" (combo Aspecto+Verbo+Mod específico):
+// isto é o pré-requisito de mais alto nível — sem conhecer o Aspecto,
+// o jogador nem consegue selecioná-lo no painel de composição. Cada
+// classe concede N vagas (classesRPG[...].aspectosAprendizado); cada
+// vaga usada guarda o ID do aspecto escolhido em d.grimorio.aspectosLivres.
+function gerarBlocoAprenderAspecto() {
+  const vagas = vagasAspectoLivre();
+  if (vagas.total === 0) return ''; // classe sem vagas de aprendizado livre (ex: Vanguarda) — não mostra o bloco
+
+  const d = PERSONAGEM.dados;
+  const eleg = resolverElegibilidadeAtual();
+  // Já conhecidos por QUALQUER origem (racial/especialização/livre) não
+  // podem ser escolhidos de novo como vaga livre — evita desperdiçar
+  // uma vaga aprendendo o que o personagem já tem de graça.
+  const jaConhecidos = new Set(eleg.aspectosPermitidos);
+  const disponiveisParaAprender = Object.keys(sistemaMagia.aspectos).filter(id => !jaConhecidos.has(id));
+
+  const cheio = vagas.usadas >= vagas.total;
+  const opcoes = montarOpcoesSelect(sistemaMagia.aspectos, '', disponiveisParaAprender);
+
+  const listaConhecidos = (d.grimorio.aspectosLivres || [])
+    .map(id => {
+      const asp = sistemaMagia.aspectos[id];
+      return asp ? `<span class="grimorio-aspecto-chip">${asp.icone || ''} ${esc(asp.nome)} <button onclick="removerAspectoLivre('${id}')" title="Esquecer este aspecto">✕</button></span>` : '';
+    }).join('');
+
+  return `
+    <div class="grimorio-aprender-aspecto">
+      <div class="identity-label" style="margin-bottom:6px">Aspectos Livres Conhecidos — ${vagas.usadas} / ${vagas.total}</div>
+      ${listaConhecidos ? `<div class="grimorio-aspectos-chips">${listaConhecidos}</div>` : ''}
+      ${cheio
+        ? `<div class="grimorio-aprender-aviso" style="margin-top:6px">Todas as vagas de Aspecto Livre desta classe já estão em uso.</div>`
+        : `<div class="identity-field" style="margin-top:8px;display:flex;gap:8px;align-items:flex-end">
+             <select class="identity-input" id="grim_aprender_aspecto_select" style="flex:1">
+               <option value="">— Escolher novo aspecto —</option>
+               ${opcoes}
+             </select>
+             <button class="btn-aprender-magia" style="white-space:nowrap" onclick="aprenderAspectoLivre()">+ Adicionar</button>
+           </div>`
+      }
+    </div>
+  `;
+}
+
+function aprenderAspectoLivre() {
+  const d = PERSONAGEM.dados;
+  const select = document.getElementById('grim_aprender_aspecto_select');
+  const aspectoId = select ? select.value : '';
+  if (!aspectoId) return;
+
+  const vagas = vagasAspectoLivre();
+  if (vagas.usadas >= vagas.total) {
+    showToast('Não há vagas de Aspecto Livre disponíveis.', 'warning');
+    return;
+  }
+  if ((d.grimorio.aspectosLivres || []).includes(aspectoId)) return; // defesa: já escolhido
+
+  d.grimorio.aspectosLivres.push(aspectoId);
+  showToast('✓ Aspecto aprendido!');
+  renderGrimorio();
+  agendarSalvar();
+}
+
+function removerAspectoLivre(aspectoId) {
+  const d = PERSONAGEM.dados;
+  d.grimorio.aspectosLivres = (d.grimorio.aspectosLivres || []).filter(id => id !== aspectoId);
+  // Se a última combinação em edição usava esse aspecto, limpa — ele
+  // não está mais disponível no select filtrado.
+  if (d.grimorio.ultimaCombo && d.grimorio.ultimaCombo.aspecto === aspectoId) {
+    d.grimorio.ultimaCombo.aspecto = '';
+  }
+  renderGrimorio();
+  agendarSalvar();
+}
+
 // Gera o botão/aviso de "Aprender Magia" com base na combinação atual
 // da Coluna 1. Cobre os 3 estados: combinação incompleta, já aprendida,
 // limite atingido, ou pronta para salvar.
@@ -1498,6 +1678,32 @@ function aprenderMagiaAtual() {
   const circulo = parseInt(document.getElementById('grim_circulo').value) || 1;
 
   if (!aspecto || !verbo || !mod) return;
+
+  // Defesa em profundidade: revalida a elegibilidade real (não confia
+  // só no select já ter filtrado — DOM pode estar desatualizado se o
+  // jogador trocou classe/raça sem re-renderizar a aba).
+  const eleg = resolverElegibilidadeAtual();
+  if (!eleg.aspectosPermitidos.includes(aspecto)) {
+    showToast('Este Aspecto não é mais conhecido por este personagem.', 'warning');
+    renderGrimorio();
+    return;
+  }
+  if (!eleg.verbosPermitidos.includes(verbo)) {
+    showToast('Este Verbo não é permitido pela classe atual.', 'warning');
+    renderGrimorio();
+    return;
+  }
+  if (!eleg.modificadorPermitido(mod)) {
+    showToast('Este Modificador não é permitido pela Trilha atual.', 'warning');
+    renderGrimorio();
+    return;
+  }
+  const circuloTeto = eleg.circuloMaxPorAspecto(aspecto);
+  if (circulo > circuloTeto) {
+    showToast(`Círculo acima do permitido para este Aspecto (máx. ${circuloTeto}).`, 'warning');
+    renderGrimorio();
+    return;
+  }
 
   if (magiaJaAprendida(aspecto, mod, manifestacao)) {
     showToast('Esta combinação já foi aprendida.', 'warning');

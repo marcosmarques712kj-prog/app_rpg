@@ -116,6 +116,204 @@ const sistemaMagia = {
     10: { titulo: 'Gênese Invertida', desc: 'Um eco da Criação — ou da sua antítese. O que veio a seguir não tem nome mortal.' },
   },
 
+  // ===========================================================
+  // CAMADA DE ELEGIBILIDADE — Travas de aprendizado/conjuração
+  // ===========================================================
+  // Não faz parte do motor de geração puro (gerarMagia). Decide SE uma
+  // combinação pode ser conjurada por um personagem específico, ANTES
+  // de chegar ao motor. 4 travas independentes, combinadas com AND:
+  //   1. circuloMaximoPorAspecto()  — teto por origem do aspecto conhecido
+  //   2. circuloMaximoPorNivel()    — teto pela progressão de nível da classe
+  //   3. verboPermitido()           — verbo precisa estar liberado pela classe
+  //   4. modificadorPermitido()     — modificador precisa bater com a Trilha
+  // O círculo final permitido = min(trava 1, trava 2). Travas 3 e 4 são
+  // binárias. Ver resolverElegibilidade() no final deste bloco, que
+  // calcula tudo de uma vez a partir de um "contexto de personagem".
+
+  // Tabela de referência ÚNICA de progressão mágica por nível — o
+  // "full caster" teórico. Cada classe se desloca/corta a partir dela
+  // via atrasoNiveis + circuloMaximo (ver classes.js). NÃO duplicar
+  // esta tabela por classe.
+  progressaoReferencia: {
+    1: 1, 3: 2, 5: 3, 10: 4, 15: 5, 20: 6, 25: 7, 30: 8, 40: 9, 50: 10
+  },
+
+  /**
+   * Lê a progressaoReferencia para um nível arbitrário. Nível fora da
+   * tabela usa o degrau imediatamente abaixo (ex: nível 7 → círculo do
+   * degrau 5, pois o próximo degrau só libera no nível 10).
+   * Nível 0 ou negativo retorna 0 (nenhum círculo liberado).
+   */
+  lookupProgressaoReferencia(nivel) {
+    const n = Math.max(0, parseInt(nivel) || 0);
+    const degraus = Object.keys(this.progressaoReferencia).map(Number).sort((a, b) => a - b);
+    let resultado = 0;
+    for (const degrau of degraus) {
+      if (n >= degrau) resultado = this.progressaoReferencia[degrau];
+      else break;
+    }
+    return resultado;
+  },
+
+  /**
+   * Trava 2 — Teto de círculo pela progressão de nível.
+   * Resolve a curva efetiva (especialização sobrescreve classe;
+   * tabelaPropria sobrescreve offset+teto quando presente) e retorna
+   * o círculo máximo que aquele nível permite.
+   *
+   * @param {number} nivel
+   * @param {object} classeObj  — objeto da classe em classesRPG (classes.js)
+   * @param {object} especObj   — objeto da especialização (pode ser null/undefined)
+   * @returns {number} círculo máximo permitido por nível (0 se nada aplicável)
+   */
+  circuloMaximoPorNivel(nivel, classeObj, especObj) {
+    if (!classeObj) return 0;
+
+    // Exceção rara: curva de formato próprio, não redutível a offset+teto.
+    const fonteTabelaPropria = (especObj && especObj.tabelaPropria) ? especObj.tabelaPropria
+      : (classeObj.tabelaPropria || null);
+    if (fonteTabelaPropria) {
+      const n = Math.max(0, parseInt(nivel) || 0);
+      const degraus = Object.keys(fonteTabelaPropria).map(Number).sort((a, b) => a - b);
+      let resultado = 0;
+      for (const degrau of degraus) {
+        if (n >= degrau) resultado = fonteTabelaPropria[degrau];
+        else break;
+      }
+      return resultado;
+    }
+
+    const atraso = (especObj && especObj.atrasoNiveis !== undefined) ? especObj.atrasoNiveis : (classeObj.atrasoNiveis || 0);
+    const teto    = (especObj && especObj.circuloMaximo !== undefined) ? especObj.circuloMaximo : (classeObj.circuloMaximo || 0);
+
+    const nivelEfetivo = (parseInt(nivel) || 0) - atraso;
+    const circuloRef = this.lookupProgressaoReferencia(nivelEfetivo);
+    return Math.min(circuloRef, teto);
+  },
+
+  /**
+   * Trava 1 — Teto de círculo pela origem do aspecto conhecido.
+   * @param {string} origem 'racial' | 'especializacao' | 'livre'
+   * @returns {number} 10 = sem teto próprio desta camada (racial usa o teto de nível como único limite)
+   */
+  circuloMaximoPorOrigemAspecto(origem) {
+    if (origem === 'racial') return 10;          // sem teto próprio — só o nível limita
+    if (origem === 'especializacao') return 9;
+    if (origem === 'livre') return 6;
+    return 0; // origem desconhecida/inválida: bloqueia por segurança
+  },
+
+  /**
+   * Trava 3 — Verbo permitido pela classe.
+   */
+  verboPermitido(verboId, classeObj) {
+    if (!classeObj || !Array.isArray(classeObj.verbosPermitidos)) return false;
+    return classeObj.verbosPermitidos.includes(verboId);
+  },
+
+  /**
+   * Trava 4 — Modificador permitido pela Trilha da especialização.
+   * Fallback deliberado: se o modificador ainda não tem
+   * `trilhaPermitida` cadastrado (dado pendente de preenchimento),
+   * NÃO bloqueia — trata como permitido em ambas as trilhas. Isso
+   * evita travar a ficha inteira enquanto os 12 modificadores não
+   * estão todos preenchidos. Remover o fallback quando o
+   * preenchimento estiver completo, se se quiser bloquear por padrão.
+   */
+  modificadorPermitido(modId, trilhaPersonagem) {
+    const mod = this.modificadores[modId];
+    if (!mod) return false;
+    if (!Array.isArray(mod.trilhaPermitida)) return true; // fallback: dado ainda não preenchido
+    if (!trilhaPersonagem) return true; // personagem sem especialização definida ainda: não bloqueia
+    return mod.trilhaPermitida.includes(trilhaPersonagem);
+  },
+
+  /**
+   * Monta o mapa de aspectos conhecidos de um personagem a partir de
+   * raça + classe + especialização + lista de IDs escolhidos livremente.
+   * Não lê PERSONAGEM diretamente (esse arquivo não conhece a ficha) —
+   * recebe tudo já resolvido pelo chamador.
+   *
+   * @param {object} p
+   * @param {string} p.aspectoRacial       — aspectoPadrao da subraça (racas.js), pode ser null
+   * @param {string} p.aspectoEspecializacao — aspectoPadrao da especialização (classes.js), pode ser null
+   * @param {string[]} p.aspectosLivres    — IDs escolhidos pelo jogador (dentro do limite aspectosAprendizado)
+   * @returns {{ [aspectoId]: { origem: string, circuloMax: number } }}
+   */
+  montarAspectosConhecidos({ aspectoRacial, aspectoEspecializacao, aspectosLivres = [] }) {
+    const conhecidos = {};
+    if (aspectoRacial) {
+      conhecidos[aspectoRacial] = { origem: 'racial', circuloMax: this.circuloMaximoPorOrigemAspecto('racial') };
+    }
+    if (aspectoEspecializacao && !conhecidos[aspectoEspecializacao]) {
+      conhecidos[aspectoEspecializacao] = { origem: 'especializacao', circuloMax: this.circuloMaximoPorOrigemAspecto('especializacao') };
+    }
+    (aspectosLivres || []).forEach(id => {
+      if (!conhecidos[id]) {
+        conhecidos[id] = { origem: 'livre', circuloMax: this.circuloMaximoPorOrigemAspecto('livre') };
+      }
+      // Se o mesmo aspecto já veio de origem melhor (racial/especializacao),
+      // mantém a origem melhor — não rebaixa o teto.
+    });
+    return conhecidos;
+  },
+
+  /**
+   * Ponto de entrada único da Camada de Elegibilidade. Recebe um
+   * contexto de personagem já resolvido e devolve tudo que a UI
+   * precisa pra filtrar selects e travar o slider de círculo.
+   *
+   * @param {object} ctx
+   * @param {number} ctx.nivel
+   * @param {object} ctx.classeObj  — classesRPG[classeBaseId]
+   * @param {object} ctx.especObj   — classeObj.especializacoes[classeEspecId], ou null
+   * @param {object} ctx.aspectosConhecidos — retorno de montarAspectosConhecidos()
+   * @returns {{
+   *   aspectosPermitidos: string[],
+   *   verbosPermitidos: string[],
+   *   circuloMaxPorAspecto: (aspectoId: string) => number,
+   *   circuloMaxNivel: number,
+   *   modificadorPermitido: (modId: string) => boolean
+   * }}
+   */
+  resolverElegibilidade({ nivel, classeObj, especObj, aspectosConhecidos = {} }) {
+    const circuloMaxNivel = this.circuloMaximoPorNivel(nivel, classeObj, especObj);
+    const trilhaPersonagem = especObj ? especObj.trilha : null;
+
+    return {
+      aspectosPermitidos: Object.keys(aspectosConhecidos),
+      verbosPermitidos: Object.keys(this.verbos).filter(vId => this.verboPermitido(vId, classeObj)),
+      circuloMaxPorAspecto: (aspectoId) => {
+        const info = aspectosConhecidos[aspectoId];
+        if (!info) return 0;
+        return Math.min(info.circuloMax, circuloMaxNivel);
+      },
+      circuloMaxNivel,
+      modificadorPermitido: (modId) => this.modificadorPermitido(modId, trilhaPersonagem),
+    };
+  },
+
+  /**
+   * Trava 2 (bug fix) — Limite máximo de Sopro por nível/modFoco.
+   * Fórmula preservada do fallback que já existia na ficha:
+   * 3 + mod(atributoFoco) + floor(nivel / 2).
+   */
+  calcularLimiteSopro(nivel, modFoco) {
+    const n = parseInt(nivel) || 1;
+    const m = parseInt(modFoco) || 0;
+    return 3 + m + Math.floor(n / 2);
+  },
+
+  /**
+   * Trava 2 (bug fix) — Limite máximo de Mácula por nível.
+   * Fórmula preservada do comentário que já existia na ficha:
+   * 12 + (floor(nivel / 5) × 2).
+   */
+  calcularLimiteMacula(nivel) {
+    const n = parseInt(nivel) || 1;
+    return 12 + Math.floor(n / 5) * 2;
+  },
+
 
   // ===========================================================
   // CAMADA 1 — OS 15 ASPECTOS DIVINOS E PRIMAIS
