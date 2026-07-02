@@ -207,8 +207,11 @@ const sistemaMagia = {
       descricao:
         'A Lua traz consigo a noite, o descanso e os perigos que dançam ' +
         'nas sombras — Nyxara foi uma das primeiras a nascer do sonho de ' +
-        'Archëon, e dela brotaram Nerýth, Morvethra e a própria Mabryth. ' +
-        'Seu domínio é o véu entre o que se vê e o que se esconde. ' +
+        'Archëon, e dela brotaram Nerýth, Morvethra, a própria Mabryth e, ' +
+        'mais tarde, Nyvelis — concebida não da mesma efusão espontânea ' +
+        'das outras, mas de uma decisão deliberada: garantir que os ' +
+        'territórios gelados do mundo nunca ficassem entregues apenas aos ' +
+        'Dragões e ao Motor do Mundo. Seu domínio é o véu entre o que se vê e o que se esconde. ' +
         'Canalizar a Lua é abrir o terceiro olho à luz prateada que revela ' +
         'mapas ocultos, sussurra verdades enterradas e tece fios invisíveis ' +
         'na mente dos desatentos. Nyxara disputou os céus com Pyraël até ' +
@@ -641,6 +644,45 @@ const sistemaMagia = {
         leve:     'Dormência nos dedos do conjurador por alguns minutos. As veias dos antebraços escurecem levemente.',
         moderada: 'Fios de energia residual grudam nos dedos do conjurador como teias invisíveis. Sensação de insetos caminhando sob a pele.',
         severa:   'Veneno residual. O conjurador sofre 1 ponto de dano necrótico não-letal. Veias dos braços se tornam visivelmente roxas por horas. Aranhas reais parecem ser atraídas ao conjurador.',
+      }
+    },
+
+    // ─────────────────────────────────────────────────
+    // 16. GELO DE NYVELIS — Guarda, Lei Natural e Vínculo Animal
+    // ─────────────────────────────────────────────────
+    gelo_nyvelis: {
+      nome: 'Gelo de Nyvelis',
+      divindade: 'Nyvelis',
+      pericias: ['exploracao', 'percepcao'],
+      recurso: 'sopro',
+      elemento: 'Barreira de Gelo / Vínculo com a Fauna / Contenção',
+      descricao:
+        'Nyxara não confiava apenas nos Quatro Dragões, tampouco no pulso ' +
+        'distante do Motor do Mundo, para vigiar os territórios gelados de ' +
+        'Aetherion — regiões vastas demais, silenciosas demais, fáceis ' +
+        'demais de esquecer. Por isso concebeu Nyvelis: não como arma, mas ' +
+        'como guardiã. Enquanto sua mãe governa o véu entre o visto e o ' +
+        'oculto, Nyvelis governa a lei silenciosa que mantém uma terra ' +
+        'gelada viva — a fome que não se torna crueldade, o predador que ' +
+        'respeita o território do outro, o inverno que pune sem exterminar. ' +
+        'Ela caminhou séculos entre lobos, ursos-de-gelo e aves de rapina ' +
+        'antes que qualquer mortal soubesse seu nome, e desse cuidado ' +
+        'paciente nasceu um poder imenso: o gelo que Nyvelis ergue não é ' +
+        'fúria congelada, é vigilância — muralhas que se erguem para ' +
+        'conter, não para ferir; grilhões de gelo que prendem sem ' +
+        'esmagar; e o chamado silencioso que faz até a besta mais ' +
+        'selvagem reconhecer, por um instante, um guardião igual a si. ' +
+        'Os Elvarin Lunares de Nyrvald dizem que, nas noites mais claras, ' +
+        'ainda é possível ver Nyvelis andando entre as manadas, contando ' +
+        'quantas ainda restam.',
+      corHex: '#A8DCE0',
+      icone: '❄️',
+      dadoBase: 'd6',
+      tracos: { escalaAlcance: 0.8, escalaArea: 1.2, escalaDuracao: 1.4, escalaVisibilidade: 0.6 },
+      sequela: {
+        leve:     'O hálito do conjurador sai visível por alguns minutos, mesmo em ambientes quentes. Um silêncio incomum parece seguir seus passos.',
+        moderada: 'Geada fina cobre as sobrancelhas e mãos do conjurador. Animais próximos ficam anormalmente calmos e atentos, como à espera de instruções.',
+        severa:   'O conjurador sente o peso do território — uma consciência súbita e esmagadora de cada vida ao redor, presa e predador. Fica Abalado por 1 rodada, incapaz de distinguir aliado de ameaça por instinto puro.',
       }
     }
   },

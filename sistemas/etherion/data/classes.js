@@ -16,6 +16,11 @@ const classesRPG = {
     // Sem bônus passivo numérico de CA/Deslocamento nas habilidades comuns desta classe.
     bonusCA: 0,
     deslocamentoBonus: 0,
+    // Trava 2 (progressão por nível): classe marcial pura — maior atraso, menor teto do grupo.
+    atrasoNiveis: 15,
+    circuloMaximo: 4,
+    // Trava 3 (verbos permitidos): dano físico direto e defesa.
+    verbosPermitidos: ['destruir', 'cortar', 'proteger'],
     habilidadesComuns: [
       {
         nome: 'Corpo de Aço',
@@ -56,6 +61,9 @@ const classesRPG = {
         pericias: ['arcanismo', 'atletismo'],
         afinidadesRaciais: [],
         habilidades: [],
+        // Override da trava 2: especialização mais arcana da Vanguarda — atraso menor, teto maior que a classe base.
+        atrasoNiveis: 8,
+        circuloMaximo: 6,
       },
       comandante_da_ordem: {
         nome: 'Comandante da Ordem',
@@ -145,6 +153,11 @@ const classesRPG = {
     // Sem bônus passivo numérico de CA/Deslocamento nas habilidades comuns desta classe.
     bonusCA: 0,
     deslocamentoBonus: 0,
+    // Trava 2 (progressão por nível): marcial ágil, atraso considerável.
+    atrasoNiveis: 10,
+    circuloMaximo: 5,
+    // Trava 3 (verbos permitidos): ataque furtivo, mobilidade, manipulação leve.
+    verbosPermitidos: ['cortar', 'deslocar', 'alterar'],
     habilidadesComuns: [
       {
         nome: 'Esquiva Reflexiva',
@@ -185,6 +198,9 @@ const classesRPG = {
         pericias: ['vontade', 'acrobacia'],
         afinidadesRaciais: [],
         habilidades: [],
+        // Override da trava 2: disciplina interna chega a um patamar mágico equivalente ao de um conjurador dedicado.
+        atrasoNiveis: 5,
+        circuloMaximo: 7,
       },
       esgrimista_audaz: {
         nome: 'Esgrimista Audaz',
@@ -262,6 +278,11 @@ const classesRPG = {
     // Sem bônus passivo numérico de CA/Deslocamento nas habilidades comuns desta classe.
     bonusCA: 0,
     deslocamentoBonus: 0,
+    // Trava 2 (progressão por nível): híbrida — não conjuradora primária, mas com ponta de arcanismo.
+    atrasoNiveis: 8,
+    circuloMaximo: 6,
+    // Trava 3 (verbos permitidos): criação, ajuste de mecanismos, invocação de constructos/venenos.
+    verbosPermitidos: ['manifestar', 'alterar', 'invocar'],
     habilidadesComuns: [
       {
         nome: 'Análise Tática',
@@ -352,6 +373,9 @@ const classesRPG = {
         pericias: ['artificio', 'arcanismo'],
         afinidadesRaciais: [],
         habilidades: [],
+        // Override da trava 2: especialização mais próxima de conjuração real dentro da Especialista.
+        atrasoNiveis: 4,
+        circuloMaximo: 8,
       },
       socorrista_de_aethervhal: {
         nome: 'Socorrista de Aethervhal',
@@ -379,6 +403,11 @@ const classesRPG = {
     // Sem bônus passivo numérico de CA/Deslocamento nas habilidades comuns desta classe.
     bonusCA: 0,
     deslocamentoBonus: 0,
+    // Trava 2 (progressão por nível): conjurador divino, atraso pequeno, teto alto.
+    atrasoNiveis: 3,
+    circuloMaximo: 8,
+    // Trava 3 (verbos permitidos): bênçãos, votos, barreiras sagradas.
+    verbosPermitidos: ['proteger', 'selar', 'vincular'],
     habilidadesComuns: [
       {
         nome: 'Canalização Sagrada',
@@ -486,6 +515,11 @@ const classesRPG = {
     // Sem bônus passivo numérico de CA/Deslocamento nas habilidades comuns desta classe.
     bonusCA: 0,
     deslocamentoBonus: 0,
+    // Trava 2 (progressão por nível): conjurador puro — sem atraso, teto máximo.
+    atrasoNiveis: 0,
+    circuloMaximo: 10,
+    // Trava 3 (verbos permitidos): acesso amplo por definição de conjurador puro.
+    verbosPermitidos: ['manifestar', 'alterar', 'vincular', 'selar', 'destruir', 'invocar', 'cortar', 'proteger', 'deslocar'],
     habilidadesComuns: [
       {
         nome: 'Erudição Arcana',
@@ -613,6 +647,11 @@ const classesRPG = {
     // Sem bônus passivo numérico de CA/Deslocamento nas habilidades comuns desta classe.
     bonusCA: 0,
     deslocamentoBonus: 0,
+    // Trava 2 (progressão por nível): conjurador natural quase tão puro quanto o Transcendente.
+    atrasoNiveis: 2,
+    circuloMaximo: 9,
+    // Trava 3 (verbos permitidos): criação de vida, invocação de bestas, transformação, força elemental.
+    verbosPermitidos: ['manifestar', 'invocar', 'alterar', 'destruir'],
     habilidadesComuns: [
       {
         nome: 'Sangue do Mundo',
