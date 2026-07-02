@@ -371,9 +371,16 @@ let _dadosCarregados = false; // true depois da primeira busca real ao Supabase
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 
 // Busca campanhas e personagens do usuário logado no Supabase. RLS
-// garante que só voltam linhas que o usuário tem permissão de ver
-// (próprias + onde é mestre) — não precisamos filtrar nada aqui no
-// client, a query já vem filtrada pelo banco.
+// garante que só voltam linhas que o usuário tem permissão de VER no
+// banco (próprias + de campanhas onde é mestre) — mas "posso ver" não é
+// o mesmo que "é meu": a tela de Personagens (grid pessoal) precisa
+// filtrar por `donoId === user.id` no client antes de exibir, senão o
+// mestre vê os personagens de outros jogadores na sua própria lista
+// pessoal. Esse filtro acontece em renderPersonagens(), não aqui —
+// PERSONAGENS continua com a lista completa (permitida pelo RLS) porque
+// outros usos legítimos, como personagensDaCampanha() (contagem/lista de
+// participantes dentro do card de uma campanha), precisam ver todos os
+// personagens da campanha, não só os do usuário logado.
 // Se não há sessão, zera as listas (estado "visitante" = vazio).
 async function carregarDadosDoSupabase() {
   const user = window.usuarioLogado ? window.usuarioLogado() : null;
@@ -704,6 +711,15 @@ window.addEventListener('message', (event) => {
   if (tipo === 'ficha:erro-salvo') {
     const ind = document.getElementById('sheet-save-indicator');
     if (ind) ind.textContent = '✗ Erro ao salvar';
+    return;
+  }
+
+  if (tipo === 'ficha:abrir') {
+    // payload já vem como path absoluto a partir da raiz do domínio
+    // (ex: '/sistemas/etherion/ficha/ficha.html?id=...'), então dá
+    // pra reusar abrirFicha() sem nenhum ajuste — o iframe atual
+    // (campanha) é substituído pelo iframe da ficha.
+    abrirFicha(payload);
     return;
   }
 });
@@ -1155,8 +1171,16 @@ async function buscarCampanhaPorCodigo() {
       ? '<span style="color:#7fae6f;">Entrada aberta — você entra direto.</span>'
       : '<span style="color:#C9A84C;">Entrada por aprovação — o mestre precisa aceitar seu pedido.</span>');
 
-  // Personagens soltos (sem campanha) do MESMO sistema da campanha.
-  const candidatos = PERSONAGENS.filter(p => p.sistema === encontrada.sistema && !p.campanhaId);
+  // Personagens soltos (sem campanha) do MESMO sistema da campanha —
+  // e do usuário logado. Sem o filtro por donoId, PERSONAGENS pode
+  // conter personagens de outros jogadores (visíveis via RLS porque o
+  // usuário é mestre em alguma campanha deles), e listá-los aqui deixaria
+  // o usuário vincular sem querer o personagem de outra pessoa a uma
+  // campanha nova — não é só um problema visual, é uma ação destrutiva.
+  const userAtualEC = window.usuarioLogado ? window.usuarioLogado() : null;
+  const candidatos = PERSONAGENS.filter(p =>
+    p.sistema === encontrada.sistema && !p.campanhaId && p.donoId === userAtualEC?.id
+  );
 
   const selecionar = document.getElementById('ec_wrap_selecionar');
   const criar = document.getElementById('ec_wrap_criar');
@@ -1280,9 +1304,15 @@ let charFilterAtivo = 'all';
 
 function renderPersonagens() {
   const grid = document.getElementById('charGrid');
+  // "Meus Personagens" mostra só os personagens do usuário logado — não
+  // todos os que o RLS permite ver (que inclui os de outros jogadores em
+  // campanhas onde o usuário é mestre). Ver comentário em
+  // carregarDadosDoSupabase() sobre por que esse filtro não acontece lá.
+  const user = window.usuarioLogado ? window.usuarioLogado() : null;
+  const meusPersonagens = user ? PERSONAGENS.filter(p => p.donoId === user.id) : [];
   const filtrados = charFilterAtivo === 'all'
-    ? PERSONAGENS
-    : PERSONAGENS.filter(p => p.sistema === charFilterAtivo);
+    ? meusPersonagens
+    : meusPersonagens.filter(p => p.sistema === charFilterAtivo);
 
   grid.innerHTML = filtrados.map((p, i) => {
     const s = getSistema(p.sistema);
@@ -1309,13 +1339,13 @@ function renderPersonagens() {
       <div class="new-card-label">NOVO PERSONAGEM</div>
     </div>`;
 
-  document.getElementById('count-personagens').textContent = PERSONAGENS.length;
-  atualizarFiltrosChar();
+  document.getElementById('count-personagens').textContent = meusPersonagens.length;
+  atualizarFiltrosChar(meusPersonagens);
 }
 
-function atualizarFiltrosChar() {
+function atualizarFiltrosChar(meusPersonagens) {
   const row = document.getElementById('charFilter');
-  const sistemasUsados = [...new Set(PERSONAGENS.map(p => p.sistema))];
+  const sistemasUsados = [...new Set(meusPersonagens.map(p => p.sistema))];
   row.innerHTML = `<button class="filter-chip ${charFilterAtivo==='all'?'active':''}" onclick="filterChars('all')">Todos</button>` +
     sistemasUsados.map(sid => {
       const s = getSistema(sid);
@@ -1478,9 +1508,15 @@ function executarDeletarPersonagem() {
 // =============================================================
 function renderSistemas() {
   const grid = document.getElementById('sistemasGrid');
+  // Mesmo cuidado de renderPersonagens(): "🧙 N personagens" no card de
+  // cada sistema deve contar só os personagens do usuário logado, não
+  // todos que o RLS deixa ver (que inclui os de outros jogadores em
+  // campanhas onde o usuário é mestre).
+  const userAtualSistemas = window.usuarioLogado ? window.usuarioLogado() : null;
+  const meusPersonagensSistemas = userAtualSistemas ? PERSONAGENS.filter(p => p.donoId === userAtualSistemas.id) : [];
   grid.innerHTML = SISTEMAS.map((s, i) => {
     const camps = CAMPANHAS.filter(c => c.sistema === s.id).length;
-    const chars = PERSONAGENS.filter(p => p.sistema === s.id).length;
+    const chars = meusPersonagensSistemas.filter(p => p.sistema === s.id).length;
     const desabilitado = s.disponivel === false;
     return `
     <div class="sistema-card fade-in" style="position:relative; animation-delay:${i*0.07}s; --sys-cor:${s.cor}; ${desabilitado ? 'opacity:0.45;' : ''}">
