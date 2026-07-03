@@ -15,6 +15,7 @@
   ],
   "styles": [
     "styles/campanha.css",
-    "styles/mesa.css"
+    "styles/mesa.css",
+    "styles/ficha-base.css"
   ]
 }

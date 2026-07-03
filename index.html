@@ -1021,7 +1021,7 @@ function esc(str) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+    .replace(/\x27/g, '&#39;');
 }
 
 async function confirmarEntrarCampanha() {
@@ -1404,6 +1404,7 @@ async function init() {
   preencherSelectsSistema();
   renderSistemas();
   carregarIndiceLivros();
+}
 
 async function initDadosAutenticados() {
   console.log('[diag] initDadosAutenticados() CHAMADA (' + (++window._diagContador || (window._diagContador = 1)) + 'ª vez)');

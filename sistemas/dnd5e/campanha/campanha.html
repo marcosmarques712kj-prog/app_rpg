@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Campanha — D&D 5e</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cinzel+Decorative:wght@400;700&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../../../core/css/ficha-base.css">
+<link rel="stylesheet" href="../styles/ficha-base.css">
 <style>
   /* Estilos adicionais específicos da campanha de Mestre */
   .dash-banner {
@@ -292,7 +292,7 @@
   }
 
   function abrirFichaPersonagem(pid) {
-    const url = `/core/ficha/ficha.html?id=${encodeURIComponent(pid)}`;
+    const url = `/sistemas/dnd5e/ficha/ficha.html?id=${encodeURIComponent(pid)}`;
     if (rodandoNoIframe) {
       // Pede para o shell trocar a ficha aberta no MESMO iframe pai —
       // não faz sentido aninhar um segundo iframe dentro deste.

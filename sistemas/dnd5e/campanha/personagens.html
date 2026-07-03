@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sistema D&D</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cinzel+Decorative:wght@400;700&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../../../core/css/ficha-base.css">
+<link rel="stylesheet" href="../styles/ficha-base.css">
 </head>
 <body>
 <!-- ===== TOP BAR ===== -->
@@ -127,7 +127,7 @@
           <div class="char-mini-name">${p.nome}</div>
           <div class="char-mini-info">Classe: ${p.dados?.cls || '?'} | NEX: ${p.dados?.nex || 5}% | Origem: ${p.dados?.origem || '?'}</div>
         </div>
-        <button class="btn-action" onclick="window.location.href='/core/ficha/ficha.html?id=${p.id}'">Acessar Ficha</button>
+        <button class="btn-action" onclick="window.location.href='/sistemas/dnd5e/ficha/ficha.html?id=${p.id}'">Acessar Ficha</button>
       </div>
     `).join('');
   }

@@ -9,7 +9,7 @@
       img: '/assets/icons/dnd.png',
       cor: '#C9A84C',
       corBg: 'rgba(201,168,76,0.08)',
-      ficha: '/core/ficha/ficha.html',
+      ficha: '/sistemas/dnd5e/ficha/ficha.html',
       urlCampanha: '/sistemas/dnd5e/campanha/campanha.html',
       mesa: '/sistemas/dnd5e/mesa/mesa.html',
       hub: '/features/livros/sistema-hub.html?sys=dnd5e',
