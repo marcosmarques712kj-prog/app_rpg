@@ -48,25 +48,14 @@
   </button>
 </nav>
 
-<!-- ===== TOPBAR — MODO FICHA/CAMPANHA (oculto por padrão) =====
-     Reaproveita a classe .primary-nav pra herdar o mesmo visual da
-     nav do hub (fundo, borda, altura) sem precisar de uma classe
-     "sheet-topbar" nova que não existe no CSS atual.
-     Título centralizado de verdade: os dois lados (botão Voltar e
-     indicador de salvo) têm a MESMA largura mínima (110px), então o
-     #sheet-title (flex:1, text-align:center) fica centralizado em
-     relação à barra inteira, não só dentro do espaço sobrando depois
-     do botão — antes ficava puxado pra esquerda, colado no "Voltar". -->
 <nav class="primary-nav" id="topbar-sheet" style="display:none; align-items:center; gap:14px;">
   <button class="pnav-tab" onclick="fecharFicha()" style="flex:0 0 auto; min-width:110px;">← Voltar</button>
   <span id="sheet-title" style="flex:1; text-align:center; font-family:'Cinzel Decorative',serif; color:var(--gold,#C9A84C); letter-spacing:1.5px; font-size:18px; text-shadow:0 0 20px rgba(201,168,76,0.3); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">—</span>
   <span id="sheet-save-indicator" style="flex:0 0 auto; min-width:110px; text-align:right; font-size:12px; color:var(--gold,#C9A84C); opacity:0.85;"></span>
 </nav>
 
-<!-- ===== MAIN — CONTEÚDO HUB (visível por padrão) ===== -->
 <div class="page-wrap" id="hub-content">
 
-  <!-- ========== CAMPANHAS ========== -->
   <section class="section-panel active" id="sec-campanhas">
 
     <div class="sec-header">
@@ -80,7 +69,6 @@
       </div>
     </div>
 
-    <!-- Filtro rápido por sistema -->
     <div class="filter-row" id="campFilter">
       <button class="filter-chip active" data-filter="all" onclick="filterCamps('all')">Todas</button>
     </div>
@@ -89,7 +77,7 @@
 
   </section>
 
-  <!-- ========== PERSONAGENS ========== -->
+
   <section class="section-panel" id="sec-personagens">
 
     <div class="sec-header">
@@ -100,7 +88,6 @@
       <button class="btn-gold" onclick="openModal('modalPersonagem')">✦ Novo Personagem</button>
     </div>
 
-    <!-- Filtro por sistema -->
     <div class="filter-row" id="charFilter">
       <button class="filter-chip active" data-filter="all" onclick="filterChars('all')">Todos</button>
     </div>
@@ -109,7 +96,6 @@
 
   </section>
 
-  <!-- ========== SISTEMAS ========== -->
   <section class="section-panel" id="sec-sistemas">
 
     <div class="sec-header">
@@ -124,7 +110,6 @@
 
   </section>
 
-  <!-- ========== LIVROS ========== -->
   <section class="section-panel" id="sec-livros">
 
     <div class="sec-header">
@@ -139,13 +124,6 @@
 
 </div>
 
-<!-- ===== IFRAME DE FICHA/CAMPANHA (oculto por padrão) =====
-     Carrega etherion-ficha.html, campanha-dnd.html, etc. no lugar de
-     navegar para outra página — o shell (index.html) nunca é
-     destruído, então a sessão do auth-supabase.js nunca se perde.
-     OBS: a altura calc() abaixo assume header + nav com ~140px de
-     altura combinada; ajuste esse valor se o layout real (definido em
-     css/home-screen.css) tiver dimensões diferentes. -->
 <iframe
   id="sheet-frame"
   title="Ficha ou campanha"
@@ -205,7 +183,6 @@
   </div>
 </div>
 
-<!-- ===== MODAL: ENTRAR EM CAMPANHA ===== -->
 <div class="modal-backdrop" id="modalEntrarCampanha">
   <div class="modal">
     <div class="corner tl"></div><div class="corner tr"></div>
@@ -217,14 +194,12 @@
     <div class="modal-body">
       <div style="display:flex; flex-direction:column; gap:16px;">
 
-        <!-- ETAPA 1: código de convite -->
         <div class="form-group" id="ec_etapa_codigo">
           <label style="display:block; font-size:11px; letter-spacing:1px; color:var(--gold); margin-bottom:4px;">CÓDIGO DE CONVITE</label>
           <input type="text" id="ec_codigo" class="form-input" placeholder="Ex: X7K2QP" style="text-transform:uppercase; letter-spacing:2px;" maxlength="6">
           <div id="ec_codigo_erro" style="color:#c47a7a; font-size:12px; margin-top:6px; display:none;"></div>
         </div>
 
-        <!-- ETAPA 2: resultado da busca + escolha/criação de personagem (oculta até validar o código) -->
         <div id="ec_etapa_personagem" style="display:none; flex-direction:column; gap:16px;">
           <div id="ec_campanha_info" style="border:1px solid rgba(201,168,76,0.3); padding:12px 14px; font-size:13px; color:var(--parchment-dark);"></div>
 
@@ -250,7 +225,6 @@
   </div>
 </div>
 
-<!-- ===== MODAL: NOVO PERSONAGEM ===== -->
 <div class="modal-backdrop" id="modalPersonagem">
   <div class="modal">
     <div class="corner tl"></div><div class="corner tr"></div>
@@ -289,7 +263,6 @@
   </div>
 </div>
 
-<!-- ===== MODAL: CONFIRMAR EXCLUSÃO DE PERSONAGEM ===== -->
 <div class="modal-backdrop" id="modalConfirmDelete">
   <div class="modal modal-small">
     <div class="corner tl"></div><div class="corner tr"></div>
@@ -314,7 +287,6 @@
   </div>
 </div>
 
-<!-- ===== MODAL CROPPER ===== -->
 <div class="modal-backdrop" id="modalCropper">
   <div class="modal" style="max-width: 500px;">
     <div class="modal-header">
@@ -344,19 +316,9 @@
 
 <script src="core/js/sistemas-registry.js"></script>
 <script>
-// =============================================================
-// SISTEMAS REGISTRADOS
-// =============================================================
+
 const SISTEMAS = window.SISTEMAS || [];
 
-// =============================================================
-// DADOS (localStorage)
-// =============================================================
-// NOTA: localStorage para campanhas/personagens foi REMOVIDO. Os
-// dados agora vêm 100% do Supabase, sujeitos a RLS (cada um só vê o
-// que tem permissão). loadData/saveData seguem existindo só pra
-// outras coisas pequenas e não-sensíveis (preferências de filtro,
-// estado de UI) que ainda fazem sentido ficar no navegador.
 function loadData(key, fallback) {
   try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
   catch(e) { return fallback; }
@@ -370,32 +332,11 @@ let _dadosCarregados = false; // true depois da primeira busca real ao Supabase
 
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 
-// Busca campanhas e personagens do usuário logado no Supabase. RLS
-// garante que só voltam linhas que o usuário tem permissão de VER no
-// banco (próprias + de campanhas onde é mestre) — mas "posso ver" não é
-// o mesmo que "é meu": a tela de Personagens (grid pessoal) precisa
-// filtrar por `donoId === user.id` no client antes de exibir, senão o
-// mestre vê os personagens de outros jogadores na sua própria lista
-// pessoal. Esse filtro acontece em renderPersonagens(), não aqui —
-// PERSONAGENS continua com a lista completa (permitida pelo RLS) porque
-// outros usos legítimos, como personagensDaCampanha() (contagem/lista de
-// participantes dentro do card de uma campanha), precisam ver todos os
-// personagens da campanha, não só os do usuário logado.
-// Se não há sessão, zera as listas (estado "visitante" = vazio).
 async function carregarDadosDoSupabase() {
   const user = window.usuarioLogado ? window.usuarioLogado() : null;
   console.log('[diag] carregarDadosDoSupabase() chamada. user =', user ? user.id : null);
   if (!user) {
-    // Ao dar F5, o SDK do Supabase leva um instante pra processar o
-    // localStorage e confirmar a sessão — nesse intervalo,
-    // usuarioLogado() pode retornar null momentaneamente mesmo com o
-    // usuário de fato logado. Se ainda não tivemos NENHUMA carga de
-    // dados confirmada (_dadosCarregados === false), não zeramos nada
-    // agora — apenas aguardamos a próxima notificação de auth (que vai
-    // chegar com o usuário real assim que o SDK terminar). Só zeramos
-    // de fato quando já tínhamos dados carregados antes e a sessão
-    // realmente caiu (logout explícito, token expirado etc.) — nesse
-    // caso sim é um estado "visitante" real, não um flash de loading.
+
     if (_dadosCarregados) {
       console.log('[diag] sem usuário (sessão encerrada de fato) — zerando CAMPANHAS/PERSONAGENS');
       CAMPANHAS = [];
@@ -420,30 +361,18 @@ async function carregarDadosDoSupabase() {
   if (erroCamp) { console.error('[forja] erro ao carregar campanhas:', erroCamp.message); showToast('⚠ Erro ao carregar campanhas', 'warning'); }
   if (erroPers) { console.error('[forja] erro ao carregar personagens:', erroPers.message); showToast('⚠ Erro ao carregar personagens', 'warning'); }
 
-  // Adapta o shape do Supabase pro shape que o restante do código já
-  // espera (campos em português, jeito que renderCampanhas/
-  // renderPersonagens já leem). `dados` no Supabase guarda o que
-  // antes ficava solto em campos individuais (jogadores, desc, etc)
-  // — ver mapearCampanhaSupabase/mapearPersonagemSupabase abaixo.
   CAMPANHAS = (campanhas || []).map(mapearCampanhaSupabase);
   PERSONAGENS = (personagens || []).map(mapearPersonagemSupabase);
   console.log('[diag] CAMPANHAS final:', CAMPANHAS.length, 'PERSONAGENS final:', PERSONAGENS.length);
   _dadosCarregados = true;
 }
-
-// Campos como jogadores/sessoes/desc/banner/status não têm coluna
-// própria em `campanhas` (só nome, mestre_id, codigo_convite) — para
-// não exigir uma migração de schema agora só para isso, guardamos
-// esses extras dentro de uma coluna `dados` jsonb também em
-// campanhas (mesma ideia do `dados` de personagens). Isso exige uma
-// migração pequena no Supabase — ver nota no chat sobre migração 005.
 function mapearCampanhaSupabase(c) {
   const extra = c.dados || {};
   return {
     id: c.id,
     nome: c.nome,
-    sistema: c.sistema,       // coluna própria (campanha tem 1 sistema fixo)
-    status: c.status,         // coluna própria
+    sistema: c.sistema,
+    status: c.status,
     jogadores: extra.jogadores ?? 4,
     sessoes: extra.sessoes ?? 0,
     desc: extra.desc || 'Uma nova campanha aguarda...',
@@ -468,38 +397,21 @@ function mapearPersonagemSupabase(p) {
   };
 }
 
-// Substitui o antigo `campanha.personagens` (array de IDs). Como
-// agora é o PERSONAGEM que aponta pra campanha (campanha_id), e não
-// o contrário, esta função calcula a lista na hora, a partir de
-// PERSONAGENS já carregado — ver chamadas que antes liam
-// `c.personagens` diretamente, trocadas por personagensDaCampanha(c).
 function personagensDaCampanha(c) {
   return PERSONAGENS.filter(p => p.campanhaId === c.id);
 }
 
-// =============================================================
-// NAV
-// =============================================================
 function switchSection(id) {
   document.querySelectorAll('.section-panel').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.pnav-tab').forEach(t => t.classList.toggle('active', t.dataset.section === id));
   document.getElementById('sec-' + id).classList.add('active');
 }
 
-// =============================================================
-// HELPER SISTEMA
-// =============================================================
 function getSistema(id) { return SISTEMAS.find(s => s.id === id) || null; }
 
-// Monta o subtítulo "Classe · Raça" ou "Classe · Origem" do card de personagem.
-// Campos ainda não preenchidos (ficha não aberta/completada) aparecem como "—".
-// Usa os 'campos' do sistema pra descobrir dinamicamente quais são os 2 campos
-// de identidade (ex: cls+race no D&D, cls+origem no OP) — assim funciona pra
-// qualquer sistema novo sem precisar hardcodar nomes de campo.
 function subtituloChar(p, s) {
   if (!s) return '— · —';
   const d = p.dados || {};
-  // pega os campos do tipo select (identidade), exceto progressão (number)
   const camposIdentidade = s.campos.filter(c => c.tipo === 'select').slice(0, 2);
   if (!camposIdentidade.length) return '— · —';
   return camposIdentidade
@@ -507,15 +419,11 @@ function subtituloChar(p, s) {
     .join(' · ');
 }
 
-// Retorna o campo de "progressão" do sistema (nível, NEX, etc) — o primeiro
-// campo do tipo number que tenha um default definido.
 function campoProgressao(s) {
   if (!s) return null;
   return s.campos.find(c => c.tipo === 'number' && c.default !== undefined) || null;
 }
 
-// Dado um personagem, devolve { texto, valor, campoId } pro badge de nível/NEX,
-// já aplicando o valor padrão do sistema quando o personagem ainda não tem nada definido.
 function progressaoDoChar(p, s) {
   const campo = campoProgressao(s);
   if (!campo) return null;
@@ -542,9 +450,6 @@ function sistemaBadge(id) {
   return `<span class="sys-badge" style="color:${s.cor};border-color:${s.cor}40;background:${s.corBg}">${sysIcon(s,'1em')} ${s.nome}</span>`;
 }
 
-// =============================================================
-// RENDERIZAR CAMPANHAS
-// =============================================================
 let campFilterAtivo = 'all';
 
 function renderCampanhas() {
@@ -608,53 +513,16 @@ function filterCamps(f) {
   renderCampanhas();
 }
 
-// =============================================================
-// BFCACHE FIX — evita estado de auth "zumbi" ao voltar de outra
-// página via botão Voltar do navegador.
-// =============================================================
-// Problema real observado: ao navegar pra ficha/campanha e depois
-// clicar em "Voltar" (window.location.href='../../index.html'), o
-// Chrome/Safari frequentemente restaura esta página do bfcache (back-
-// forward cache) em vez de recarregar do zero. Isso CONGELA o estado
-// JS exatamente como estava antes de sair — incluindo variáveis
-// internas do módulo auth-supabase.js (_usuarioAtual, _perfilAtual,
-// e principalmente _resolverPendente, a Promise pendente de um
-// exigirLogin() anterior que pode nunca ter sido resolvida). Como
-// resultado: window.exigirLogin ainda existe (é a mesma função de
-// antes), mas reage a um estado interno obsoleto — fazendo o botão
-// "Criar Personagem"/"Criar Campanha" parecer travado, sem nenhum
-// erro no console (porque tecnicamente nada quebrou, só ficou preso
-// num estado velho).
-// event.persisted === true é o sinal inequívoco de que a página foi
-// restaurada do bfcache (não foi um load novo). Nesse caso, forçamos
-// um reload de verdade — mais simples e seguro do que tentar
-// reconstruir manualmente cada pedaço de estado do módulo de auth.
 window.addEventListener('pageshow', (event) => {
   if (event.persisted) {
     console.log('[bfcache-fix] página restaurada do cache do navegador — forçando reload para reinicializar auth-supabase.js');
     window.location.reload();
   }
 });
-// NOTA (refatoração SPA): a partir daqui, abrir uma ficha ou campanha
-// não navega mais pra outra página (ver abrirFicha() logo abaixo) —
-// então o cenário acima não acontece mais nesse fluxo. Esse fix
-// continua valendo pra a navegação de Livros (sistema-hub.html,
-// livros-sistema.html), que ainda usa window.location.href e está
-// fora do escopo desta refatoração.
 
-// =============================================================
-// SPA SHELL — ABRIR/FECHAR FICHA OU CAMPANHA NUM IFRAME
-// =============================================================
-// Em vez de window.location.href (que destruía esta página e, com
-// ela, a sessão em memória do módulo auth-supabase.js — ver bfcache
-// fix acima), a ficha/campanha agora carrega dentro de #sheet-frame.
-// O shell (este index.html) nunca é descarregado, então a sessão
-// nunca se perde e não há mais estado "zumbi" pra esse fluxo.
 function abrirFicha(url) {
   document.getElementById('hub-content').style.display = 'none';
   document.getElementById('topbar-hub').style.display = 'none';
-  // reseta indicadores antes de carregar a próxima ficha — evita
-  // mostrar por um instante o título/estado da ficha anterior
   document.getElementById('sheet-title').textContent = '—';
   document.getElementById('sheet-save-indicator').textContent = '';
   document.getElementById('sheet-frame').src = url;
@@ -669,8 +537,6 @@ function fecharFicha() {
   document.getElementById('topbar-sheet').style.display = 'none';
   document.getElementById('hub-content').style.display = 'block';
   document.getElementById('topbar-hub').style.display = 'flex';
-  // Recarrega os dados do Supabase pra refletir qualquer edição feita
-  // dentro da ficha/campanha (ex: nome do personagem mudou)
   if (window.usuarioLogado && window.usuarioLogado()) {
     carregarDadosDoSupabase().then(() => {
       renderCampanhas();
@@ -679,11 +545,8 @@ function fecharFicha() {
   }
 }
 
-// Escuta mensagens enviadas pelas fichas/campanhas dentro do iframe
 window.addEventListener('message', (event) => {
-  // Segurança: só aceitar mensagens da mesma origem (mesmo domínio
-  // Vercel) — o iframe só carrega conteúdo nosso, mas confirmamos
-  // mesmo assim antes de confiar em event.data.
+
   if (event.origin !== window.location.origin) return;
 
   const { tipo, payload } = event.data || {};
@@ -715,18 +578,11 @@ window.addEventListener('message', (event) => {
   }
 
   if (tipo === 'ficha:abrir') {
-    // payload já vem como path absoluto a partir da raiz do domínio
-    // (ex: '/sistemas/etherion/ficha/ficha.html?id=...'), então dá
-    // pra reusar abrirFicha() sem nenhum ajuste — o iframe atual
-    // (campanha) é substituído pelo iframe da ficha.
     abrirFicha(payload);
     return;
   }
 });
 
-// =============================================================
-// ABRIR CAMPANHA (detalhes)
-// =============================================================
 function abrirCampanha(id) {
   const c = CAMPANHAS.find(x => x.id === id);
   if (!c) return;
@@ -775,9 +631,6 @@ function removerCharDaCamp(campId, charId) {
   showToast('Personagem removido da campanha.', 'info');
 }
 
-// =============================================================
-// IMAGE UPLOAD — compressão automática via canvas
-// =============================================================
 function compressImage(file, maxW, maxH, quality, callback) {
   const reader = new FileReader();
   reader.onload = e => {
@@ -812,13 +665,9 @@ function handleImgUpload(inputId, previewId, placeholderId, callback) {
   });
 }
 
-// Armazena temporariamente as imagens enquanto o modal está aberto
 let _pendingBanner = null;
 let _pendingPhoto  = null;
 
-// =============================================================
-// CROPPER LOGIC
-// =============================================================
 let currentCropType = null; 
 let cropImgOrigin = { width: 0, height: 0 };
 let cropTransform = { x: 0, y: 0, scale: 1 };
@@ -995,15 +844,8 @@ function confirmCrop() {
   closeCropper();
 }
 
-// =============================================================
-// CRIAR CAMPANHA
-// =============================================================
-// Gera um código de convite curto e (na prática) único o bastante —
-// a tabela campanhas tem UNIQUE(codigo_convite) no banco, então uma
-// colisão rara seria pega pelo banco e reportada como erro, não
-// criaria silenciosamente uma campanha com convite duplicado.
 function gerarCodigoConvite() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sem O/0/I/1 (evita confusão visual)
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let codigo = '';
   for (let i = 0; i < 6; i++) codigo += chars[Math.floor(Math.random() * chars.length)];
   return codigo;
@@ -1018,9 +860,6 @@ async function criarCampanha() {
 
   if (!nome || !sistema) { showToast('⚠ Preencha o nome e o sistema', 'warning'); return; }
 
-  // Defesa extra: mesmo que <option disabled> normalmente impeça
-  // seleção pela UI, o value poderia ser forçado via DevTools. Nunca
-  // confiar só na UI pra bloquear sistemas ainda não migrados.
   const sistemaCampanha = getSistema(sistema);
   if (!sistemaCampanha || sistemaCampanha.disponivel === false) {
     showToast('⚠ Este sistema ainda não está disponível para campanhas.', 'warning');
@@ -1029,8 +868,6 @@ async function criarCampanha() {
 
   const dadosForm = { nome, sistema, jogadores: parseInt(jogadores) || 4, desc, banner: _pendingBanner || null, entradaAberta };
 
-  // Guarda a intenção ANTES de exigir login — se precisar de redirect
-  // pro Discord, isto sobrevive pro próximo load (ver auth-supabase.js).
   guardarAcaoPendente('criarCampanha', dadosForm);
 
   const sessao = await exigirLogin('Você precisa entrar com Discord para criar uma campanha.');
@@ -1046,9 +883,6 @@ async function _executarCriacaoCampanha(dadosForm) {
   const { nome, sistema, jogadores, desc, banner, entradaAberta } = dadosForm;
   const codigoConvite = gerarCodigoConvite();
 
-  // GUARDA DEFENSIVA: mesmo raciocínio de _executarCriacaoPersonagem
-  // — nunca gravar mestre_id nulo (ver comentário lá para o contexto
-  // completo da race condition que isso evita).
   const usuario = usuarioLogado();
   if (!usuario || !usuario.id) {
     console.error('[forja] tentativa de criar campanha sem usuário válido — abortando para não gravar mestre_id nulo. usuarioLogado() =', usuario);
@@ -1064,7 +898,7 @@ async function _executarCriacaoCampanha(dadosForm) {
       sistema,
       mestre_id: usuario.id,
       codigo_convite: codigoConvite,
-      entrada_aberta: entradaAberta !== false, // default true se ausente (compat com chamadas antigas de ação pendente)
+      entrada_aberta: entradaAberta !== false,
       dados: { jogadores, sessoes: 0, desc: desc || 'Uma nova campanha aguarda...', banner: banner || null, ultimaSessao: null }
     })
     .select()
@@ -1076,7 +910,7 @@ async function _executarCriacaoCampanha(dadosForm) {
     return;
   }
 
-  consumirAcaoPendente('criarCampanha'); // limpa pra não duplicar em reload acidental
+  consumirAcaoPendente('criarCampanha');
   CAMPANHAS.unshift(mapearCampanhaSupabase(data));
   renderCampanhas();
   closeModal('modalCampanha');
@@ -1093,16 +927,8 @@ async function _executarCriacaoCampanha(dadosForm) {
   showToast(`⚔ Campanha "${nome}" criada! Código de convite: ${codigoConvite}`, 'gold');
 }
 
-// =============================================================
-// ENTRAR EM CAMPANHA (código de convite)
-// =============================================================
-// Estado transitório desta operação — vive só enquanto o modal está
-// aberto, não precisa sobreviver a reload (diferente de criarCampanha/
-// criarPersonagem, que guardam ação pendente por causa do redirect do
-// Discord). Se o usuário nem está logado, exigirLogin() já cobre isso
-// antes de chegar aqui.
-let _ecCampanhaEncontrada = null; // { id, nome, sistema, entrada_aberta }
-let _ecCodigoValidado = null; // código exato que resultou em _ecCampanhaEncontrada
+let _ecCampanhaEncontrada = null;
+let _ecCodigoValidado = null;
 
 function abrirModalEntrarCampanha() {
   _ecCampanhaEncontrada = null;
@@ -1130,11 +956,6 @@ async function buscarCampanhaPorCodigo() {
     return;
   }
 
-  // Login é necessário já aqui, e não só na hora de confirmar — a
-  // busca em si não exige (a function de banco não olha auth.uid()
-  // pra este lookup específico), mas exigir cedo evita "achar" a
-  // campanha e só então descobrir que precisa logar, o que seria uma
-  // segunda barreira depois de já ter escolhido personagem.
   const sessao = await exigirLogin('Você precisa entrar com Discord para entrar em uma campanha.');
   if (!sessao) return;
 
@@ -1146,10 +967,6 @@ async function buscarCampanhaPorCodigo() {
 
   btnBuscar.disabled = false;
 
-  // buscar_campanha_por_codigo retorna um SETOF (array), mesmo que
-  // encontre no máximo 1 linha — codigo_convite não tem UNIQUE
-  // garantido no schema documentado, então tratamos como lista e
-  // pegamos a primeira, em vez de assumir .single().
   const encontrada = Array.isArray(data) ? data[0] : data;
 
   if (error || !encontrada) {
@@ -1171,12 +988,6 @@ async function buscarCampanhaPorCodigo() {
       ? '<span style="color:#7fae6f;">Entrada aberta — você entra direto.</span>'
       : '<span style="color:#C9A84C;">Entrada por aprovação — o mestre precisa aceitar seu pedido.</span>');
 
-  // Personagens soltos (sem campanha) do MESMO sistema da campanha —
-  // e do usuário logado. Sem o filtro por donoId, PERSONAGENS pode
-  // conter personagens de outros jogadores (visíveis via RLS porque o
-  // usuário é mestre em alguma campanha deles), e listá-los aqui deixaria
-  // o usuário vincular sem querer o personagem de outra pessoa a uma
-  // campanha nova — não é só um problema visual, é uma ação destrutiva.
   const userAtualEC = window.usuarioLogado ? window.usuarioLogado() : null;
   const candidatos = PERSONAGENS.filter(p =>
     p.sistema === encontrada.sistema && !p.campanhaId && p.donoId === userAtualEC?.id
@@ -1204,10 +1015,6 @@ async function buscarCampanhaPorCodigo() {
   document.getElementById('ec_btn_entrar').style.display = 'inline-block';
 }
 
-// esc() já existe em outras páginas do app (campanha.html) mas não
-// neste arquivo — pequena função local só pra este trecho, evita
-// depender de innerHTML cru com dados vindos do banco (nome da
-// campanha, nome de personagem).
 function esc(str) {
   return String(str ?? '')
     .replace(/&/g, '&amp;')
@@ -1239,9 +1046,6 @@ async function confirmarEntrarCampanha() {
     if (usandoPersonagemExistente) {
       personagemId = select.value;
     } else {
-      // Cria o personagem novo, solto, do mesmo sistema da campanha —
-      // mesmo padrão de _executarCriacaoPersonagem (nasce só com nome
-      // e sistema; resto é preenchido na ficha depois).
       const nomeNovo = document.getElementById('ec_novo_personagem_nome').value.trim();
       if (!nomeNovo) {
         showToast('⚠ Dê um nome ao seu personagem.', 'warning');
@@ -1266,9 +1070,6 @@ async function confirmarEntrarCampanha() {
       personagemId = novoPersonagem.id;
     }
 
-    // Campanha aberta entra direto; fechada vira solicitação pendente.
-    // Ambas as functions já validam sistema/personagem no banco — não
-    // duplicamos essa checagem aqui, só escolhemos qual chamar.
     const nomeFuncao = _ecCampanhaEncontrada.entrada_aberta ? 'entrar_em_campanha' : 'solicitar_entrada_campanha';
     const { error: erroEntrar } = await window.supabaseClient
       .rpc(nomeFuncao, { p_codigo_convite: _ecCodigoValidado, p_personagem_id: personagemId });
@@ -1284,8 +1085,6 @@ async function confirmarEntrarCampanha() {
 
     if (_ecCampanhaEncontrada.entrada_aberta) {
       showToast(`⚔ Você entrou em "${esc(_ecCampanhaEncontrada.nome)}"!`, 'gold');
-      // Recarrega para refletir campanha_id atualizado no personagem
-      // e a campanha (agora visível via RLS) na lista.
       await carregarDadosDoSupabase();
       renderCampanhas();
       renderPersonagens();
@@ -1297,17 +1096,10 @@ async function confirmarEntrarCampanha() {
   }
 }
 
-// =============================================================
-// RENDERIZAR PERSONAGENS
-// =============================================================
 let charFilterAtivo = 'all';
 
 function renderPersonagens() {
   const grid = document.getElementById('charGrid');
-  // "Meus Personagens" mostra só os personagens do usuário logado — não
-  // todos os que o RLS permite ver (que inclui os de outros jogadores em
-  // campanhas onde o usuário é mestre). Ver comentário em
-  // carregarDadosDoSupabase() sobre por que esse filtro não acontece lá.
   const user = window.usuarioLogado ? window.usuarioLogado() : null;
   const meusPersonagens = user ? PERSONAGENS.filter(p => p.donoId === user.id) : [];
   const filtrados = charFilterAtivo === 'all'
@@ -1368,26 +1160,17 @@ function abrirPersonagem(id) {
   else showToast('⚠ Ficha não configurada para este sistema.', 'warning');
 }
 
-// =============================================================
-// CRIAR PERSONAGEM
-// =============================================================
 async function criarPersonagem() {
   const nome    = document.getElementById('ch_name').value.trim();
   const sistema = document.getElementById('ch_system').value;
   if (!nome || !sistema) { showToast('⚠ Preencha o nome e o sistema', 'warning'); return; }
 
-  // Defesa extra: mesmo que <option disabled> normalmente impeça
-  // seleção pela UI, o value poderia ser forçado via DevTools.
   const sistemaPersonagem = getSistema(sistema);
   if (!sistemaPersonagem || sistemaPersonagem.disponivel === false) {
     showToast('⚠ Este sistema ainda não está disponível para personagens.', 'warning');
     return;
   }
 
-  // Classe/Raça/Nível/Alinhamento etc. NÃO são mais preenchidos aqui no
-  // momento da criação (feature descontinuada de propósito — ver nota
-  // acima de preencherSelectsSistema()). O personagem nasce só com nome
-  // e sistema; tudo o mais é preenchido depois dentro da própria ficha.
   const dadosIniciais = {};
   if (_pendingPhoto) dadosIniciais._foto = _pendingPhoto;
 
@@ -1406,27 +1189,13 @@ async function criarPersonagem() {
 async function _executarCriacaoPersonagem(dadosForm) {
   const { nome, sistema, dadosIniciais } = dadosForm;
 
-  // GUARDA DEFENSIVA: nunca tentar gravar um personagem sem dono_id
-  // válido. Isso já aconteceu por uma race condition no módulo de
-  // auth (corrigida em auth-supabase.js), mas mantemos esta checagem
-  // aqui como segunda linha de defesa — é melhor falhar com um toast
-  // claro e deixar a ação pendente intacta (pra tentar de novo) do
-  // que gravar uma linha "órfã" no Supabase com dono_id NULL, que
-  // fica invisível para todo mundo (inclusive quem criou) por causa
-  // da RLS, e só seria notada inspecionando o banco diretamente.
   const usuario = usuarioLogado();
   if (!usuario || !usuario.id) {
     console.error('[forja] tentativa de criar personagem sem usuário válido — abortando para não gravar dono_id nulo. usuarioLogado() =', usuario);
     showToast('⚠ Sessão ainda carregando, tente novamente em um instante.', 'warning');
-    // Mantém a ação pendente (não consome) para a próxima chamada de
-    // initDadosAutenticados() — quando a sessão já estiver íntegra —
-    // poder retomar sozinha, sem o usuário precisar preencher tudo de novo.
     guardarAcaoPendente('criarPersonagem', dadosForm);
     return;
   }
-
-  // Personagem nasce SEM campanha_id (solto) — decisão confirmada:
-  // criado fora, depois colocado numa campanha via entrar_em_campanha().
   const { data, error } = await window.supabaseClient
     .from('personagens')
     .insert({ nome, sistema, dono_id: usuario.id, campanha_id: null, dados: dadosIniciais })
@@ -1455,20 +1224,12 @@ async function _executarCriacaoPersonagem(dadosForm) {
 
   const s = getSistema(sistema);
   if (s?.ficha) {
-    // Abre a ficha do personagem recém-criado dentro do iframe do shell —
-    // não há mais troca de página, então a sessão de auth nunca se perde.
-    // IMPORTANTE: consumirAcaoPendente() já rodou ANTES desta chamada
-    // (logo acima), então não fica pendência órfã esperando um load que
-    // nunca mais vai chamar criarPersonagem() de novo.
     abrirFicha(`${s.ficha}?id=${novo.id}&nome=${encodeURIComponent(nome)}`);
   } else {
     showToast(`✦ ${nome} criado(a) com sucesso!`, 'gold');
   }
 }
 
-// =============================================================
-// DELETAR PERSONAGEM
-// =============================================================
 let _charParaDeletar = null;
 
 function confirmarDeletarPersonagem(id) {
@@ -1491,8 +1252,6 @@ function executarDeletarPersonagem() {
 
   PERSONAGENS = PERSONAGENS.filter(x => x.id !== id);
   saveData('forja_personagens', PERSONAGENS);
-
-  // remove o personagem de qualquer campanha em que estivesse listado
   CAMPANHAS.forEach(c => { c.personagens = (c.personagens||[]).filter(cid => cid !== id); });
   saveData('forja_campanhas', CAMPANHAS);
 
@@ -1503,15 +1262,8 @@ function executarDeletarPersonagem() {
   showToast(`🗑 ${p ? p.nome : 'Personagem'} foi apagado.`, 'warning');
 }
 
-// =============================================================
-// RENDERIZAR SISTEMAS
-// =============================================================
 function renderSistemas() {
   const grid = document.getElementById('sistemasGrid');
-  // Mesmo cuidado de renderPersonagens(): "🧙 N personagens" no card de
-  // cada sistema deve contar só os personagens do usuário logado, não
-  // todos que o RLS deixa ver (que inclui os de outros jogadores em
-  // campanhas onde o usuário é mestre).
   const userAtualSistemas = window.usuarioLogado ? window.usuarioLogado() : null;
   const meusPersonagensSistemas = userAtualSistemas ? PERSONAGENS.filter(p => p.donoId === userAtualSistemas.id) : [];
   grid.innerHTML = SISTEMAS.map((s, i) => {
@@ -1543,15 +1295,7 @@ function renderSistemas() {
   document.getElementById('count-sistemas').textContent = SISTEMAS.length;
 }
 
-// =============================================================
-// LIVROS — aqui dentro do home só existe o GRID DE MÓDULOS.
-// Ao clicar num módulo, navega para livros-sistema.html (página própria,
-// com sua própria top bar e seta de voltar pro home). O leitor de um
-// livro específico abre outra página ainda (livro-leitor.html), com seta
-// de voltar pra livros-sistema.html — assim cada nível tem seu próprio
-// "voltar" pro nível anterior, sem depender de troca de aba no home.
-// =============================================================
-let INDICE_LIVROS = null;   // só usado aqui pra mostrar a contagem no grid
+let INDICE_LIVROS = null;
 
 async function carregarIndiceLivros() {
   try {
@@ -1563,8 +1307,6 @@ async function carregarIndiceLivros() {
     INDICE_LIVROS = {};
     SISTEMAS.forEach(s => INDICE_LIVROS[s.id] = []);
   }
-  // mescla registros extras feitos via página livros-sistema.html (ver nota
-  // lá sobre a limitação do localStorage).
   const extras = JSON.parse(localStorage.getItem('forja_livros_extras') || '{}');
   Object.keys(extras).forEach(sid => {
     if (!INDICE_LIVROS[sid]) INDICE_LIVROS[sid] = [];
@@ -1612,25 +1354,6 @@ function preencherSelectsSistema() {
   });
 }
 
-// DESCONTINUADO DE PROPÓSITO: este projeto já teve uma feature de
-// "campos extras" (Classe/Raça/Nível/Alinhamento etc.) preenchida no
-// próprio modal de criação, gerada dinamicamente por sistema a partir
-// de SISTEMAS[].campos (renderCamposExtras() + coletarValoresCamposExtras(),
-// lidas por criarPersonagem() em #ch_dynamic_fields). Foi removida de
-// propósito — não é regressão. Esses dados agora só existem dentro de
-// cada ficha (sistemas/*/*-ficha.html), preenchidos lá depois que o
-// personagem já existe. Não reintroduzir esse formulário dinâmico no
-// modal de criação sem confirmar antes — já causou bug onde os campos
-// de um sistema apareciam preenchidos com opções de outro.
-// SISTEMAS[].campos continua existindo só porque subtituloChar(),
-// campoProgressao() e progressaoDoChar() (mais abaixo) usam esses IDs
-// pra saber quais chaves de `dados` exibir no card do personagem —
-// isso é puramente de leitura/exibição do que a ficha já salvou, não
-// tem relação com o formulário de criação.
-
-// =============================================================
-// MODAIS
-// =============================================================
 function openModal(id) {
   document.getElementById(id).classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -1646,9 +1369,6 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') document.querySelectorAll('.modal-backdrop.open').forEach(m => closeModal(m.id));
 });
 
-// =============================================================
-// TOAST
-// =============================================================
 function showToast(msg, type = '') {
   const c = document.getElementById('toastContainer');
   const t = document.createElement('div');
@@ -1664,9 +1384,6 @@ function showToast(msg, type = '') {
   }, 2800);
 }
 
-// =============================================================
-// PARTICLES
-// =============================================================
 function initParticles() {
   const container = document.getElementById('particles');
   for (let i = 0; i < 20; i++) {
@@ -1682,24 +1399,12 @@ function initParticles() {
   }
 }
 
-// =============================================================
-// INIT
-// =============================================================
 async function init() {
   initParticles();
   preencherSelectsSistema();
   renderSistemas();
   carregarIndiceLivros();
-  // Campanhas/Personagens dependem do módulo de auth (window.usuarioLogado,
-  // window.supabaseClient) já estar carregado — ver script type="module"
-  // logo abaixo, que dispara o evento 'auth-modulo-pronto' quando pronto,
-  // e chama initDadosAutenticados() a partir daí (não daqui).
-}
 
-// Roda assim que o <script type="module"> da ponte de auth (mais abaixo
-// no arquivo) terminar de importar e expor window.usuarioLogado/
-// window.supabaseClient. Sem esperar por isso, carregarDadosDoSupabase()
-// rodaria contra funções que ainda não existem.
 async function initDadosAutenticados() {
   console.log('[diag] initDadosAutenticados() CHAMADA (' + (++window._diagContador || (window._diagContador = 1)) + 'ª vez)');
   await carregarDadosDoSupabase();
@@ -1707,8 +1412,6 @@ async function initDadosAutenticados() {
   renderPersonagens();
   console.log('[diag] após render: PERSONAGENS.length =', PERSONAGENS.length, '— grid mostra', document.querySelectorAll('#charGrid .char-card').length, 'cards');
 
-  // Retoma uma ação pendente de criar campanha/personagem que tenha
-  // sobrevivido a um redirect de login (ver auth-supabase.js).
   const pendenteCampanha = consumirAcaoPendente('criarCampanha');
   if (pendenteCampanha) await _executarCriacaoCampanha(pendenteCampanha);
 
@@ -1777,25 +1480,13 @@ init();
     }
   });
 
-  // Dispara o flag pro script clássico saber que pode chamar
-  // window.exigirLogin com segurança (evita corrida onde um onclick
-  // dispara antes deste module terminar de importar/avaliar).
   window._authModuloPronto = true;
   window.dispatchEvent(new Event('auth-modulo-pronto'));
 
-  // Recarrega campanhas/personagens sempre que o estado de login
-  // mudar DE VERDADE (login, logout, ou troca de usuário) — não a
-  // cada disparo bruto do Supabase. O Supabase costuma disparar
-  // onAuthStateChange mais de uma vez na mesma carga de página (ex:
-  // INITIAL_SESSION seguido de SIGNED_IN/TOKEN_REFRESHED), e sem essa
-  // checagem initDadosAutenticados() rodava várias vezes à toa,
-  // multiplicando requisições ao Supabase sem necessidade (o risco
-  // de gravar dados com usuário nulo já foi corrigido na raiz, em
-  // auth-supabase.js, mas aqui evitamos o desperdício/ruído).
-  let _ultimoUsuarioId = undefined; // undefined = ainda não rodou nenhuma vez
+  let _ultimoUsuarioId = undefined;
   onMudancaAuth((user) => {
     const idAtual = user ? user.id : null;
-    if (idAtual === _ultimoUsuarioId) return; // mesmo usuário (ou mesmo "deslogado") de antes — ignora
+    if (idAtual === _ultimoUsuarioId) return;
     _ultimoUsuarioId = idAtual;
     if (typeof window.initDadosAutenticados === 'function') window.initDadosAutenticados();
   });
