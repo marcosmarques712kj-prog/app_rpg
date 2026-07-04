@@ -233,6 +233,10 @@ const sistemaMagia = {
     if (mod._obsoleto) return false; // ex: sacrificio_vital — virou camada de pagamento, não modificador de forma
     if (!Array.isArray(mod.trilhaPermitida)) return true; // fallback: dado ainda não preenchido
     if (!trilhaPersonagem) return true; // personagem sem especialização definida ainda: não bloqueia
+    // Trilha 'Equilibrada' (Catalogador/Juiz do Eclipse, Guardião da Maré
+    // Cheia): não escolheu um lado — tem acesso a modificadores de ambas
+    // as trilhas, não só a uma.
+    if (trilhaPersonagem === 'Equilibrada') return true;
     return mod.trilhaPermitida.includes(trilhaPersonagem);
   },
 
@@ -244,16 +248,35 @@ const sistemaMagia = {
    *
    * @param {object} p
    * @param {string} p.aspectoRacial       — aspectoPadrao da subraça (racas.js), pode ser null
-   * @param {string} p.aspectoEspecializacao — aspectoPadrao da especialização (classes.js), pode ser null
+   * @param {string} p.aspectoEspecializacao — aspectoPadrao da especialização (classes.js), pode ser null.
+   *   Caso comum (51 de 54 especializações): um único aspecto gratuito.
+   * @param {string[]} p.aspectosIniciaisFixos — aspectosIniciaisFixos da especialização
+   *   (classes.js), pode ser null/vazio. Caso raro (Catalogador/Juiz do
+   *   Eclipse, Guardião da Maré Cheia): a especialização concede MAIS DE UM
+   *   aspecto gratuito de uma vez, e por isso zera aspectosAprendizado (ver
+   *   comentário nessas 3 especializações em classes.js). Quando presente,
+   *   tem precedência sobre aspectoEspecializacao (não usa os dois juntos —
+   *   o chamador deve passar só um dos dois, mas se vierem ambos por engano
+   *   esta função não duplica, só evita comportamento indefinido).
    * @param {string[]} p.aspectosLivres    — IDs escolhidos pelo jogador (dentro do limite aspectosAprendizado)
    * @returns {{ [aspectoId]: { origem: string, circuloMax: number } }}
    */
-  montarAspectosConhecidos({ aspectoRacial, aspectoEspecializacao, aspectosLivres = [] }) {
+  montarAspectosConhecidos({ aspectoRacial, aspectoEspecializacao, aspectosIniciaisFixos = [], aspectosLivres = [] }) {
     const conhecidos = {};
     if (aspectoRacial) {
       conhecidos[aspectoRacial] = { origem: 'racial', circuloMax: this.circuloMaximoPorOrigemAspecto('racial') };
     }
-    if (aspectoEspecializacao && !conhecidos[aspectoEspecializacao]) {
+    // aspectosIniciaisFixos (múltiplos) tem precedência sobre aspectoEspecializacao
+    // (singular) — ver nota no JSDoc acima. Ambos usam o mesmo teto de origem
+    // 'especializacao' (9), então não há diferença de poder entre os dois
+    // formatos, só de quantidade de aspectos concedidos.
+    if (Array.isArray(aspectosIniciaisFixos) && aspectosIniciaisFixos.length > 0) {
+      aspectosIniciaisFixos.forEach(id => {
+        if (!conhecidos[id]) {
+          conhecidos[id] = { origem: 'especializacao', circuloMax: this.circuloMaximoPorOrigemAspecto('especializacao') };
+        }
+      });
+    } else if (aspectoEspecializacao && !conhecidos[aspectoEspecializacao]) {
       conhecidos[aspectoEspecializacao] = { origem: 'especializacao', circuloMax: this.circuloMaximoPorOrigemAspecto('especializacao') };
     }
     (aspectosLivres || []).forEach(id => {
@@ -281,12 +304,23 @@ const sistemaMagia = {
    *   verbosPermitidos: string[],
    *   circuloMaxPorAspecto: (aspectoId: string) => number,
    *   circuloMaxNivel: number,
-   *   modificadorPermitido: (modId: string) => boolean
+   *   modificadorPermitido: (modId: string) => boolean,
+   *   temAcessoSinergia: boolean
    * }}
    */
   resolverElegibilidade({ nivel, classeObj, especObj, aspectosConhecidos = {} }) {
     const circuloMaxNivel = this.circuloMaximoPorNivel(nivel, classeObj, especObj);
     const trilhaPersonagem = especObj ? especObj.trilha : null;
+
+    // Acesso à Sinergia (Corromper/Purificar, V1.0 — ver resolverSinergia):
+    // pode vir da CLASSE inteira (destravaSinergiaClasseInteira — ex:
+    // Transcendente, que destrava para todas as suas especializações) ou de
+    // uma especialização específica (destravaSinergia — ex: Catalogador do
+    // Eclipse, Juiz do Eclipse, Guardião da Maré Cheia).
+    const temAcessoSinergia = Boolean(
+      (classeObj && classeObj.destravaSinergiaClasseInteira) ||
+      (especObj && especObj.destravaSinergia)
+    );
 
     return {
       aspectosPermitidos: Object.keys(aspectosConhecidos),
@@ -298,6 +332,7 @@ const sistemaMagia = {
       },
       circuloMaxNivel,
       modificadorPermitido: (modId) => this.modificadorPermitido(modId, trilhaPersonagem),
+      temAcessoSinergia,
     };
   },
 

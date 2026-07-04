@@ -1125,23 +1125,24 @@ function resolverElegibilidadeAtual() {
   const aspectoRacial = subraca ? subraca.aspectoPadrao : null;
   const aspectoEspecializacao = especObj ? especObj.aspectoPadrao : null;
 
+  // V10.0: aspectosIniciaisFixos (Catalogador/Juiz do Eclipse, Guardião da
+  // Maré Cheia — concedem 2 aspectos de uma vez, ver classes.js) agora é
+  // lido nativamente por montarAspectosConhecidos no motor. Quando presente,
+  // tem precedência sobre aspectoEspecializacao — não passamos os dois.
   const aspectosConhecidos = sistemaMagia.montarAspectosConhecidos({
     aspectoRacial: aspectoRacial || null,
     aspectoEspecializacao: aspectoEspecializacao || null,
+    aspectosIniciaisFixos: especObj ? (especObj.aspectosIniciaisFixos || []) : [],
     aspectosLivres: d.grimorio.aspectosLivres || [],
   });
 
   const nivel = parseInt(d.level) || 1;
 
-  const resultado = sistemaMagia.resolverElegibilidade({ nivel, classeObj, especObj, aspectosConhecidos });
-
-  // V9.0 — Sinergia (Corromper/Purificar): acesso vem OU da classe inteira
-  // (destravaSinergiaClasseInteira — ex: Transcendente inteira) OU de uma
-  // especialização específica (destravaSinergia — ex: Catalogador do
-  // Eclipse, Juiz do Eclipse, Guardião da Maré Cheia). Ver classes.js.
-  resultado.temAcessoSinergia = !!(classeObj.destravaSinergiaClasseInteira || (especObj && especObj.destravaSinergia));
-
-  return resultado;
+  // V10.0: temAcessoSinergia agora é calculado direto dentro de
+  // resolverElegibilidade no motor (destravaSinergiaClasseInteira da classe
+  // OU destravaSinergia da especialização) — não precisamos mais duplicar
+  // essa checagem aqui na ficha.
+  return sistemaMagia.resolverElegibilidade({ nivel, classeObj, especObj, aspectosConhecidos });
 }
 
 // Quantas vagas de aspecto livre a classe atual concede, e quantas já
