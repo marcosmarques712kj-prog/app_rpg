@@ -219,10 +219,18 @@ const sistemaMagia = {
    * evita travar a ficha inteira enquanto os 12 modificadores não
    * estão todos preenchidos. Remover o fallback quando o
    * preenchimento estiver completo, se se quiser bloquear por padrão.
+   *
+   * V8.0: modificadores marcados `_obsoleto` (ex: sacrificio_vital, que
+   * virou camada de pagamento separada — ver resolverPagamento/
+   * resolverSinergia) nunca são permitidos aqui, independente de trilha.
+   * Isso garante que a UI (ficha.js, montarOpcoesSelect) não ofereça mais
+   * essa opção no select de modificadores, sem precisar de uma lista de
+   * exclusão hardcoded na própria ficha.
    */
   modificadorPermitido(modId, trilhaPersonagem) {
     const mod = this.modificadores[modId];
     if (!mod) return false;
+    if (mod._obsoleto) return false; // ex: sacrificio_vital — virou camada de pagamento, não modificador de forma
     if (!Array.isArray(mod.trilhaPermitida)) return true; // fallback: dado ainda não preenchido
     if (!trilhaPersonagem) return true; // personagem sem especialização definida ainda: não bloqueia
     return mod.trilhaPermitida.includes(trilhaPersonagem);
@@ -2292,45 +2300,49 @@ const sistemaMagia = {
     // ─────────────────────────────────────────────────
     sacrificio_vital: {
       nome: 'Sacrifício Vital',
-      custoExtra: 0,
-      ajusteSequela: 0,
-      ajustes: { ajAlcance: +0, ajArea: +1, ajDuracao: +1, ajVisibilidade: +2 },
+      // V8.0 (Nova Camada de Pagamento): este modificador foi REMOVIDO da
+      // lista de escolhas de forma (Direcionado/Fragmentado/Caótico/etc).
+      // O Sacrifício Vital agora é uma camada de PAGAMENTO independente —
+      // ver `resolverPagamento` — que se aplica por cima de qualquer
+      // modificador já escolhido, trocando Sopro/Mácula faltante por PV.
+      // Esta entrada permanece apenas por retrocompatibilidade de nome/lore
+      // (ex: se algum código externo antigo referenciar a chave), mas
+      // `gerarMagia` não a aceita mais como valor de `modId` — ver validação
+      // na Camada 1. NÃO usar este objeto para cálculos; usar `resolverPagamento`.
+      _obsoleto: true,
+      nomeOriginal: 'Sacrifício Vital',
       efeitoMecanico:
-        'O conjurador paga (Círculo × 2) PV próprios como custo adicional. ' +
-        'Em troca, o efeito aumenta de escala em Área e Duração, e a ' +
-        'Visibilidade sobe dois graus. O recurso arcano (Sopro/Mácula) ' +
-        'permanece o mesmo — o sangue substitui parte do esforço metafísico.',
+        'MOVIDO: ver resolverPagamento(). O conjurador paga em PV o Sopro/Mácula ' +
+        'que não possui, numa taxa progressiva (cada ponto faltante custa mais ' +
+        'que o anterior). Não altera Área, Duração ou Visibilidade da magia — ' +
+        'é puramente uma troca de moeda, não uma escolha de forma.',
       descricao: {
         ofensivo:
           'O poder que nenhum feitiço comprado com recurso arcano pode ' +
           'igualar — porque este foi comprado com sangue do próprio conjurador. ' +
           'Como os deuses que sacrificaram partes de seu poder para criar ' +
           'Morvethra e Ordelyne, o conjurador abre uma veia de sua própria ' +
-          'vitalidade e a converte em dano amplificado, em área expandida, ' +
-          'em destruição que ecoa pelos dois planos simultaneamente. A carne ' +
-          'dói. O inimigo também.',
+          'vitalidade e a converte no mesmo efeito que o Sopro ou a Mácula ' +
+          'teriam pago — a carne substitui o esforço metafísico faltante.',
         defensivo:
           'A proteção mais genuína é aquela que custa ao protetor — como ' +
           'Khaíros, Elysséra e Nyxara que sacrificaram partes de seu próprio ' +
           'poder para criar Morvethra e salvar o mundo da agonia eterna. ' +
-          'O conjurador paga em PV próprios para erguer um escudo ampliado ' +
-          'que cobre mais aliados, dura mais rodadas e brilha com a ' +
-          'intensidade de uma devoção que o custo do Sopro não poderia comprar.',
+          'O conjurador paga em PV próprios o que o Sopro esgotado não ' +
+          'consegue mais sustentar.',
         utilidade:
-          'A mácula do sangue como catalisador metafísico — o Véu responde ' +
-          'ao sacrifício vital com uma abertura mais generosa, deixando o ' +
-          'efeito penetrar mais fundo, alcançar alvos mais distantes no ' +
-          'plano espiritual e persistir por mais tempo antes de colapsar. ' +
-          'As entidades de Nythraxis reconhecem o preço pago em carne e ' +
-          'desviam-se do caminho da intenção, como se o sangue as espantasse.',
+          'A mácula do sangue como catalisador metafísico — quando o Véu ' +
+          'já não responde ao recurso arcano exaurido, o sangue do ' +
+          'conjurador substitui o que falta, ponto a ponto, cada vez mais ' +
+          'caro quanto mais fundo o poço estiver seco.',
       },
       template:
         'O conjurador fecha o punho e aperta — não uma pedra de foco, mas ' +
         'a palma da própria mão. Uma fina linha vermelha se forma. O sangue ' +
-        'não cai: converte-se em luz que permeia a magia e a expande além ' +
-        'do que o Sopro ou a Mácula sozinhos sustentariam. O custo é visível ' +
-        'no rosto do conjurador — palidez, pupilas dilatadas — mas o efeito ' +
-        'pulsa com uma intensidade que os recursos comuns não alcançam.'
+        'não cai: converte-se em luz que preenche exatamente o que o Sopro ' +
+        'ou a Mácula não puderam pagar. O custo é visível no rosto do ' +
+        'conjurador — palidez, pupilas dilatadas — mas o efeito permanece ' +
+        'o mesmo que teria sido com o recurso arcano intacto.'
     },
 
     // ─────────────────────────────────────────────────
@@ -3294,6 +3306,261 @@ const sistemaMagia = {
   },
 
   /**
+   * Resolve o Sacrifício Vital (V8.0 — Nova Camada de Pagamento).
+   *
+   * Substitui o antigo modificador `sacrificio_vital`. Não é mais uma
+   * escolha de FORMA da magia (não compete com Direcionado/Fragmentado/
+   * Caótico) — é uma camada de PAGAMENTO que se aplica DEPOIS que o custo
+   * final em Sopro/Mácula já foi calculado por `calcularCusto` (e,
+   * opcionalmente, `calcularInfusao`). A forma da magia (dados, área,
+   * duração, visibilidade) nunca muda por causa do pagamento — só a
+   * origem dos pontos que faltam.
+   *
+   * Mecanismo (definido com o usuário, ver conversa de design):
+   *   - O jogador paga primeiro com o recurso arcano que tiver disponível.
+   *   - Cada ponto de Sopro/Mácula que FALTA é pago em PV numa progressão
+   *     triangular de base 2: o 1º ponto faltante custa 2 PV, o 2º custa
+   *     3 PV, o 3º custa 4 PV, etc. (cada ponto seguinte custa +1 que o
+   *     anterior). Faltar tudo dói MUITO mais que faltar pouco — de
+   *     propósito, para que sacrificar sangue continue sendo uma válvula
+   *     de emergência, não uma estratégia ótima de rotina.
+   *   - Sem recursoDisponivel informado, assume-se recurso suficiente
+   *     (comportamento padrão, sem sacrifício) — 100% retrocompatível com
+   *     código que não passa esse parâmetro.
+   *
+   * @param {number} custoFinal        — custo em Sopro/Mácula já calculado (após calcularCusto/calcularInfusao)
+   * @param {number|null} recursoDisponivel — quanto de Sopro/Mácula o personagem tem agora (null = assume suficiente)
+   * @returns {{
+   *   recursoPago: number,        // quanto foi de fato descontado do Sopro/Mácula do personagem
+   *   faltante: number,           // quantos pontos faltavam e foram cobertos em sangue
+   *   custoPV: number,            // quanto de PV foi sacrificado no total
+   *   sacrificioAtivo: boolean,   // true se houve qualquer sacrifício de PV
+   *   tag: string|null            // tag pronta para exibição na ficha, ou null se não houve sacrifício
+   * }}
+   */
+  resolverPagamento(custoFinal, recursoDisponivel = null) {
+    const custo = Math.max(0, custoFinal || 0);
+
+    // Sem informação de recurso disponível: assume que o personagem paga
+    // normalmente, sem sacrifício — comportamento padrão/retrocompatível.
+    if (recursoDisponivel === null || recursoDisponivel === undefined) {
+      return { recursoPago: custo, faltante: 0, custoPV: 0, sacrificioAtivo: false, tag: null };
+    }
+
+    const disponivel = Math.max(0, recursoDisponivel);
+    const recursoPago = Math.min(custo, disponivel);
+    const faltante = Math.max(0, custo - disponivel);
+
+    if (faltante === 0) {
+      return { recursoPago, faltante: 0, custoPV: 0, sacrificioAtivo: false, tag: null };
+    }
+
+    // Soma triangular de base 2: ponto 1 custa 2, ponto 2 custa 3, ponto 3
+    // custa 4... ou seja, o N-ésimo ponto faltante custa (2 + (N-1)) PV.
+    // custoPV = soma de N=1 até faltante de (2 + (N-1))
+    //         = faltante*2 + (faltante*(faltante-1))/2
+    const custoPV = faltante * 2 + (faltante * (faltante - 1)) / 2;
+
+    return {
+      recursoPago,
+      faltante,
+      custoPV,
+      sacrificioAtivo: true,
+      tag: `Sacrifício Vital: ${faltante} ponto(s) de recurso faltante pago(s) com ${custoPV} PV`
+    };
+  },
+
+  /**
+   * Frações de custo migradas por grau de Corromper/Purificar (V1.0).
+   * Definidas com o usuário: Leve=15%, Moderada=35%, Severa=60%.
+   */
+  fracoesSinergia: {
+    leve: 0.15,
+    moderada: 0.35,
+    severa: 0.60,
+  },
+
+  /**
+   * Resolve a mecânica de Sinergia — Corromper uma magia de Aspecto Puro ou
+   * Purificar uma magia de Aspecto Corrompido (V1.0).
+   *
+   * Pré-requisito de acesso: o personagem precisa ter `destravaSinergia`
+   * na especialização OU pertencer a uma classe com
+   * `destravaSinergiaClasseInteira` (ver classes.js — Catalogador do
+   * Eclipse, Juiz do Eclipse, Guardião da Maré Cheia, e toda a classe
+   * Transcendente). A checagem de acesso é feita fora desta função — quem
+   * chama `resolverSinergia` já validou o acesso (aqui recebemos só o
+   * resultado dessa validação em `temAcesso`, para a função permanecer pura
+   * e sem depender de conhecer a estrutura de classes.js).
+   *
+   * Mecânica:
+   *   1. Direção é inferida do `recursoOriginal` da magia: uma magia que
+   *      nasce em Sopro só pode ser CORROMPIDA (puxada para Mácula); uma
+   *      magia que nasce em Mácula só pode ser PURIFICADA (puxada para
+   *      Sopro). Não existe "corromper uma magia já corrompida".
+   *   2. Uma fração do `custoFinal` (ver fracoesSinergia) migra para o
+   *      recurso oposto — arredondada para cima, para que graus baixos
+   *      sempre movam pelo menos 1 ponto quando o custo não for zero.
+   *   3. Rola 1d10 na tabela `selvageriaSinergia[direcao][grau]` e retorna
+   *      a entrada sorteada (efeito mecânico + texto, ou só texto se for
+   *      entrada de sabor).
+   *
+   * @param {number} custoFinal        — custo total já calculado da magia (após calcularCusto/Infusao)
+   * @param {'sopro'|'macula'} recursoOriginal — recurso nativo do Aspecto da magia
+   * @param {'leve'|'moderada'|'severa'} grau  — intensidade escolhida da Sinergia
+   * @param {boolean} temAcesso        — se o personagem tem `destravaSinergia` (checado pelo chamador)
+   * @param {function} [rolarD10]      — injeção opcional de RNG para testes determinísticos; default Math.random
+   * @returns {object} resultado completo da sinergia, ou { erro } se inválido
+   */
+  resolverSinergia(custoFinal, recursoOriginal, grau, temAcesso, rolarD10 = null) {
+    if (!temAcesso) {
+      return { erro: 'Este personagem não tem acesso à mecânica de Sinergia (Corromper/Purificar). Requer destravaSinergia ou destravaSinergiaClasseInteira.' };
+    }
+    const fracao = this.fracoesSinergia[grau];
+    if (fracao === undefined) {
+      return { erro: `Grau de Sinergia inválido: "${grau}". Use 'leve', 'moderada' ou 'severa'.` };
+    }
+    if (recursoOriginal !== 'sopro' && recursoOriginal !== 'macula') {
+      return { erro: `Recurso original inválido: "${recursoOriginal}". Use 'sopro' ou 'macula'.` };
+    }
+
+    const direcao = recursoOriginal === 'sopro' ? 'corromper' : 'purificar';
+    const recursoDestino = recursoOriginal === 'sopro' ? 'macula' : 'sopro';
+
+    const custo = Math.max(0, custoFinal || 0);
+    const custoMigrado = Math.ceil(custo * fracao);
+    const custoRestante = custo - custoMigrado;
+
+    // Rolagem 1d10 — injeção de RNG opcional para testes determinísticos.
+    const roll = rolarD10 ? rolarD10() : (Math.floor(Math.random() * 10) + 1);
+    const tabela = this.selvageriaSinergia[direcao][grau];
+    const resultado = tabela[roll - 1];
+
+    return {
+      direcao,                 // 'corromper' | 'purificar'
+      grau,                    // 'leve' | 'moderada' | 'severa'
+      recursoOriginal,         // 'sopro' | 'macula'
+      recursoDestino,          // 'macula' | 'sopro'
+      custoTotal: custo,
+      custoRestante,           // continua no recurso original
+      custoMigrado,            // passa a ser cobrado no recursoDestino
+      rolagemSelvageria: roll,
+      efeitoSelvageria: resultado.efeito,   // string com o ajuste mecânico, ou null se for só sabor
+      textoSelvageria: resultado.texto,
+      tag: `Sinergia: ${direcao === 'corromper' ? 'Corrompida' : 'Purificada'} (${grau}) — ${custoMigrado} ${recursoDestino === 'macula' ? 'Mácula' : 'Sopro'} migrado(s) de ${custo} total`
+    };
+  },
+
+  /**
+   * Tabela de Selvageria da Sinergia (V1.0 — Corromper/Purificar).
+   *
+   * Mecânica: quando um conjurador com `destravaSinergia` (ou de uma classe
+   * com `destravaSinergiaClasseInteira`, ver classes.js) opta por Corromper
+   * uma magia de Aspecto Puro ou Purificar uma magia de Aspecto Corrompido,
+   * uma fração do custo migra para o recurso oposto (ver resolverSinergia:
+   * 15% Leve / 35% Moderada / 60% Severa) E o jogador rola 1d10 nesta tabela,
+   * usando a tabela correspondente à direção (Corromper ou Purificar) e ao
+   * grau escolhido (Leve/Moderada/Severa).
+   *
+   * Cada tabela tem exatamente 10 entradas (por isso 1d10 — dado do tamanho
+   * exato da tabela, sem espaço vazio nem sobreposição, como definido com o
+   * usuário). As entradas 1–5 são de EFEITO MECÂNICO real (campo `efeito`
+   * preenchido); as entradas 6–10 são de SABOR NARRATIVO puro (campo
+   * `efeito: null` — mudam a cena/descrição, não os números). A mistura
+   * bom/ruim é intencional (tabela de "selvageria", não só de risco): tanto
+   * as entradas numéricas quanto as de sabor têm resultados favoráveis e
+   * desfavoráveis embaralhados, nunca em ordem crescente de gravidade.
+   *
+   * Progressão de intensidade por grau (definida com o usuário):
+   *   Leve     → efeitos pequenos e reversíveis (±1 dado, ±1 CD, sequela ±1 nível)
+   *   Moderada → efeitos que mudam a cena (dano/autodano localizado, área/duração alteradas)
+   *   Severa   → efeitos que podem virar o jogo (dobro de dano/PV, sequela +2, alvo extra)
+   *
+   * O efeito mecânico é sempre um texto descritivo — igual ao resto do
+   * sistema (Falhas Críticas, efeitoMecanico dos modificadores), a mesa
+   * aplica o ajuste manualmente; o motor não recalcula dados automaticamente
+   * a partir desta tabela.
+   */
+  selvageriaSinergia: {
+    corromper: {
+      leve: [
+        { efeito: '+1 dado na rolagem principal, mas a magia ganha um leve tom sombrio visível (fumaça escura, sombra mais longa que o normal).', texto: 'A Mácula empresta um fio de força a mais — pouco, mas o suficiente para se notar.' },
+        { efeito: '-1 dado na rolagem principal; o excesso de Mácula "trava" parte do efeito puro antes de sair.', texto: 'Nem toda corrupção rende poder. Às vezes só suja o gesto sem melhorar o golpe.' },
+        { efeito: '+1 na CD de resistência do alvo, mas a Sequela sobe 1 nível.', texto: 'O toque da Mácula torna o efeito mais difícil de resistir — e mais difícil de digerir depois.' },
+        { efeito: 'Sequela desce 1 nível (mínimo Nenhuma), mas o custo em recurso migrado (Mácula) dobra desta vez.', texto: 'A Mácula absorve parte do desgaste que seria do conjurador — mas cobra o dobro pelo favor.' },
+        { efeito: 'Sem alteração numérica: a rolagem sai exatamente como calculada, sem bônus nem penalidade.', texto: 'A fronteira aceita a oferenda sem reclamar — só desta vez.' },
+        { efeito: null, texto: 'Por um instante, os olhos do conjurador escurecem nas bordas — ninguém mais percebe, mas ele sente o próprio reflexo errado num vidro próximo.' },
+        { efeito: null, texto: 'A magia sai com um cheiro leve de ferro e ozônio, como se algo tivesse sangrado no ar sem sangue de verdade.' },
+        { efeito: null, texto: 'Um sussurro baixo, numa língua que ninguém reconhece, acompanha o efeito — inofensivo, mas ninguém esquece de tê-lo ouvido.' },
+        { efeito: null, texto: 'A luz ao redor do conjurador pisca por meio segundo, como uma vela querendo apagar e desistindo.' },
+        { efeito: null, texto: 'O conjurador sente um prazer estranho e breve na execução — satisfação que não deveria vir de algo tão pequeno.' },
+      ],
+      moderada: [
+        { efeito: '+1d de dano extra num alvo à escolha do Mestre dentro da área (pode incluir aliados), representando a Mácula "vazando" do controle do conjurador.', texto: 'O poder emprestado não escolhe quem alimenta — só quem está perto o suficiente.' },
+        { efeito: 'O conjurador sofre 1d4 de dano direto (autodano), mas a magia ignora metade da resistência do alvo principal.', texto: 'A Mácula corta os dois lados da lâmina — quem empunha sangra também.' },
+        { efeito: 'A Área da magia aumenta em um grau na escala, sem custo adicional desta vez.', texto: 'A corrupção se espalha mais longe do que o conjurador pretendia — e ele deixa.' },
+        { efeito: 'A Duração da magia é reduzida pela metade (arredondado para baixo, mínimo 1), mas a Sequela cai 1 nível.', texto: 'O que é roubado da Mácula não dura — mas também não cobra tanto do corpo.' },
+        { efeito: 'Sequela sobe 2 níveis, mas o efeito ganha +2 dados na rolagem principal — um pico real de poder, pago em cheio.', texto: 'A oferenda maior recebe retorno maior. Morvethra não faz caridade.' },
+        { efeito: null, texto: 'Uma mancha escura, do tamanho de uma mão, aparece na pele do conjurador onde a magia se originou — desaparece em algumas horas, mas todos que olham de perto a veem.' },
+        { efeito: null, texto: 'Pequenos animais e insetos na área evitam o conjurador pelo resto da cena, como se sentissem algo errado nele.' },
+        { efeito: null, texto: 'A voz do conjurador sai um tom mais grave que o normal ao pronunciar a magia, e continua assim por alguns minutos depois.' },
+        { efeito: null, texto: 'Um NPC sensível ao oculto na cena percebe a mácula imediatamente — pode reagir com medo, curiosidade ou hostilidade, a critério do Mestre.' },
+        { efeito: null, texto: 'O conjurador sente, por um instante, a presença fria e paciente de algo observando do outro lado do Véu — e então nada, como se tivesse imaginado.' },
+      ],
+      severa: [
+        { efeito: 'A magia dobra de dano ou PV temporário, mas atinge automaticamente um alvo extra não escolhido pelo conjurador (aliado ou inimigo, a critério do Mestre).', texto: 'A Mácula em excesso não obedece limites — o poder que Morvethra concede vem com fome própria.' },
+        { efeito: 'O conjurador sofre 2d6 de dano direto (autodano) E a Sequela sobe 2 níveis, mas a magia ignora toda resistência do alvo principal.', texto: 'Um preço em cheio, sem desconto — a corrupção plena não perdoa quem a convoca.' },
+        { efeito: 'A Área e a Duração da magia dobram simultaneamente, sem custo adicional em recurso (só o que já foi pago no grau Severo).', texto: 'Por um instante, a mácula convocada excede qualquer controle — e o conjurador simplesmente deixa acontecer.' },
+        { efeito: 'Sequela desce 2 níveis (mínimo Nenhuma) e o conjurador recupera 1d4 de PV, mas o custo migrado em Mácula desta magia específica dobra retroativamente.', texto: 'Um raro momento em que a corrupção cura mais do que fere — Morvethra, por capricho, decide poupar.' },
+        { efeito: 'A rolagem principal ganha vantagem (role dois conjuntos de dados e use o maior total), mas todo PV de sequela acumulado nesta cena vira PV de sequela permanente até descanso longo.', texto: 'O poder pleno da Mácula tem um preço que não se paga na hora — se acumula, e cobra depois.' },
+        { efeito: null, texto: 'Por toda a cena, a sombra do conjurador se move com um atraso quase imperceptível em relação ao corpo — ninguém consegue explicar por quê, e ele sente cada segundo disso.' },
+        { efeito: null, texto: 'Uma entidade menor de Nythraxis é atraída pelo cheiro da mácula liberada em excesso — presença breve, silenciosa, mas real, observando de longe até o fim da cena.' },
+        { efeito: null, texto: 'Os olhos do conjurador ficam completamente negros por 1 minuto — visíveis para qualquer um que olhe diretamente para ele, mesmo sem nenhum efeito mecânico associado.' },
+        { efeito: null, texto: 'Quem estiver mais próximo do conjurador no momento do efeito jura, depois, ter visto por um instante um segundo rosto sobreposto ao dele.' },
+        { efeito: null, texto: 'A magia deixa uma marca permanente e sutil — uma veia escurecida sob a pele, um floco de cinza nos cabelos — que não desaparece com cura comum, só narrativamente relevante daqui pra frente.' },
+      ],
+    },
+    purificar: {
+      leve: [
+        { efeito: '+1 dado na rolagem principal, mas a magia ganha um brilho suave visível, quebrando qualquer tentativa de discrição.', texto: 'O Sopro empresta um fôlego a mais — luminoso e, por isso mesmo, difícil de esconder.' },
+        { efeito: '-1 dado na rolagem principal; o excesso de pureza dilui parte do efeito corrompido antes de sair.', texto: 'Nem toda purificação rende poder. Às vezes só suaviza o golpe sem fortalecê-lo.' },
+        { efeito: '+1 na CD de resistência do alvo, mas a Sequela sobe 1 nível.', texto: 'A clareza do Sopro torna o efeito mais difícil de ignorar — e mais custosa de sustentar.' },
+        { efeito: 'Sequela desce 1 nível (mínimo Nenhuma), mas o custo em recurso migrado (Sopro) dobra desta vez.', texto: 'O Sopro absorve parte do desgaste do conjurador — mas pede o dobro em troca do alívio.' },
+        { efeito: 'Sem alteração numérica: a rolagem sai exatamente como calculada, sem bônus nem penalidade.', texto: 'A fronteira aceita a oferenda sem reclamar — só desta vez.' },
+        { efeito: null, texto: 'Por um instante, os olhos do conjurador brilham fracamente nas bordas — ninguém mais percebe, mas ele sente o próprio reflexo levemente distinto num vidro próximo.' },
+        { efeito: null, texto: 'A magia sai com um leve aroma de ozônio limpo e flores fora de estação, como se algo tivesse florescido no ar sem planta de verdade.' },
+        { efeito: null, texto: 'Um canto baixo, numa melodia que ninguém reconhece, acompanha o efeito — inofensivo, mas ninguém esquece de tê-lo ouvido.' },
+        { efeito: null, texto: 'A luz ao redor do conjurador se intensifica por meio segundo, como uma vela sendo reacesa antes mesmo de apagar.' },
+        { efeito: null, texto: 'O conjurador sente uma paz estranha e breve na execução — serenidade que não deveria vir de algo tão pequeno.' },
+      ],
+      moderada: [
+        { efeito: '+1d de cura ou PV temporário extra num alvo à escolha do Mestre dentro da área (pode incluir inimigos), representando o Sopro "vazando" do controle do conjurador.', texto: 'O poder emprestado não escolhe quem alimenta — só quem está perto o suficiente.' },
+        { efeito: 'O conjurador sofre 1d4 de dano direto (autodano, o corpo rejeita o excesso de pureza), mas a magia ignora metade da resistência do alvo principal.', texto: 'O Sopro em excesso queima como fogo frio — quem empunha sente também.' },
+        { efeito: 'A Área da magia aumenta em um grau na escala, sem custo adicional desta vez.', texto: 'A purificação se espalha mais longe do que o conjurador pretendia — e ele deixa.' },
+        { efeito: 'A Duração da magia é reduzida pela metade (arredondado para baixo, mínimo 1), mas a Sequela cai 1 nível.', texto: 'O que é emprestado do Sopro não dura — mas também não cobra tanto do corpo.' },
+        { efeito: 'Sequela sobe 2 níveis, mas o efeito ganha +2 dados na rolagem principal — um pico real de poder, pago em cheio.', texto: 'A oferenda maior recebe retorno maior. Archëon não faz caridade, só sonha em silêncio.' },
+        { efeito: null, texto: 'Uma marca clara, do tamanho de uma mão, aparece na pele do conjurador onde a magia se originou — desaparece em algumas horas, mas todos que olham de perto a veem.' },
+        { efeito: null, texto: 'Pequenos animais e insetos na área se aproximam do conjurador pelo resto da cena, como se sentissem algo diferente nele.' },
+        { efeito: null, texto: 'A voz do conjurador sai um tom mais claro que o normal ao pronunciar a magia, e continua assim por alguns minutos depois.' },
+        { efeito: null, texto: 'Um NPC sensível ao sagrado na cena percebe a pureza imediatamente — pode reagir com reverência, desconfiança ou fascínio, a critério do Mestre.' },
+        { efeito: null, texto: 'O conjurador sente, por um instante, a presença calma e vasta de algo observando do outro lado do Véu — e então nada, como se tivesse imaginado.' },
+      ],
+      severa: [
+        { efeito: 'A magia dobra de dano ou PV temporário, mas atinge automaticamente um alvo extra não escolhido pelo conjurador (aliado ou inimigo, a critério do Mestre).', texto: 'O Sopro em excesso não obedece limites — o poder que Archëon concede vem com vontade própria.' },
+        { efeito: 'O conjurador sofre 2d6 de dano direto (autodano) E a Sequela sobe 2 níveis, mas a magia ignora toda resistência do alvo principal.', texto: 'Um preço em cheio, sem desconto — a pureza plena não perdoa quem a convoca sem estar pronto.' },
+        { efeito: 'A Área e a Duração da magia dobram simultaneamente, sem custo adicional em recurso (só o que já foi pago no grau Severo).', texto: 'Por um instante, o sopro convocado excede qualquer controle — e o conjurador simplesmente deixa acontecer.' },
+        { efeito: 'Sequela desce 2 níveis (mínimo Nenhuma) e o conjurador recupera 1d4 de PV, mas o custo migrado em Sopro desta magia específica dobra retroativamente.', texto: 'Um raro momento em que a pureza cura mais do que exige — Archëon, por capricho, decide sonhar generoso.' },
+        { efeito: 'A rolagem principal ganha vantagem (role dois conjuntos de dados e use o maior total), mas todo PV de sequela acumulado nesta cena vira PV de sequela permanente até descanso longo.', texto: 'O poder pleno do Sopro tem um preço que não se paga na hora — se acumula, e cobra depois.' },
+        { efeito: null, texto: 'Por toda a cena, a sombra do conjurador parece mais rasa que o normal, quase translúcida sob luz direta — ninguém consegue explicar por quê, e ele sente cada segundo disso.' },
+        { efeito: null, texto: 'Uma presença menor ligada a Elysséra ou Aethrýs parece notar a pureza liberada em excesso — presença breve, silenciosa, mas real, observando de longe até o fim da cena.' },
+        { efeito: null, texto: 'Os olhos do conjurador ficam completamente brancos por 1 minuto — visíveis para qualquer um que olhe diretamente para ele, mesmo sem nenhum efeito mecânico associado.' },
+        { efeito: null, texto: 'Quem estiver mais próximo do conjurador no momento do efeito jura, depois, ter visto por um instante um segundo rosto sobreposto ao dele, mais jovem e mais calmo.' },
+        { efeito: null, texto: 'A magia deixa uma marca permanente e sutil — uma veia levemente luminosa sob a pele, uma mecha de cabelo clareada — que não desaparece com cura comum, só narrativamente relevante daqui pra frente.' },
+      ],
+    },
+  },
+
+  /**
    * Tabela de Falhas Críticas por Aspecto.
    *
    * Cada um dos 15 Aspectos define três textos narrativos, um por faixa
@@ -3677,13 +3944,31 @@ const sistemaMagia = {
    * Quando o dado já está travado em d4, o Fragmentado NÃO dobra a quantidade —
    * a regra do forcaDadoFixo substitui a regra do Fragmentado inteiramente.
    *
+   * V7.0 (Auditoria de Balanceamento): o dobro do Fragmentado agora só se
+   * aplica quando o degrau REALMENTE caiu. Antes, "Dados x2" era incondicional
+   * — bastava escolher Fragmentado. Mas quando uma Manifestação com
+   * ajusteDegrau positivo (ex: Lança, Flecha) ou uma Afinidade Harmoniosa
+   * neutralizava (ou revertia) o -1 do Fragmentado, o jogador ficava com o
+   * dobro de dados de graça, sem pagar o trade-off que o dobro deveria
+   * compensar. Levantamento: ~18.9% de todas as combinações com Fragmentado
+   * caíam nessa brecha, chegando a builds com quase o dobro do valor esperado
+   * de uma build equivalente sem Fragmentado, pelo mesmo custo e com sequela
+   * mais BAIXA. Agora o delta líquido de degrau (Manifestação + Afinidade +
+   * o -1 do próprio Fragmentado) é calculado aqui, e o dobro só se aplica se
+   * esse delta for negativo — ou seja, se a concentração realmente foi trocada
+   * por espalhamento. Sem essa perda real, "Fragmentado" vira só uma escolha
+   * de forma/alcance (via seus ajustes de Área/Alcance/Visibilidade), sem
+   * bônus de quantidade — que é o comportamento correto: o motivo do dobro é
+   * o degrau perdido, não a etiqueta "fragmentado" em si.
+   *
    * @param {string} verboId        — chave do verbo
    * @param {number} circulo        — círculo injetado (1 a 10)
    * @param {string} modId          — (opcional) chave do modificador, para dobrar via Fragmentado
    * @param {string} manifestacaoId — (opcional) chave da manifestação, para bloquear dobro em forcaDadoFixo
+   * @param {object} afinidade      — (opcional) resultado de resolverAfinidade, para checar ajusteDegrau líquido
    * @returns {number|null}
    */
-  resolverQuantidadeDados(verboId, circulo, modId = null, manifestacaoId = null) {
+  resolverQuantidadeDados(verboId, circulo, modId = null, manifestacaoId = null, afinidade = null) {
     const verbo = this.verbos[verboId];
     if (!verbo || verbo.multiplicadorDados === null || verbo.multiplicadorDados === undefined) {
       return null;
@@ -3701,11 +3986,23 @@ const sistemaMagia = {
     // por forcaDadoFixo (Agulha/Fio). Quando o dado já está no piso absoluto da
     // regra da manifestação, dobrar a quantidade quebraria o balanceamento —
     // o Fragmentado inteiro é absorvido pelo forcaDadoFixo, sem bônus de quantidade.
+    //
+    // V7.0: e agora, além disso, o dobro só se aplica se o delta líquido de
+    // degrau (Manifestação.ajusteDegrau + Afinidade.ajusteDegrau + o -1 do
+    // próprio Fragmentado) for NEGATIVO — isto é, se o degrau realmente caiu.
+    // Ver comentário completo no cabeçalho da função.
     if (modId === 'fragmentado') {
       const manifestacao = manifestacaoId ? this.manifestacoes[manifestacaoId] : null;
       const dadoTravado = manifestacao && manifestacao.forcaDadoFixo;
       if (!dadoTravado) {
-        quantidade = quantidade * 2;
+        const ajusteManifestacaoLiquido = (manifestacao && (manifestacao.ajusteDegrau || 0));
+        const ajusteAfinidadeLiquido = afinidade ? (afinidade.ajusteDegrau || 0) : 0;
+        const deltaLiquido = ajusteManifestacaoLiquido + ajusteAfinidadeLiquido + (-1); // -1 é o próprio Fragmentado
+        if (deltaLiquido < 0) {
+          quantidade = quantidade * 2;
+        }
+        // deltaLiquido >= 0: degrau neutralizado ou revertido — sem trade-off
+        // real, então sem bônus de quantidade. `quantidade` permanece a base.
       }
     }
 
@@ -3756,6 +4053,21 @@ const sistemaMagia = {
     const verbo   = this.verbos[verboId];
     const mod     = this.modificadores[modId];
 
+    // V8.0: sacrificio_vital não é mais um modificador de forma — é uma
+    // camada de pagamento (ver resolverPagamento). O objeto ainda existe em
+    // `this.modificadores.sacrificio_vital` só para preservar a lore/nome,
+    // marcado com `_obsoleto: true`, mas não deve ser usado como modId aqui:
+    // seus campos numéricos (custoExtra, ajustes) não existem mais, e usá-lo
+    // silenciosamente quebraria custo/tags. Falha explícita é melhor que
+    // um NaN silencioso.
+    if (mod && mod._obsoleto) {
+      return {
+        erro: 'Sacrifício Vital não é mais um modificador — é uma forma de pagamento. Use resolverPagamento() com o custoFinal da magia já escolhida.',
+        tags: [],
+        manifestacao: null
+      };
+    }
+
     if (!aspecto || !verbo || !mod) {
       return {
         erro: 'Combinação inválida: aspecto, verbo ou modificador não encontrado.',
@@ -3789,9 +4101,12 @@ const sistemaMagia = {
     // resolverDadoManifestacao determina o dado correto considerando:
     //   dadoBase do Aspecto → ajuste de Manifestação → Fragmentado → Piso/Teto de Vidro
     // resolverQuantidadeDados determina a quantidade de dados, com proteção
-    // para Agulha/Fio+Fragmentado (dado travado, sem dobro de quantidade).
+    // para Agulha/Fio+Fragmentado (dado travado, sem dobro de quantidade) e,
+    // desde a V7.0, também exige que o degrau tenha realmente caído (delta
+    // líquido negativo) para dobrar — por isso recebe dadoFinal.afinidade,
+    // já resolvida na linha acima, em vez de recalcular a afinidade de novo.
     const dadoFinal       = this.resolverDadoManifestacao(aspectoId, manifestacaoId, circuloValidado, modId, verboId);
-    const quantidadeDados = this.resolverQuantidadeDados(verboId, circuloValidado, modId, manifestacaoId);
+    const quantidadeDados = this.resolverQuantidadeDados(verboId, circuloValidado, modId, manifestacaoId, dadoFinal && dadoFinal.afinidade);
 
     // ── 5. Tags da Manifestação e do Modificador ──────────────────────────
     const tagsManifestacao = [];
@@ -3869,6 +4184,12 @@ const sistemaMagia = {
     // sem isso, a tag voltaria a mentir sempre que uma Afinidade Harmoniosa
     // (+1) ou Dissonante (-1) mudasse o resultado líquido real, repetindo
     // exatamente o padrão do bug #3 já corrigido (ver handoff, seção 3).
+    //
+    // V7.0 (Auditoria de Balanceamento): a tag agora reflete o comportamento
+    // real de resolverQuantidadeDados — "Dados x2" só aparece quando o dobro
+    // de fato aconteceu (deltaLiquido < 0). Quando o degrau é neutralizado ou
+    // revertido, o dobro NÃO ocorre mais (ver resolverQuantidadeDados), então
+    // a tag diz isso explicitamente em vez de anunciar um "x2" que não rolou.
     if (modId === 'fragmentado') {
       const dadoTravado = manifestacao && manifestacao.forcaDadoFixo;
       if (dadoTravado) {
@@ -3880,7 +4201,7 @@ const sistemaMagia = {
         if (deltaLiquido < 0) {
           tagsManifestacao.push(`Fragmentado: ${deltaLiquido} Degrau(s) / Dados x2`);
         } else {
-          tagsManifestacao.push('Fragmentado: Degrau Neutralizado pela Manifestação/Afinidade / Dados x2');
+          tagsManifestacao.push('Fragmentado: Degrau Neutralizado pela Manifestação/Afinidade / Sem dobro de quantidade (sem trade-off real)');
         }
       }
     }
@@ -3929,6 +4250,72 @@ const sistemaMagia = {
       tagsInfusao = infusao.tags;
     }
 
+    // ── 7b. Sinergia — Corromper/Purificar (V9.0, Fluxo Unificado) ────────
+    // Se `options.sinergia` foi informado (com temAcesso e grau), a magia é
+    // dividida em duas fatias de custo: a fatia que continua no recurso
+    // original do Aspecto, e a fatia migrada para o recurso oposto (ver
+    // resolverSinergia / fracoesSinergia). Sem `options.sinergia`, este
+    // bloco não roda e custoFinal segue intacto — 100% retrocompatível.
+    const sinergiaOptions = (options && options.sinergia) ? options.sinergia : null;
+    let sinergia = null;
+    let custoFatiaOriginal = custoFinal;   // por padrão (sem sinergia), tudo fica no recurso original
+    let custoFatiaDestino = 0;
+    let recursoDestinoSinergia = null;
+
+    if (sinergiaOptions) {
+      const resultadoSinergia = this.resolverSinergia(
+        custoFinal,
+        aspecto.recurso, // 'sopro' | 'macula', já resolvido do Aspecto na Camada 1
+        sinergiaOptions.grau,
+        !!sinergiaOptions.temAcesso,
+        sinergiaOptions.rolarD10 || null
+      );
+      if (resultadoSinergia.erro) {
+        // Erro de Sinergia (sem acesso, grau inválido) não invalida a magia
+        // inteira — a Sinergia é uma camada opcional. Reportamos o erro no
+        // próprio bloco `sinergia` do retorno, e a magia segue sem ela.
+        sinergia = { erro: resultadoSinergia.erro };
+      } else {
+        sinergia = resultadoSinergia;
+        custoFatiaOriginal = resultadoSinergia.custoRestante;
+        custoFatiaDestino = resultadoSinergia.custoMigrado;
+        recursoDestinoSinergia = resultadoSinergia.recursoDestino;
+      }
+    }
+
+    // ── 7c. Sacrifício Vital (Nova Camada de Pagamento, V8.0) ─────────────
+    // Sem Sinergia ativa: comportamento original, uma única fatia (custoFinal
+    // inteiro) checada contra `options.recursoDisponivel`.
+    // Com Sinergia ativa: resolverPagamento roda DUAS vezes, encadeado — uma
+    // vez para a fatia que ficou no recurso original, outra para a fatia
+    // migrada no recurso destino — cada uma contra seu próprio "disponível"
+    // (options.sinergia.recursoOriginalDisponivel / recursoDestinoDisponivel).
+    // Os PV das duas fatias se somam no total final. Isto é puramente
+    // aditivo: quem não usa `options.sinergia` nunca aciona este caminho, e
+    // o resultado é idêntico ao de antes desta camada existir.
+    let pagamento;
+    if (sinergiaOptions && sinergia && !sinergia.erro) {
+      const dispOriginal = (sinergiaOptions.recursoOriginalDisponivel !== undefined) ? sinergiaOptions.recursoOriginalDisponivel : null;
+      const dispDestino   = (sinergiaOptions.recursoDestinoDisponivel !== undefined) ? sinergiaOptions.recursoDestinoDisponivel : null;
+
+      const pagamentoOriginal = this.resolverPagamento(custoFatiaOriginal, dispOriginal);
+      const pagamentoDestino  = this.resolverPagamento(custoFatiaDestino, dispDestino);
+
+      pagamento = {
+        recursoPago: pagamentoOriginal.recursoPago + pagamentoDestino.recursoPago,
+        faltante: pagamentoOriginal.faltante + pagamentoDestino.faltante,
+        custoPV: pagamentoOriginal.custoPV + pagamentoDestino.custoPV,
+        sacrificioAtivo: pagamentoOriginal.sacrificioAtivo || pagamentoDestino.sacrificioAtivo,
+        tag: [pagamentoOriginal.tag, pagamentoDestino.tag].filter(Boolean).join(' | ') || null,
+        // Detalhe por fatia, útil para a UI exibir separado (Sopro vs Mácula).
+        porFatia: { original: pagamentoOriginal, destino: pagamentoDestino }
+      };
+    } else {
+      // Caminho original, sem Sinergia — idêntico ao comportamento anterior.
+      const recursoDisponivel = (options && options.recursoDisponivel !== undefined) ? options.recursoDisponivel : null;
+      pagamento = this.resolverPagamento(custoFinal, recursoDisponivel);
+    }
+
     // ── 8. Ressonância de Falha Crítica ───────────────────────────────────
     const falhaCritica = this.resolverFalhaCritica(aspecto.recurso, aspectoId, circuloValidado, manifestacaoId);
 
@@ -3940,6 +4327,8 @@ const sistemaMagia = {
       verbo.nome,
       mod.nome,
       `Custo: ${custoFinal} ${aspecto.recurso === 'sopro' ? 'Sopro' : 'Mácula'}`,
+      ...(sinergia && !sinergia.erro ? [sinergia.tag] : []),
+      ...(pagamento.sacrificioAtivo ? [pagamento.tag] : []),
       `Alcance: ${escala.alcance}`,
       `Área: ${escala.area}`,
       ...(escala.nivelSequela !== 'Nenhuma' ? [`Sequela: ${escala.nivelSequela}`] : [])
@@ -3991,6 +4380,17 @@ const sistemaMagia = {
       circulo:          circuloValidado,
       recurso:          aspecto.recurso,
       custoFinal,
+      // Sacrifício Vital (V8.0) — só relevante quando recursoDisponivel foi
+      // informado nas opções. Campos novos, aditivos: código existente que
+      // não os lê continua funcionando exatamente como antes.
+      recursoPago:      pagamento.recursoPago,
+      custoPV:          pagamento.custoPV,
+      sacrificioAtivo:  pagamento.sacrificioAtivo,
+      // Sinergia — Corromper/Purificar (V9.0). null quando options.sinergia
+      // não foi informado (comportamento padrão). Quando informado mas sem
+      // acesso/grau inválido, vem como { erro }. Quando bem-sucedido, traz
+      // direção, grau, recursos e o resultado da tabela de Selvageria.
+      sinergia,
       pericias:         aspecto.pericias,
       efeitoBase:       verbo.efeitoBase,
       efeitoModificador: mod.efeitoMecanico,

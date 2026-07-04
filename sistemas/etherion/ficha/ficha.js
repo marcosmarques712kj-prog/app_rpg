@@ -1112,7 +1112,7 @@ function atualizarFoco(id, val) {
 // Nada a fazer aqui quando esses dados chegarem — o motor já resolve.
 function resolverElegibilidadeAtual() {
   const d = PERSONAGEM.dados;
-  const semDados = { aspectosPermitidos: [], verbosPermitidos: [], circuloMaxNivel: 0, circuloMaxPorAspecto: () => 0, modificadorPermitido: () => true };
+  const semDados = { aspectosPermitidos: [], verbosPermitidos: [], circuloMaxNivel: 0, circuloMaxPorAspecto: () => 0, modificadorPermitido: () => true, temAcessoSinergia: false };
 
   if (typeof sistemaMagia === 'undefined' || typeof classesRPG === 'undefined') return semDados;
 
@@ -1133,7 +1133,15 @@ function resolverElegibilidadeAtual() {
 
   const nivel = parseInt(d.level) || 1;
 
-  return sistemaMagia.resolverElegibilidade({ nivel, classeObj, especObj, aspectosConhecidos });
+  const resultado = sistemaMagia.resolverElegibilidade({ nivel, classeObj, especObj, aspectosConhecidos });
+
+  // V9.0 — Sinergia (Corromper/Purificar): acesso vem OU da classe inteira
+  // (destravaSinergiaClasseInteira — ex: Transcendente inteira) OU de uma
+  // especialização específica (destravaSinergia — ex: Catalogador do
+  // Eclipse, Juiz do Eclipse, Guardião da Maré Cheia). Ver classes.js.
+  resultado.temAcessoSinergia = !!(classeObj.destravaSinergiaClasseInteira || (especObj && especObj.destravaSinergia));
+
+  return resultado;
 }
 
 // Quantas vagas de aspecto livre a classe atual concede, e quantas já
@@ -1188,28 +1196,37 @@ function classeRecurso(recurso) {
 }
 
 // Gera o bloco de "custo vital" (PV do conjurador).
-// O modificador `sacrificio_vital` (V4.0) define custoVital dinamicamente
-// via efeitoMecanico — o custo real em PV = Círculo × 2.
-// Quando um modificador tem `custoVital` direto no objeto, esse campo
-// é usado; caso seja `sacrificio_vital`, calculamos a partir do círculo.
-function gerarBlocoCustoVital(mod, circulo) {
-  if (!mod) return '';
+//
+// V8.0: o antigo modificador `sacrificio_vital` virou uma camada de
+// pagamento própria dentro do motor (ver resolverPagamento/resolverSinergia
+// em magias.js) — não é mais selecionável no select de Modificador, e a
+// fórmula "Círculo × 2" fixa que existia aqui foi substituída por uma
+// progressão triangular calculada no motor. Por isso esta função não
+// recebe mais `mod` — ela lê o resultado JÁ CALCULADO direto do objeto
+// `magia` retornado por gerarMagiaSegura(): `magia.sacrificioAtivo` e
+// `magia.custoPV`. Isso ativa automaticamente sempre que o personagem não
+// tiver recurso (Sopro/Mácula) suficiente para pagar a magia — sem
+// nenhum toggle manual, conforme decidido com o usuário.
+//
+// Suporte legado mantido: modificadores futuros que declarem `custoVital`
+// diretamente no objeto (pv/sanidade) continuam funcionando como antes.
+function gerarBlocoCustoVital(magia, mod) {
+  if (!magia) return '';
 
-  // Suporte ao novo modificador Sacrifício Vital (V4.0):
-  // paga (Círculo × 2) PV próprios como custo adicional.
-  if (mod.nome === 'Sacrifício Vital') {
-    const pvCusto = (circulo || 1) * 2;
-    return `<div class="magia-custo-vital">🩸 Sacrifício Vital: −${pvCusto} PV do conjurador</div>`;
+  const partesLegado = [];
+  if (mod && mod.custoVital) {
+    if (mod.custoVital.pv)       partesLegado.push(`${mod.custoVital.pv} PV`);
+    if (mod.custoVital.sanidade) partesLegado.push(`${mod.custoVital.sanidade} Sanidade`);
   }
+  const blocoLegado = partesLegado.length
+    ? `<div class="magia-custo-vital">🩸 Custo Vital: ${esc(partesLegado.join(' + '))}</div>`
+    : '';
 
-  // Suporte legado para mods futuros que declarem custoVital diretamente.
-  if (!mod.custoVital) return '';
-  const cv = mod.custoVital;
-  const partes = [];
-  if (cv.pv)       partes.push(`${cv.pv} PV`);
-  if (cv.sanidade) partes.push(`${cv.sanidade} Sanidade`);
-  if (!partes.length) return '';
-  return `<div class="magia-custo-vital">🩸 Custo Vital: ${esc(partes.join(' + '))}</div>`;
+  const blocoSacrificio = magia.sacrificioAtivo
+    ? `<div class="magia-custo-vital">🩸 Sacrifício Vital: faltou recurso arcano — −${magia.custoPV} PV do conjurador para cobrir a diferença</div>`
+    : '';
+
+  return blocoSacrificio + blocoLegado;
 }
 
 // Constrói o HTML completo do Card de Magia (Coluna 2) a partir do
@@ -1255,7 +1272,7 @@ function gerarHTMLCardMagia(magia, modSelecionado) {
   ].filter(Boolean).join('');
 
   // ── V4.0: Blocos especiais dos novos modificadores ─────────────
-  const blocoCustoVital = gerarBlocoCustoVital(modSelecionado, magia.circulo);
+  const blocoCustoVital = gerarBlocoCustoVital(magia, modSelecionado);
 
   // ── Bloco mecânico unificado (Camada 4) ───────────────────────
   // Reúne: dado resolvido, manifestação e eco num único resumo inline.
@@ -1303,6 +1320,25 @@ function gerarHTMLCardMagia(magia, modSelecionado) {
       <div class="magia-sequela-texto">${esc(magia.textoSequela)}</div>
     </div>` : '';
 
+  // ── V9.0: Sinergia (Corromper/Purificar) ──────────────────────
+  // Mostra o resultado da tabela de Selvageria (rolagem 1d10, já feita
+  // pelo motor em resolverSinergia) quando o jogador selecionou um grau
+  // no novo select da Coluna 1. Rola de novo a cada atualização do preview
+  // (aspecto/verbo/mod/manifestação/círculo/grau) — por isso o rótulo deixa
+  // claro que é uma PRÉVIA, não um resultado fixado para a mesa.
+  // magia.sinergia.erro acontece se o grau foi selecionado sem o
+  // personagem ter destravaSinergia/destravaSinergiaClasseInteira — nesse
+  // caso o select nem deveria estar visível (ver renderGrimorio), então
+  // isto é só uma rede de segurança.
+  const blocoSinergia = (magia.sinergia && !magia.sinergia.erro) ? `
+    <div class="magia-custo-vital" style="background:rgba(90,50,10,0.30);border-color:rgba(200,140,40,0.50)">
+      ${magia.sinergia.direcao === 'corromper' ? '🩸' : '✨'}
+      <strong>${magia.sinergia.direcao === 'corromper' ? 'Corrompida' : 'Purificada'} (${esc(magia.sinergia.grau)}):</strong>
+      ${magia.sinergia.custoMigrado} ${magia.sinergia.recursoDestino === 'macula' ? 'Mácula' : 'Sopro'} migrado(s) de ${magia.sinergia.custoTotal} total.
+      <div style="margin-top:6px;font-style:italic">🎲 Selvageria (1d10 = ${magia.sinergia.rolagemSelvageria}, prévia — rola de novo a cada ajuste): ${esc(magia.sinergia.textoSelvageria)}</div>
+      ${magia.sinergia.efeitoSelvageria ? `<div style="margin-top:4px"><strong>Efeito:</strong> ${esc(magia.sinergia.efeitoSelvageria)}</div>` : ''}
+    </div>` : '';
+
   return `
     <div class="magia-card ${classeIntensidade}" style="--cor-aspecto:${cor}">
       <div class="magia-card-header">
@@ -1316,6 +1352,7 @@ function gerarHTMLCardMagia(magia, modSelecionado) {
       <div class="magia-badges">${badgesLegado}</div>
       ${tagsHTML ? `<div class="magia-badges" style="margin-top:4px">${tagsHTML}</div>` : ''}
       ${blocoCustoVital}
+      ${blocoSinergia}
       ${blocoMecanica}
 
       <div class="magia-resumo-circulo">
@@ -1346,6 +1383,10 @@ function atualizarPreviewMagia() {
   const verboId        = document.getElementById('grim_verbo').value;
   const modId          = document.getElementById('grim_mod').value;
   const manifestacaoId = (document.getElementById('grim_manifest') || {}).value || '';
+  // V9.0: select de Sinergia só existe no DOM quando o personagem tem
+  // acesso (ver renderGrimorio) — por isso o acesso via optional chaining
+  // com fallback vazio, em vez de assumir que o elemento sempre existe.
+  const grauSinergia   = (document.getElementById('grim_sinergia') || {}).value || '';
 
   // Recalcula o teto do slider (Trava 1 x Trava 2) toda vez que o
   // aspecto muda — cada aspecto conhecido pode ter uma origem/teto
@@ -1365,7 +1406,7 @@ function atualizarPreviewMagia() {
 
   let magia = null;
   if (aspectoId && verboId && modId) {
-    magia = gerarMagiaSegura(aspectoId, verboId, modId, circulo, manifestacaoId || null);
+    magia = gerarMagiaSegura(aspectoId, verboId, modId, circulo, manifestacaoId || null, grauSinergia || null);
   }
 
   const modSelecionado = sistemaMagia.modificadores ? sistemaMagia.modificadores[modId] : null;
@@ -1374,10 +1415,10 @@ function atualizarPreviewMagia() {
     aspecto: aspectoId, verbo: verboId, mod: modId, manifestacao: manifestacaoId, circulo
   });
 
-  // Persiste a última combinação que o jogador estava montando (inclui manifestação).
+  // Persiste a última combinação que o jogador estava montando (inclui manifestação e sinergia).
   PERSONAGEM.dados.grimorio.ultimaCombo = {
     aspecto: aspectoId, verbo: verboId, mod: modId,
-    manifestacao: manifestacaoId, circulo
+    manifestacao: manifestacaoId, circulo, sinergia: grauSinergia
   };
   agendarSalvar();
 }
@@ -1388,7 +1429,15 @@ function atualizarPreviewMagia() {
 // Usa nível e classe reais do personagem — isso ativa corretamente regras
 // do motor que dependem deles (ex.: Imposto de Infusão para classes fora
 // de Vanguarda/Suporte).
-function gerarMagiaSegura(aspectoId, verboId, modId, circulo, manifestacaoId) {
+//
+// V8.0/V9.0: também injeta os recursos REAIS do personagem (Sopro/Mácula
+// atuais, lidos de d.recursos) — isso ativa o Sacrifício Vital automático
+// dentro do motor sempre que o custo da magia exceder o que o personagem
+// tem disponível (sem precisar de nenhum toggle manual, conforme decidido
+// com o usuário). `grauSinergia` (opcional, 'leve'|'moderada'|'severa') vem
+// do novo select da Coluna 1 — só é passado quando a Sinergia está de fato
+// selecionada; sem isso, o motor se comporta exatamente como antes.
+function gerarMagiaSegura(aspectoId, verboId, modId, circulo, manifestacaoId, grauSinergia) {
   const aspecto = sistemaMagia.aspectos[aspectoId];
   if (aspecto && (!aspecto.tracos || !aspecto.sequela)) {
     return { erro: `O aspecto "${aspecto.nome}" ainda não tem os dados de escalonamento (tracos/sequela) cadastrados em magias.js — preview indisponível até a base ser completada.` };
@@ -1398,14 +1447,51 @@ function gerarMagiaSegura(aspectoId, verboId, modId, circulo, manifestacaoId) {
   const modFoco = (typeof classesRPG !== 'undefined' && d.classeBase && classesRPG[d.classeBase] && classesRPG[d.classeBase].atributoFoco)
     ? getAtrib(classesRPG[d.classeBase].atributoFoco)
     : 0;
+
+  // Recurso disponível AGORA, para o Sacrifício Vital automático (V8.0).
+  // Qual dos dois (Sopro/Mácula) é o "original" depende do recurso do
+  // Aspecto escolhido — só sabemos isso depois de olhar `aspecto.recurso`.
+  // Fallbacks (cur:5 para Sopro, cur:0 para Mácula) espelham exatamente os
+  // mesmos usados na Coluna de Recursos da aba Principal (ver recursoHTML),
+  // para que o motor "veja" o mesmo valor que já está na tela do jogador —
+  // em vez de tratar ficha sem d.recursos ainda inicializado como "recurso
+  // infinito" (null faria resolverPagamento assumir suficiente sempre).
+  const r = d.recursos || {};
+  const recursoDisponivel = aspecto
+    ? (aspecto.recurso === 'sopro' ? (r.sopro ? r.sopro.cur : 5)
+                                    : (r.macula ? r.macula.cur : 0))
+    : null;
+
+  const options = { nivel, modFoco, classePersonagem: d.classeBase || null, recursoDisponivel };
+
+  // Sinergia (V9.0): só monta o bloco se um grau foi de fato selecionado.
+  // temAcesso vem da mesma checagem de elegibilidade usada para mostrar (ou
+  // esconder) o select de Sinergia na Coluna 1 — se o jogador de alguma
+  // forma mandar um grau sem ter acesso, o motor recusa (ver resolverSinergia),
+  // e o erro fica isolado em magia.sinergia.erro sem invalidar a magia toda.
+  if (grauSinergia && aspecto) {
+    const eleg = resolverElegibilidadeAtual();
+    const recursoDestinoDisponivel = aspecto.recurso === 'sopro'
+      ? (r.macula ? r.macula.cur : 0)
+      : (r.sopro ? r.sopro.cur : 5);
+
+    options.sinergia = {
+      grau: grauSinergia,
+      temAcesso: eleg.temAcessoSinergia,
+      recursoOriginalDisponivel: recursoDisponivel,
+      recursoDestinoDisponivel,
+    };
+  }
+
   try {
     // Usa gerarMagiaSegura() do motor (Camada 4): inclui Motor de Degraus,
-    // Ricochete do Disco, PV Estrutural, Imposto de Infusão e Falha Crítica.
+    // Ricochete do Disco, PV Estrutural, Imposto de Infusão, Falha Crítica,
+    // Sacrifício Vital e Sinergia (Corromper/Purificar).
     return sistemaMagia.gerarMagiaSegura(
       aspectoId, verboId, modId,
       manifestacaoId || null,
       circulo,
-      { nivel, modFoco, classePersonagem: d.classeBase || null }
+      options
     );
   } catch (e) {
     console.error('Erro ao gerar magia:', e);
@@ -1415,7 +1501,7 @@ function gerarMagiaSegura(aspectoId, verboId, modId, circulo, manifestacaoId) {
 
 function renderGrimorio() {
   const d = PERSONAGEM.dados;
-  const combo = d.grimorio.ultimaCombo || { aspecto: '', verbo: '', mod: '', manifestacao: '', circulo: 1 };
+  const combo = d.grimorio.ultimaCombo || { aspecto: '', verbo: '', mod: '', manifestacao: '', circulo: 1, sinergia: '' };
   const eleg = resolverElegibilidadeAtual();
 
   // Se o personagem não tem classe/raça o suficiente para calcular
@@ -1486,6 +1572,19 @@ function renderGrimorio() {
           </select>
         </div>
 
+        ${eleg.temAcessoSinergia ? `
+        <div class="identity-field" style="margin-bottom:18px">
+          <label class="identity-label">Sinergia <span style="opacity:0.5;font-style:italic">(Corromper/Purificar — opcional)</span></label>
+          <select class="identity-input" id="grim_sinergia" onchange="atualizarPreviewMagia()">
+            <option value="">— Nenhuma —</option>
+            <option value="leve"     ${combo.sinergia === 'leve' ? 'selected' : ''}>Leve (15% do custo migra)</option>
+            <option value="moderada" ${combo.sinergia === 'moderada' ? 'selected' : ''}>Moderada (35% do custo migra)</option>
+            <option value="severa"   ${combo.sinergia === 'severa' ? 'selected' : ''}>Severa (60% do custo migra)</option>
+          </select>
+          <div class="identity-hint" style="font-size:11px;opacity:0.6;margin-top:4px">A direção (Corromper/Purificar) é definida automaticamente pelo recurso do Aspecto escolhido.</div>
+        </div>
+        ` : ''}
+
         <div class="identity-field">
           <label class="identity-label">
             Círculo Injetado — <span id="grim_circulo_valor">${circuloAtual}</span> / <span id="grim_circulo_teto">${circuloTeto}</span>
@@ -1501,7 +1600,7 @@ function renderGrimorio() {
         <div class="grimorio-preview" id="magia-preview-col">
           ${gerarHTMLCardMagia(
             (combo.aspecto && combo.verbo && combo.mod)
-              ? gerarMagiaSegura(combo.aspecto, combo.verbo, combo.mod, combo.circulo, combo.manifestacao || null)
+              ? gerarMagiaSegura(combo.aspecto, combo.verbo, combo.mod, combo.circulo, combo.manifestacao || null, combo.sinergia || null)
               : null,
             sistemaMagia.modificadores ? sistemaMagia.modificadores[combo.mod] : null
           )}

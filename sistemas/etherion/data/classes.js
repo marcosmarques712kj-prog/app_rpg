@@ -449,6 +449,28 @@ const classesRPG = {
         afinidadesRaciais: [],
         habilidades: [],
       },
+      catalogador_do_eclipse: {
+        nome: 'Catalogador do Eclipse',
+        trilha: 'Equilibrada',
+        recurso: '50/50',
+        aliases: ['catalogador', 'pesquisador da fronteira', 'cientista do véu'],
+        citacao: 'Sopro e Mácula não são inimigos. São só duas respostas diferentes para a mesma pergunta que ninguém teve coragem de fazer.',
+        pericias: ['investigacao', 'arcanismo'],
+        // Trava 1: Lua de Nyxara — "o véu entre o que se vê e o que se esconde" — é
+        // literalmente a fronteira entre Sopro e Mácula, sem julgamento moral entre os dois.
+        aspectoPadrao: 'lua_nyxara',
+        afinidadesRaciais: [],
+        habilidades: [],
+        // Trava de acesso à mecânica de Corromper/Purificar (V1.0, ver magias.js resolverSinergia).
+        destravaSinergia: true,
+        // Override da Trava 1 (aprendizado livre): esta especialização não escolhe
+        // aspectos com vagas livres — ela NASCE conhecendo os dois lados da fronteira.
+        // aspectosIniciaisFixos vêm de graça, fora do sistema de vagas, mas em troca
+        // aspectosAprendizado cai para 0 (nenhuma vaga livre adicional no nível dela;
+        // só aspectos concedidos por raça, se houver, poderiam somar depois).
+        aspectosAprendizado: 0,
+        aspectosIniciaisFixos: ['lua_nyxara', 'morte_morvethra'],
+      },
     },
   },
 
@@ -579,6 +601,26 @@ const classesRPG = {
         afinidadesRaciais: [],
         habilidades: [],
       },
+      juiz_do_eclipse: {
+        nome: 'Juiz do Eclipse',
+        trilha: 'Equilibrada',
+        recurso: 'Sopro',
+        aliases: ['juiz', 'clérigo do véu', 'guardião da fronteira sagrada'],
+        citacao: 'Nyxara disputou os céus com Pyraël até que Khaíros forjou o eclipse. Minha fé não escolheu um lado — ela guarda a linha entre os dois.',
+        pericias: ['teologia', 'ocultismo'],
+        // Trava 1: Lua de Nyxara nasceu do sonho de Archëon e gerou tanto Morvethra
+        // (Mácula) quanto Nerýth (Sopro) — doutrina que estuda os dois lados por fé,
+        // não por ausência dela.
+        aspectoPadrao: 'lua_nyxara',
+        afinidadesRaciais: [],
+        habilidades: [],
+        // Trava de acesso à mecânica de Corromper/Purificar (V1.0, ver magias.js resolverSinergia).
+        destravaSinergia: true,
+        // Override da Trava 1 (aprendizado livre) — ver comentário equivalente em
+        // catalogador_do_eclipse. Mesmo mecanismo: nasce com os 2 fixos, zero vagas livres.
+        aspectosAprendizado: 0,
+        aspectosIniciaisFixos: ['lua_nyxara', 'morte_morvethra'],
+      },
     },
   },
 
@@ -602,6 +644,13 @@ const classesRPG = {
     verbosPermitidos: ['manifestar', 'alterar', 'vincular', 'selar', 'destruir', 'invocar', 'cortar', 'proteger', 'deslocar'],
     // Trava 1 (aprendizado livre): conjurador puro — maior número de vagas do jogo.
     aspectosAprendizado: 3,
+    // Trava de acesso à mecânica de Corromper/Purificar (V1.0, ver magias.js
+    // resolverSinergia). Diferente de `destravaSinergia` nas especializações
+    // (que destrava só aquela especialização específica), esta flag a nível
+    // de CLASSE destrava para TODAS as especializações do Transcendente,
+    // independente de qual delas o personagem escolheu — a classe inteira
+    // já transcendeu a separação Pura/Corrompida por domínio da Arte.
+    destravaSinergiaClasseInteira: true,
     habilidadesComuns: [
       {
         nome: 'Erudição Arcana',
@@ -865,6 +914,26 @@ const classesRPG = {
         aspectoPadrao: 'teia_mabryth',
         afinidadesRaciais: [],
         habilidades: [],
+      },
+      guardiao_da_mare_cheia: {
+        nome: 'Guardião da Maré Cheia',
+        trilha: 'Equilibrada',
+        recurso: 'Mácula',
+        aliases: ['guardião da maré', 'xamã do eclipse', 'filho do ciclo'],
+        citacao: 'A maré não pergunta se prefere subir ou descer. Ela só sabe que as duas coisas são a mesma água.',
+        pericias: ['sintonia', 'ocultismo'],
+        // Trava 1: Lua de Nyxara governa marés e ciclos — para o Primordial, Puro e
+        // Corrompido não são um julgamento moral, são só as duas fases do mesmo ciclo
+        // natural, como noite e dia, maré alta e baixa.
+        aspectoPadrao: 'lua_nyxara',
+        afinidadesRaciais: [],
+        habilidades: [],
+        // Trava de acesso à mecânica de Corromper/Purificar (V1.0, ver magias.js resolverSinergia).
+        destravaSinergia: true,
+        // Override da Trava 1 (aprendizado livre) — ver comentário equivalente em
+        // catalogador_do_eclipse. Mesmo mecanismo: nasce com os 2 fixos, zero vagas livres.
+        aspectosAprendizado: 0,
+        aspectosIniciaisFixos: ['lua_nyxara', 'morte_morvethra'],
       },
     },
   },
