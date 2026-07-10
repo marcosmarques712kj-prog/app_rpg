@@ -900,10 +900,23 @@ function renderPericias() {
   const d = PERSONAGEM.dados;
   const prof = bonusProficiencia(d.level);
 
-  // Divide as 19 perícias em duas colunas de tamanho igual
-  const metade = Math.ceil(PERICIAS.length / 2);
-  const colA = PERICIAS.slice(0, metade);
-  const colB = PERICIAS.slice(metade);
+  // Agrupa as perícias por atributo, na ordem canônica STR/DEX/CON/INT/WIS/CHA,
+  // em vez de dividir a lista alfabética ao meio — assim fica fácil achar
+  // "tudo que é DEX" ou "tudo que é INT" de relance.
+  const gruposPorAttr = ATRIBUTOS.map(a => ({
+    attr: a,
+    pericias: PERICIAS.filter(p => p.attr === a.id)
+  })).filter(g => g.pericias.length > 0);
+
+  // Distribui os grupos entre as duas colunas tentando equilibrar a
+  // quantidade de perícias em cada lado (não corta um grupo ao meio).
+  const colAGrupos = [];
+  const colBGrupos = [];
+  let contA = 0, contB = 0;
+  for (const g of gruposPorAttr) {
+    if (contA <= contB) { colAGrupos.push(g); contA += g.pericias.length; }
+    else { colBGrupos.push(g); contB += g.pericias.length; }
+  }
 
   function skillinha(p) {
     const proficiente = d.profSkills.includes(p.id);
@@ -921,6 +934,12 @@ function renderPericias() {
       <button class="d20-btn" title="Rolar teste de ${p.nome} (1d20${modStr})"
         onclick="rolarD20('${p.nome}', ${valor})">${D20_SVG}</button>
     </div>`;
+  }
+
+  function grupoHTML(g) {
+    return `
+    <div class="skills-group-title">${g.attr.nome}</div>
+    ${g.pericias.map(p => skillinha(p)).join('')}`;
   }
 
   function saveRow(a) {
@@ -978,12 +997,12 @@ function renderPericias() {
 
       </div>
 
-      <!-- Coluna direita: duas colunas de perícias num único box -->
+      <!-- Coluna direita: duas colunas de perícias, agrupadas por atributo -->
       <div class="box" style="padding:14px 18px">
         <div class="box-title" style="margin-bottom:10px">Perícias</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 24px">
-          <div class="skills-list">${colA.map(p => skillinha(p)).join('')}</div>
-          <div class="skills-list">${colB.map(p => skillinha(p)).join('')}</div>
+          <div class="skills-list">${colAGrupos.map(g => grupoHTML(g)).join('')}</div>
+          <div class="skills-list">${colBGrupos.map(g => grupoHTML(g)).join('')}</div>
         </div>
       </div>
 

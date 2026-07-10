@@ -361,6 +361,13 @@ body {
 
 /* ===== SKILLS LIST ===== */
 .skills-list { display: flex; flex-direction: column; gap: 2px; }
+.skills-group-title {
+  font-family: 'Cinzel', serif; font-size: 8.5px; letter-spacing: 2px;
+  color: var(--gold); opacity: 0.55; text-transform: uppercase;
+  margin: 10px 0 3px; padding-bottom: 2px;
+  border-bottom: 1px solid rgba(139,105,20,0.2);
+}
+.skills-group-title:first-child { margin-top: 0; }
 .skill-row {
   display: grid; grid-template-columns: 22px 1fr 60px 50px; align-items: center; gap: 8px;
   padding: 6px 4px; border-bottom: 1px solid rgba(139,105,20,0.08);
