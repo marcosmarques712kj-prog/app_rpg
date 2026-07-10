@@ -1528,70 +1528,6 @@ function toggleMagiaPreparada(i) {
 // =============================================================
 function renderBiografia() {
   const d = PERSONAGEM.dados;
-  const b = d.bio;
-
-  function caixaResumo(campo, label, placeholder) {
-    return `
-    <div>
-      <div class="box-title" style="font-size:9px;margin-bottom:6px">${label}</div>
-      <textarea class="text-box" style="min-height:100px" placeholder="${placeholder}"
-        oninput="atualizarBioCampo('${campo}', this.value)">${esc(b[campo])}</textarea>
-    </div>`;
-  }
-
-  document.getElementById('panel-biografia').innerHTML = `
-    <div class="box" style="margin-bottom:18px">
-      <div class="box-title">Aparência Física</div>
-      <div class="identity-row" style="margin-bottom:14px">
-        <div class="identity-field">
-          <label class="identity-label">Altura</label>
-          <input class="identity-input" value="${esc(b.altura)}" placeholder="ex: 1,78m" oninput="atualizarBioCampo('altura', this.value)">
-        </div>
-        <div class="identity-field">
-          <label class="identity-label">Peso</label>
-          <input class="identity-input" value="${esc(b.peso)}" placeholder="ex: 75kg" oninput="atualizarBioCampo('peso', this.value)">
-        </div>
-        <div class="identity-field">
-          <label class="identity-label">Idade</label>
-          <input class="identity-input" value="${esc(b.idade)}" placeholder="ex: 27 anos" oninput="atualizarBioCampo('idade', this.value)">
-        </div>
-        <div class="identity-field">
-          <label class="identity-label">Cor dos Olhos</label>
-          <input class="identity-input" value="${esc(b.corOlhos)}" placeholder="ex: Verdes" oninput="atualizarBioCampo('corOlhos', this.value)">
-        </div>
-      </div>
-      <textarea class="text-box" style="min-height:90px" placeholder="Descreva a aparência geral do personagem..."
-        oninput="atualizarBioCampo('aparencia', this.value)">${esc(b.aparencia)}</textarea>
-    </div>
-
-    <div class="box" style="margin-bottom:18px">
-      <div class="box-title">História</div>
-      <textarea class="text-box" style="min-height:200px" placeholder="Origem, eventos marcantes, motivações..."
-        oninput="atualizarBioCampo('historia', this.value)">${esc(b.historia)}</textarea>
-    </div>
-
-    <div class="box">
-      <div class="box-title">Resumo do Personagem</div>
-      <div class="bio-resumo-grid">
-        ${caixaResumo('personalidade', 'Personalidade', 'Como ele age, fala, reage...')}
-        ${caixaResumo('ideais', 'Ideais', 'O que ele defende ou busca...')}
-        ${caixaResumo('vinculos', 'Vínculos', 'Pessoas, lugares ou objetos importantes...')}
-        ${caixaResumo('defeitos', 'Defeitos', 'Fraquezas, vícios, medos...')}
-      </div>
-    </div>
-  `;
-}
-
-function atualizarBioCampo(campo, valor) {
-  PERSONAGEM.dados.bio[campo] = valor;
-  agendarSalvar();
-}
-
-// =============================================================
-// RENDER: ABA BIOGRAFIA
-// =============================================================
-function renderBiografia() {
-  const d = PERSONAGEM.dados;
   const bio = d.bio || {};
 
   document.getElementById('panel-biografia').innerHTML = `
@@ -1727,10 +1663,12 @@ async function salvarAgora() {
   if (error) {
     console.error('[ficha-dnd] erro ao salvar personagem:', error.message);
     showToast('Erro ao salvar — tente novamente.', 'warning');
+    avisarShell('ficha:erro-salvo');
     return;
   }
 
   avisarShell('ficha:titulo', PERSONAGEM.nome);
+  avisarShell('ficha:salvo');
   mostrarIndicadorSalvo();
 }
 
@@ -1837,7 +1775,6 @@ window.adicionarItemInv = adicionarItemInv;
 window.atualizarItemInv = atualizarItemInv;
 window.removerItemInv = removerItemInv;
 window.atualizarBio = atualizarBio;
-window.atualizarBioCampo = atualizarBioCampo;
 window.comboFiltrar = comboFiltrar;
 window.abrirGrimorio = abrirGrimorio;
 window.fecharGrimorio = fecharGrimorio;
