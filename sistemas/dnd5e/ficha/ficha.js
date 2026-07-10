@@ -1720,9 +1720,17 @@ async function init() {
   // A .sheet-topbar interna da ficha é redundante nesse caso (era a barra
   // usada quando a ficha.html é aberta solta, fora do shell) e ficava
   // duplicada visualmente. Escondemos ela aqui, mantendo tabs e conteúdo.
+  //
+  // Importante: .sheet-tabs é "position: sticky; top: 60px" pressupondo
+  // que a topbar de 60px de altura existe acima dela. Sem a topbar, esse
+  // top:60px sobrava — as tabs ficavam grudadas 60px abaixo do topo do
+  // iframe, flutuando por cima do conteúdo do painel em vez de encostar
+  // no topo. A classe --no-topbar zera esse offset.
   if (rodandoNoIframe) {
     const topbar = document.querySelector('.sheet-topbar');
     if (topbar) topbar.style.display = 'none';
+    const tabs = document.querySelector('.sheet-tabs');
+    if (tabs) tabs.classList.add('sheet-tabs--no-topbar');
   }
 
   sb = await obterClienteSupabase();

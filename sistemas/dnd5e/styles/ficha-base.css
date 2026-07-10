@@ -71,6 +71,12 @@ body {
   box-shadow: 0 2px 12px rgba(0,0,0,0.5);
   overflow-x: auto;
 }
+/* Quando a .sheet-topbar interna é escondida (ficha rodando dentro do
+   iframe do shell — vide ficha.js/rodandoNoIframe), as tabs não têm mais
+   60px de topbar acima delas para "grudar" logo abaixo. Sem isso, o
+   sticky continuava reservando os 60px como se a topbar existisse, e as
+   tabs flutuavam sobre o conteúdo do painel. */
+.sheet-tabs.sheet-tabs--no-topbar { top: 0; }
 .sheet-tab {
   font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 2px;
   color: var(--parchment-dark); padding: 14px 22px; border: none; background: none;
