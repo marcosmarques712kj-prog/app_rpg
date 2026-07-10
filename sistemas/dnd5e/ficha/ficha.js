@@ -314,19 +314,31 @@ function fmtMod(n) {
 }
 
 // =============================================================
-// STORAGE — mesma base usada pela tela principal (forja_personagens)
+// STORAGE — Supabase (tabela `personagens`), mesmo padrão usado em
+// campanha.html: client compartilhado com o shell via iframe
+// (window.parent.supabaseClient) quando disponível, com fallback
+// de import direto quando a página é aberta solta (fora do shell).
 // =============================================================
-function loadData(key, fallback) {
-  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
-  catch(e) { return fallback; }
-}
-function saveData(key, val) {
-  try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) {}
-}
+import { exigirLogin, usuarioLogado } from '../../../core/js/auth-supabase.js';
 
-let PERSONAGENS = loadData('forja_personagens', []);
+let sb = null;
 let CHAR_ID = null;
 let PERSONAGEM = null;
+const rodandoNoIframe = window.parent && window.parent !== window;
+
+function avisarShell(tipo, payload) {
+  if (!rodandoNoIframe) return;
+  window.parent.postMessage({ tipo, payload }, window.location.origin);
+}
+
+async function obterClienteSupabase() {
+  if (rodandoNoIframe && window.parent.supabaseClient) {
+    return window.parent.supabaseClient;
+  }
+  // Fallback: página aberta fora do iframe (acesso direto/teste).
+  const mod = await import('../../../core/js/auth-supabase.js');
+  return mod.supabase;
+}
 
 function pegarIdDaUrl() {
   const params = new URLSearchParams(window.location.search);
@@ -392,13 +404,27 @@ function mesclarComDefault(dados) {
   return out;
 }
 
-function carregarPersonagem() {
+async function carregarPersonagem() {
   CHAR_ID = pegarIdDaUrl();
   if (!CHAR_ID) { mostrarEstadoVazio('Nenhum personagem especificado na URL.'); return false; }
-  const p = PERSONAGENS.find(x => x.id === CHAR_ID);
-  if (!p) { mostrarEstadoVazio('Personagem não encontrado. Ele pode ter sido apagado.'); return false; }
-  PERSONAGEM = p;
-  PERSONAGEM.dados = mesclarComDefault(p.dados || {});
+
+  // RLS do Supabase já restringe a leitura a personagens que o
+  // usuário pode ver (é o dono, ou tem acesso à campanha dele).
+  const { data, error } = await sb
+    .from('personagens')
+    .select('*')
+    .eq('id', CHAR_ID)
+    .eq('sistema', 'dnd5e')
+    .single();
+
+  if (error || !data) {
+    console.error('[ficha-dnd] erro ao carregar personagem:', error?.message);
+    mostrarEstadoVazio('Personagem não encontrado. Ele pode ter sido apagado, ou você não tem acesso a ele.');
+    return false;
+  }
+
+  PERSONAGEM = data;
+  PERSONAGEM.dados = mesclarComDefault(data.dados || {});
   return true;
 }
 
@@ -414,7 +440,11 @@ function mostrarEstadoVazio(msg) {
 }
 
 function voltarParaHome() {
-  window.location.href = '../../index.html';
+  if (rodandoNoIframe) {
+    avisarShell('ficha:voltar');
+  } else {
+    window.location.href = '../../index.html';
+  }
 }
 // =============================================================
 // CÁLCULOS DERIVADOS (com suporte a override manual)
@@ -1354,17 +1384,22 @@ function abrirGrimorio() {
   }
 }
 
-function fecharGrimorio() {
+async function fecharGrimorio() {
   const overlay = document.getElementById('grimorio-overlay');
   if (overlay) overlay.style.display = 'none';
 
-  // Relê dados do localStorage (o grimório pode ter adicionado magias)
-  // e re-renderiza a aba Combate para refletir as mudanças imediatamente.
-  PERSONAGENS = loadData('forja_personagens', []);
-  const atualizado = PERSONAGENS.find(x => x.id === CHAR_ID);
-  if (atualizado) {
-    PERSONAGEM = atualizado;
-    PERSONAGEM.dados = mesclarComDefault(atualizado.dados || {});
+  // Relê dados do Supabase (o grimório pode ter adicionado magias
+  // em sua própria aba/iframe) e re-renderiza a aba Combate para
+  // refletir as mudanças imediatamente.
+  const { data, error } = await sb
+    .from('personagens')
+    .select('*')
+    .eq('id', CHAR_ID)
+    .single();
+
+  if (!error && data) {
+    PERSONAGEM = data;
+    PERSONAGEM.dados = mesclarComDefault(data.dados || {});
   }
   renderCombate();
 }
@@ -1668,15 +1703,34 @@ function agendarSalvar() {
   _saveTimeout = setTimeout(salvarAgora, 450);
 }
 
-function salvarAgora() {
-  if (!PERSONAGEM) return;
+async function salvarAgora() {
+  if (!PERSONAGEM || !sb) return;
   // sincroniza nome (input do topo) de volta pro objeto raiz, já que home-screen usa p.nome
   const nomeInput = document.getElementById('f_nome');
   if (nomeInput) PERSONAGEM.nome = nomeInput.value.trim() || PERSONAGEM.nome;
 
-  const idx = PERSONAGENS.findIndex(x => x.id === CHAR_ID);
-  if (idx >= 0) PERSONAGENS[idx] = PERSONAGEM;
-  saveData('forja_personagens', PERSONAGENS);
+  // Login é exigido só na hora de salvar de fato (mesmo padrão
+  // "lazy" usado no resto do app) — evita pedir login só pra
+  // visualizar uma ficha que talvez já esteja acessível via RLS
+  // (ex: outro jogador da campanha vendo a ficha).
+  const sessao = await exigirLogin('Faça login para salvar as alterações no seu personagem.');
+  if (!sessao) return; // cancelou o login — não perde os dados em tela, só não persiste agora
+
+  const { error } = await sb
+    .from('personagens')
+    .update({
+      nome: PERSONAGEM.nome,
+      dados: PERSONAGEM.dados
+    })
+    .eq('id', CHAR_ID);
+
+  if (error) {
+    console.error('[ficha-dnd] erro ao salvar personagem:', error.message);
+    showToast('Erro ao salvar — tente novamente.', 'warning');
+    return;
+  }
+
+  avisarShell('ficha:titulo', PERSONAGEM.nome);
   mostrarIndicadorSalvo();
 }
 
@@ -1720,11 +1774,14 @@ function montarEstruturaAbas() {
   `;
 }
 
-function init() {
-  if (!carregarPersonagem()) return;
+async function init() {
+  sb = await obterClienteSupabase();
+
+  if (!(await carregarPersonagem())) return;
 
   montarEstruturaAbas();
   document.getElementById('f_nome').value = PERSONAGEM.nome || '';
+  avisarShell('ficha:titulo', PERSONAGEM.nome || '');
 
   renderPrincipal();
   renderPericias();
@@ -1734,6 +1791,60 @@ function init() {
   renderNotas();
 }
 
+// Aviso: diferente do antigo salvamento em localStorage (síncrono),
+// gravar no Supabase é uma chamada de rede assíncrona — o navegador
+// não espera fetch/beforeunload terminar antes de descarregar a
+// página, então isto NÃO garante que o último save chegue ao banco
+// se a pessoa fechar a aba bem no meio da janela de debounce de
+// 450ms. O autosave via agendarSalvar() cobre a grande maioria dos
+// casos; ainda assim tentamos aqui como melhor esforço.
 window.addEventListener('beforeunload', () => { if (_saveTimeout) salvarAgora(); });
+
+// =============================================================
+// EXPOSIÇÃO GLOBAL — necessária a partir da conversão deste
+// arquivo para módulo ES (import do cliente Supabase). Módulos NÃO
+// colocam suas declarações no escopo global automaticamente, e o
+// HTML desta ficha chama todas estas funções via atributos
+// onclick/oninput/onchange inline (ex: onclick="switchTab('combate')").
+// Sem este bloco, todo clique/edição na ficha falharia silenciosamente
+// com "function is not defined" no console.
+window.voltarParaHome = voltarParaHome;
+window.switchTab = switchTab;
+window.agendarSalvar = agendarSalvar;
+window.atualizarCampoSimples = atualizarCampoSimples;
+window.atualizarAttr = atualizarAttr;
+window.atualizarNivel = atualizarNivel;
+window.toggleOverride = toggleOverride;
+window.overrideManualDireto = overrideManualDireto;
+window.rolarD20 = rolarD20;
+window.setDeathSave = setDeathSave;
+window.toggleProfSave = toggleProfSave;
+window.toggleProfSkill = toggleProfSkill;
+window.atualizarHP = atualizarHP;
+window.atualizarSlotMax = atualizarSlotMax;
+window.toggleSpellSlot = toggleSpellSlot;
+window.restaurarSlotAutomatico = restaurarSlotAutomatico;
+window.adicionarAtaque = adicionarAtaque;
+window.atualizarAtaque = atualizarAtaque;
+window.removerAtaque = removerAtaque;
+window.toggleCondicaoTemp = toggleCondicaoTemp;
+window.adicionarEstadoPermanente = adicionarEstadoPermanente;
+window.atualizarEstadoPermanente = atualizarEstadoPermanente;
+window.removerEstadoPermanente = removerEstadoPermanente;
+window.atualizarCapacidadeOverride = atualizarCapacidadeOverride;
+window.atualizarMoeda = atualizarMoeda;
+window.adicionarItemInv = adicionarItemInv;
+window.atualizarItemInv = atualizarItemInv;
+window.removerItemInv = removerItemInv;
+window.atualizarBio = atualizarBio;
+window.atualizarBioCampo = atualizarBioCampo;
+window.comboFiltrar = comboFiltrar;
+window.abrirGrimorio = abrirGrimorio;
+window.fecharGrimorio = fecharGrimorio;
+window.adicionarMagia = adicionarMagia;
+window.atualizarMagiaCampo = atualizarMagiaCampo;
+window.atualizarMagiaNivel = atualizarMagiaNivel;
+window.toggleMagiaPreparada = toggleMagiaPreparada;
+window.removerMagia = removerMagia;
 
 init();

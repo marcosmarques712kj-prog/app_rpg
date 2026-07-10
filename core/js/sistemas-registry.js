@@ -13,7 +13,7 @@
       urlCampanha: '/sistemas/dnd5e/campanha/campanha.html',
       mesa: '/sistemas/dnd5e/mesa/mesa.html',
       hub: '/features/livros/sistema-hub.html?sys=dnd5e',
-      disponivel: false,
+      disponivel: true,
       campos: [
         { id: 'cls', label: 'Classe', tipo: 'select', opcoes: ['Barbaro','Bardo','Clerigo','Druida','Feiticeiro','Guerreiro','Ladino','Mago','Monge','Paladino','Ranger','Bruxo'] },
         { id: 'race', label: 'Raca', tipo: 'select', opcoes: ['Humano','Elfo','Anao','Halfling','Gnomo','Meio-Orc','Meio-Elfo','Tiefling','Draconato','Outro'] },
