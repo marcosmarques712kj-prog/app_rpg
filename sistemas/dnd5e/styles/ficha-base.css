@@ -224,12 +224,13 @@ body {
 
 /* ===== MAIN GRID (atributos + direita) ===== */
 .combat-grid {
-  display: grid; grid-template-columns: 230px 1fr; gap: 22px; margin-bottom: 22px;
+  display: grid; grid-template-columns: 420px 1fr; gap: 22px; margin-bottom: 22px;
 }
 @media (max-width: 900px) { .combat-grid { grid-template-columns: 1fr; } }
 
 /* ===== ATTRIBUTE SHIELD ===== */
-.attrs-col { display: flex; flex-direction: column; gap: 12px; }
+.attrs-col { display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: 1fr; gap: 12px; }
+@media (max-width: 560px) { .attrs-col { grid-template-columns: 1fr; } }
 .attr-shield {
   background: var(--stone-mid);
   border: 1px solid rgba(139,105,20,0.3);

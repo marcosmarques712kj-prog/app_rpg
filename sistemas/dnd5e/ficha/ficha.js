@@ -1713,6 +1713,18 @@ function montarEstruturaAbas() {
 }
 
 async function init() {
+  // Quando a ficha roda dentro do iframe do shell (index.html), o próprio
+  // shell já desenha sua topbar (#topbar-sheet) com "← Voltar", nome do
+  // personagem e indicador de salvo — vide window.addEventListener('message')
+  // em index.html tratando 'ficha:titulo' / 'ficha:salvo' / 'ficha:voltar'.
+  // A .sheet-topbar interna da ficha é redundante nesse caso (era a barra
+  // usada quando a ficha.html é aberta solta, fora do shell) e ficava
+  // duplicada visualmente. Escondemos ela aqui, mantendo tabs e conteúdo.
+  if (rodandoNoIframe) {
+    const topbar = document.querySelector('.sheet-topbar');
+    if (topbar) topbar.style.display = 'none';
+  }
+
   sb = await obterClienteSupabase();
 
   if (!(await carregarPersonagem())) return;
