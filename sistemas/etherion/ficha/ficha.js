@@ -585,12 +585,18 @@ function gerarDrawerClasse(d) {
   const base  = classesRPG[d.classeBase];
   const espec = d.classeEspec ? (base.especializacoes || {})[d.classeEspec] : null;
 
-  const chipLista = (lista, cls) => (lista || []).map(v =>
-    `<span class="idr-chip ${cls}">${esc(v)}</span>`).join('');
-
-  const profChips  = chipLista(espec?.proficiencias  || base.proficiencias  || [], 'ok');
-  const equipChips = chipLista(espec?.equipamentos   || base.equipamentos   || [], 'eq');
-  const habsHTML   = (espec?.habilidades || base.habilidades || []).map(h => `
+  // Habilidades: a especialização (classes.js) tem seu próprio campo
+  // `habilidades`, mas está vazio ([]) em todas as 57 especializações
+  // cadastradas hoje — ainda não foi preenchido no sistema. As habilidades
+  // que de fato existem e têm nome/desc estão em `habilidadesComuns` da
+  // CLASSE BASE (ex: vanguarda.habilidadesComuns = ['Corpo de Aço', ...]).
+  // Antes este código lia `base.habilidades` (campo que não existe em
+  // nenhuma classe base) — por isso o drawer só mostrava a citação e nada
+  // mais. Mostramos habilidadesComuns sempre, e complementamos com
+  // espec.habilidades quando/se a especialização já tiver as suas.
+  const habilidadesEspec = espec?.habilidades || [];
+  const habilidadesBase  = base.habilidadesComuns || [];
+  const habsHTML = [...habilidadesBase, ...habilidadesEspec].map(h => `
     <div class="idr-hab-item">
       <div class="idr-hab-nome">${esc(h.nome)}</div>
       <div class="idr-hab-desc">${esc(h.desc)}</div>
@@ -648,19 +654,9 @@ function gerarDrawerClasse(d) {
         <span class="idr-bloco-label">Atributos-chave</span>
         <div class="idr-attr-row">${attrChaveHTML}</div>
       </div>` : ''}
-      <div class="idr-cols">
-        ${profChips ? `<div>
-          <span class="idr-bloco-label">Proficiências</span>
-          <div class="idr-chip-row">${profChips}</div>
-        </div>` : ''}
-        ${equipChips ? `<div>
-          <span class="idr-bloco-label">Equipamento inicial</span>
-          <div class="idr-chip-row">${equipChips}</div>
-        </div>` : ''}
-      </div>
       ${habsHTML ? `
       <div>
-        <span class="idr-bloco-label">Habilidades${espec ? ' da especialização' : ''}</span>
+        <span class="idr-bloco-label">Habilidades</span>
         <div style="display:flex;flex-direction:column;gap:6px">${habsHTML}</div>
       </div>` : ''}
       <div>
