@@ -195,13 +195,20 @@ async function carregarPersonagem() {
     const idDireto = classesRPG[d.classeBase]; // já é uma chave válida?
     if (!idDireto) {
       const valorBusca = d.classeBase.toLowerCase();
+      // classesRPG também guarda funções/constantes auxiliares hoje
+      // (calcularCA, podeUsarArmadura, CA_BASE) — filtramos para só
+      // considerar entradas que são de fato objetos de classe (têm .nome),
+      // senão `.nome.toLowerCase()` quebra ao cair numa função/número.
+      const chavesClasse = Object.keys(classesRPG).filter(k =>
+        classesRPG[k] && typeof classesRPG[k] === 'object' && classesRPG[k].nome
+      );
       // Tenta casar pelo nome (case-insensitive)...
-      let idEncontrado = Object.keys(classesRPG).find(k =>
+      let idEncontrado = chavesClasse.find(k =>
         classesRPG[k].nome.toLowerCase() === valorBusca
       );
       // ...e se não achou, tenta pelos aliases (apelidos de busca da classe).
       if (!idEncontrado) {
-        idEncontrado = Object.keys(classesRPG).find(k =>
+        idEncontrado = chavesClasse.find(k =>
           (classesRPG[k].aliases || []).some(al => al.toLowerCase() === valorBusca)
         );
       }
@@ -611,6 +618,12 @@ function gerarDrawerClasse(d) {
   // selecionada ainda.
   const citacao = espec?.citacao || '';
 
+  // Descrição: texto narrativo mais longo, presente tanto na classe base
+  // (~200-260 chars, visão geral do arquétipo) quanto na especialização
+  // (~600-700 chars, mais específico). Prioriza a da especialização
+  // quando escolhida — senão mostra a da classe base.
+  const descricao = espec?.descricao || base.descricao || '';
+
   // Trilha (Pura / Corrompida / Equilibrada) só existe na especialização,
   // não na classe base — sem especialização escolhida, não há trilha ainda.
   const trilhaClasse = espec?.trilha
@@ -644,6 +657,11 @@ function gerarDrawerClasse(d) {
     </div>
     <div class="idr-body">
       ${citacao ? `<p class="idr-citacao">"${esc(citacao)}"</p>` : ''}
+      ${descricao ? `
+      <div>
+        <span class="idr-bloco-label">Descrição</span>
+        <p class="idr-texto">${esc(descricao)}</p>
+      </div>` : ''}
       ${trilhaHTML ? `
       <div>
         <span class="idr-bloco-label">Trilha</span>
@@ -2962,9 +2980,17 @@ function aplicarPericiasDeClasse(classeBaseId, classeEspecId) {
 }
 
 // Novas Funções Lógicas de Classe e Especialização
+// classes.js agora expõe, além das 6 classes, algumas funções/constantes
+// auxiliares no mesmo objeto classesRPG (ex: calcularCA, podeUsarArmadura,
+// CA_BASE). Sem filtrar, elas apareciam como opções extras e quebradas
+// (nome undefined) no <select> de Classe Base. Uma classe de verdade é um
+// objeto com pelo menos um campo `nome` — isso já basta pra excluir as
+// funções (typeof 'function') e constantes numéricas (CA_BASE).
 function listarClassesBase() {
   if (typeof classesRPG === 'undefined') return [];
-  return Object.keys(classesRPG).map(k => ({ id: k, nome: classesRPG[k].nome }));
+  return Object.keys(classesRPG)
+    .filter(k => classesRPG[k] && typeof classesRPG[k] === 'object' && classesRPG[k].nome)
+    .map(k => ({ id: k, nome: classesRPG[k].nome }));
 }
 
 function listarEspecializacoes(classeBaseId) {
