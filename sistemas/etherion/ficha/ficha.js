@@ -187,16 +187,24 @@ async function carregarPersonagem() {
   if (!d.classeEspec) d.classeEspec = '';
 
   // Migração: versões antigas podiam salvar d.classeBase como nome legível
-  // (ex: 'Vanguarda') em vez da chave do objeto (ex: 'vanguarda').
+  // (ex: 'Vanguarda') ou como um dos apelidos de classes.js (ex: 'guerreiro',
+  // 'tank' → vanguarda) em vez da chave do objeto (ex: 'vanguarda').
   // Aqui normalizamos para a chave, que é o que listarClassesBase() e
   // listarEspecializacoes() esperam.
   if (d.classeBase && typeof classesRPG !== 'undefined') {
     const idDireto = classesRPG[d.classeBase]; // já é uma chave válida?
     if (!idDireto) {
-      // Tenta casar pelo nome (case-insensitive)
-      const idEncontrado = Object.keys(classesRPG).find(k =>
-        classesRPG[k].nome.toLowerCase() === d.classeBase.toLowerCase()
+      const valorBusca = d.classeBase.toLowerCase();
+      // Tenta casar pelo nome (case-insensitive)...
+      let idEncontrado = Object.keys(classesRPG).find(k =>
+        classesRPG[k].nome.toLowerCase() === valorBusca
       );
+      // ...e se não achou, tenta pelos aliases (apelidos de busca da classe).
+      if (!idEncontrado) {
+        idEncontrado = Object.keys(classesRPG).find(k =>
+          (classesRPG[k].aliases || []).some(al => al.toLowerCase() === valorBusca)
+        );
+      }
       if (idEncontrado) d.classeBase = idEncontrado;
     }
   }
@@ -205,10 +213,24 @@ async function carregarPersonagem() {
     const especs = base ? (base.especializacoes || {}) : {};
     const idDireto = especs[d.classeEspec]; // já é uma chave válida?
     if (!idDireto) {
-      // Tenta casar pelo nome (case-insensitive)
-      const idEncontrado = Object.keys(especs).find(k =>
-        especs[k].nome.toLowerCase() === d.classeEspec.toLowerCase()
+      const valorBusca = d.classeEspec.toLowerCase();
+      // Tenta casar pelo nome (case-insensitive)...
+      let idEncontrado = Object.keys(especs).find(k =>
+        especs[k].nome.toLowerCase() === valorBusca
       );
+      // ...e se não achou, tenta pelos aliases da especialização.
+      // NOTA: há uma colisão conhecida em classes.js hoje — o alias 'juiz'
+      // aparece tanto em devoto.inquisidor_implacavel quanto em
+      // devoto.juiz_do_eclipse. Nesse caso find() resolve para a primeira
+      // ocorrência (inquisidor_implacavel) por ordem de declaração no
+      // objeto. Só afeta migração automática de personagens salvos com
+      // esse alias exato — se algum dia isso for um problema real, o
+      // conserto é desambiguar os aliases em classes.js, não aqui.
+      if (!idEncontrado) {
+        idEncontrado = Object.keys(especs).find(k =>
+          (especs[k].aliases || []).some(al => al.toLowerCase() === valorBusca)
+        );
+      }
       if (idEncontrado) d.classeEspec = idEncontrado;
     }
   }
@@ -577,7 +599,34 @@ function gerarDrawerClasse(d) {
   const tituloEspec = espec
     ? `<span style="color:var(--gold-dark);opacity:0.6;font-weight:400"> — ${esc(espec.nome)}</span>`
     : '';
-  const tracoNarrativo = espec?.tracoNarrativo || base.tracoNarrativo || '';
+  // A citação de sabor (falada pela especialização) fica em espec.citacao
+  // no classes.js — mesmo campo/uso de sub.citacao (raça) e origem.citacao.
+  // Não há citação de classe base isolada quando não há especialização
+  // selecionada ainda.
+  const citacao = espec?.citacao || '';
+
+  // Trilha (Pura / Corrompida / Equilibrada) só existe na especialização,
+  // não na classe base — sem especialização escolhida, não há trilha ainda.
+  const trilhaClasse = espec?.trilha
+    ? 'trilha-' + espec.trilha.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    : '';
+  const trilhaHTML = espec?.trilha
+    ? `<span class="idr-chip ${trilhaClasse}">${esc(espec.trilha)}</span>`
+    : '';
+
+  // Atributos-chave (classes.js: atributosChave, ex: ['for','cos']) — só
+  // existe na classe base, não varia por especialização. Reaproveita o
+  // mesmo componente visual (idr-attr-chip) do bônus racial, marcando
+  // como "bonus" os atributos que são chave para esta classe.
+  const attrsChave = base.atributosChave || [];
+  const attrChaveHTML = attrsChave.length > 0 ? ATRIBUTOS_ETH.map(a => {
+    const ehChave = attrsChave.includes(a.id);
+    return `
+      <div class="idr-attr-chip ${ehChave ? 'bonus' : ''}">
+        <span class="idr-attr-label">${a.nome}</span>
+        <span class="idr-attr-val">${ehChave ? '★' : '—'}</span>
+      </div>`;
+  }).join('') : '';
 
   return `
   <div id="idr-classe" class="idr-drawer" style="max-height:0;opacity:0;margin-top:0;border-left-color:var(--idr-cor-classe)">
@@ -588,7 +637,17 @@ function gerarDrawerClasse(d) {
       <button class="idr-fechar" onclick="toggleDrawerIdentidade('classe')">✕ FECHAR</button>
     </div>
     <div class="idr-body">
-      ${tracoNarrativo ? `<p class="idr-citacao">"${esc(tracoNarrativo)}"</p>` : ''}
+      ${citacao ? `<p class="idr-citacao">"${esc(citacao)}"</p>` : ''}
+      ${trilhaHTML ? `
+      <div>
+        <span class="idr-bloco-label">Trilha</span>
+        <div class="idr-chip-row">${trilhaHTML}</div>
+      </div>` : ''}
+      ${attrChaveHTML ? `
+      <div>
+        <span class="idr-bloco-label">Atributos-chave</span>
+        <div class="idr-attr-row">${attrChaveHTML}</div>
+      </div>` : ''}
       <div class="idr-cols">
         ${profChips ? `<div>
           <span class="idr-bloco-label">Proficiências</span>
@@ -2797,6 +2856,10 @@ uploadStyle.textContent = `
   .idr-chip.ok  { background:rgba(74,154,106,0.1);  border-color:rgba(74,154,106,0.32); color:#6dbe8d; }
   .idr-chip.bad { background:rgba(180,60,60,0.1);   border-color:rgba(180,60,60,0.32);  color:#d47070; }
   .idr-chip.eq  { background:rgba(74,122,181,0.1);  border-color:rgba(74,122,181,0.32); color:#7aacd4; }
+  /* Trilha da especialização (classes.js: trilha: 'Pura' | 'Corrompida' | 'Equilibrada') */
+  .idr-chip.trilha-pura       { background:rgba(201,168,76,0.1);  border-color:rgba(201,168,76,0.35); color:var(--gold); }
+  .idr-chip.trilha-corrompida { background:rgba(150,60,150,0.1);  border-color:rgba(150,60,150,0.35); color:#c37ac3; }
+  .idr-chip.trilha-equilibrada{ background:rgba(150,150,150,0.1); border-color:rgba(150,150,150,0.32); color:#b8b0a0; }
 
   /* ── CARDS DE ATRIBUTO ────────────────────────────────────────
      Sem border-radius. Mesma linguagem do .atrib-card.
