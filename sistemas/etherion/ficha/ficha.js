@@ -174,11 +174,13 @@ async function carregarPersonagem() {
   if (!d.attrs) d.attrs = {};
   if (!d.profs) d.profs = {};
   if (!d.focos) d.focos = {};
-  if (!d.recursos) d.recursos = { vida: { cur: 10, max: 10 }, san: { cur: 10, max: 10 }, sopro: { cur: 5, max: 5 }, macula: { cur: 0, max: 12 } };
+  if (!d.recursos) d.recursos = { vida: { cur: 10, max: 10 }, san: { cur: 10, max: 10 }, sopro: { cur: 12, max: 12 }, macula: { cur: 0, max: 12 } };
   if (!d.estados) d.estados = { temp: [], perm: [] };
   if (!d.habRaciais) d.habRaciais = [];
   if (!d.chamados) d.chamados = [];
   if (!d.ataques) d.ataques = [];
+  if (!d.tecnicasArmadas) d.tecnicasArmadas = [];
+  if (!d.tecnicasDesarmadas) d.tecnicasDesarmadas = [];
   if (!d.inventario) d.inventario = [];
   if (!d.moedas) d.moedas = { cobre: 0, prata: 0, ouro: 0 };
   if (!d.bio) d.bio = {};
@@ -334,14 +336,14 @@ function calcularRecursosMaximos() {
   const sanMax = 10 + calcularModificador(sab);
 
   // ── Sopro ─────────────────────────────────────────────────────
-  // Sopro = 3 + mod(atributoFoco da classe) + floor(nivel / 2)
-  let soproMax = 3;
+  // Sopro = 12 + mod(atributoFoco da classe) + floor(nivel / 2)
+  let soproMax = 12;
   if (classe && classe.atributoFoco && typeof sistemaMagia !== 'undefined') {
     const modFoco = calcularModificador(getAtrib(classe.atributoFoco));
     soproMax = sistemaMagia.calcularLimiteSopro(nivel, modFoco);
   } else if (classe && classe.atributoFoco) {
     // Fallback caso sistemaMagia não esteja carregado (não deve ocorrer em produção)
-    soproMax = 3 + calcularModificador(getAtrib(classe.atributoFoco));
+    soproMax = 12 + calcularModificador(getAtrib(classe.atributoFoco));
   }
 
   // ── Mácula ────────────────────────────────────────────────────
@@ -681,7 +683,7 @@ function gerarDrawerClasse(d) {
         <span class="idr-bloco-label">Recursos calculados</span>
         <div class="idr-chip-row">
           ${base.hpInicial != null ? `<span class="idr-chip ok">HP base: ${base.hpInicial} + mod(COS) por nível</span>` : ''}
-          ${base.atributoFoco ? `<span class="idr-chip ok">Sopro: 3 + mod(${base.atributoFoco.toUpperCase()})</span>` : ''}
+          ${base.atributoFoco ? `<span class="idr-chip ok">Sopro: 12 + mod(${base.atributoFoco.toUpperCase()}) + ⌊Nív/2⌋</span>` : ''}
         </div>
       </div>
     </div>
@@ -949,7 +951,7 @@ function renderPrincipal() {
       <div class="recursos-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px">
         ${recursoHTML('vida','Vida','vida', r.vida || {cur:10,max:10})}
         ${recursoHTML('san','Sanidade','san', r.san || {cur:10,max:10})}
-        ${recursoHTML('sopro','Sopro (Pura)','sopro', r.sopro || {cur:5,max:5})}
+        ${recursoHTML('sopro','Sopro (Pura)','sopro', r.sopro || {cur:12,max:12})}
         ${recursoHTML('macula','Mácula (Abismo)','macula', r.macula || {cur:0,max:12})}
       </div>
     </div>
@@ -1532,7 +1534,7 @@ function gerarMagiaSegura(aspectoId, verboId, modId, circulo, manifestacaoId, gr
   // infinito" (null faria resolverPagamento assumir suficiente sempre).
   const r = d.recursos || {};
   const recursoDisponivel = aspecto
-    ? (aspecto.recurso === 'sopro' ? (r.sopro ? r.sopro.cur : 5)
+    ? (aspecto.recurso === 'sopro' ? (r.sopro ? r.sopro.cur : 12)
                                     : (r.macula ? r.macula.cur : 0))
     : null;
 
@@ -1547,7 +1549,7 @@ function gerarMagiaSegura(aspectoId, verboId, modId, circulo, manifestacaoId, gr
     const eleg = resolverElegibilidadeAtual();
     const recursoDestinoDisponivel = aspecto.recurso === 'sopro'
       ? (r.macula ? r.macula.cur : 0)
-      : (r.sopro ? r.sopro.cur : 5);
+      : (r.sopro ? r.sopro.cur : 12);
 
     options.sinergia = {
       grau: grauSinergia,
@@ -2184,6 +2186,26 @@ function renderCombate() {
       <td><button class="atk-del" onclick="deletarAtaque(${i})">✕</button></td>
     </tr>`).join('');
 
+  const tecnicasArmadasRows = (d.tecnicasArmadas || []).map((t, i) => `
+    <tr class="ataque-row">
+      <td><input class="atk-input" value="${esc(t.arma)}" placeholder="Arma..." oninput="editarTecnicaArmada(${i},'arma',this.value)"></td>
+      <td><input class="atk-input" value="${esc(t.acao)}" placeholder="Ação..." oninput="editarTecnicaArmada(${i},'acao',this.value)"></td>
+      <td><input class="atk-input" value="${esc(t.postura)}" placeholder="Postura..." oninput="editarTecnicaArmada(${i},'postura',this.value)"></td>
+      <td><input class="atk-input" style="width:60px;text-align:center;" value="${esc(t.sopro)}" placeholder="Sopro" oninput="editarTecnicaArmada(${i},'sopro',this.value)"></td>
+      <td><input class="atk-input" value="${esc(t.efeito)}" placeholder="Dado/Efeito..." oninput="editarTecnicaArmada(${i},'efeito',this.value)"></td>
+      <td><button class="atk-del" onclick="deletarTecnicaArmada(${i})">✕</button></td>
+    </tr>`).join('');
+
+  const tecnicasDesarmadasRows = (d.tecnicasDesarmadas || []).map((t, i) => `
+    <tr class="ataque-row">
+      <td><input class="atk-input" value="${esc(t.via)}" placeholder="Via..." oninput="editarTecnicaDesarmada(${i},'via',this.value)"></td>
+      <td><input class="atk-input" value="${esc(t.impulso)}" placeholder="Impulso..." oninput="editarTecnicaDesarmada(${i},'impulso',this.value)"></td>
+      <td><input class="atk-input" value="${esc(t.postura)}" placeholder="Postura..." oninput="editarTecnicaDesarmada(${i},'postura',this.value)"></td>
+      <td><input class="atk-input" style="width:60px;text-align:center;" value="${esc(t.sopro)}" placeholder="Sopro" oninput="editarTecnicaDesarmada(${i},'sopro',this.value)"></td>
+      <td><input class="atk-input" value="${esc(t.efeito)}" placeholder="Dado/Efeito..." oninput="editarTecnicaDesarmada(${i},'efeito',this.value)"></td>
+      <td><button class="atk-del" onclick="deletarTecnicaDesarmada(${i})">✕</button></td>
+    </tr>`).join('');
+
   document.getElementById('panel-combate').innerHTML = `
     <!-- STATS DE COMBATE -->
     <div class="box" style="margin-bottom:16px">
@@ -2235,6 +2257,48 @@ function renderCombate() {
       </div>
     </div>
 
+    <!-- TÉCNICAS ARMADAS -->
+    <div class="box" style="margin-bottom:16px">
+      <div class="box-title">Técnicas Marciais (Combate Armado)</div>
+      <table class="ataque-table">
+        <thead>
+          <tr>
+            <th>Arma/Categoria</th>
+            <th>Ação</th>
+            <th>Postura</th>
+            <th>Custo (Sopro)</th>
+            <th>Dado / Efeito</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>${tecnicasArmadasRows}</tbody>
+      </table>
+      <div style="margin-top:10px">
+        <button class="add-row-btn" onclick="adicionarTecnicaArmada()">+ Adicionar Técnica</button>
+      </div>
+    </div>
+
+    <!-- TÉCNICAS DESARMADAS -->
+    <div class="box" style="margin-bottom:16px">
+      <div class="box-title">Técnicas Corporais (Combate Desarmado)</div>
+      <table class="ataque-table">
+        <thead>
+          <tr>
+            <th>Via</th>
+            <th>Impulso</th>
+            <th>Postura</th>
+            <th>Custo (Sopro)</th>
+            <th>Dado / Efeito</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>${tecnicasDesarmadasRows}</tbody>
+      </table>
+      <div style="margin-top:10px">
+        <button class="add-row-btn" onclick="adicionarTecnicaDesarmada()">+ Adicionar Técnica</button>
+      </div>
+    </div>
+
     <!-- MAGIAS APRENDIDAS (Grimório) — movido do Grimório Arcano pra aqui:
          lá fica só a bancada de criação/composição, aqui é onde o jogador
          de fato usa as magias em jogo (escolhe Verbo, ajusta Círculo). -->
@@ -2264,6 +2328,30 @@ function rolarAtaque(i) {
   const a = PERSONAGEM.dados.ataques[i];
   const bonus = parseInt(a.bonus) || 0;
   rolarD20(bonus, a.nome || 'Ataque');
+}
+
+function adicionarTecnicaArmada() {
+  PERSONAGEM.dados.tecnicasArmadas.push({ arma:'', acao:'', postura:'', sopro:'', efeito:'' });
+  renderCombate(); agendarSalvar();
+}
+function deletarTecnicaArmada(i) {
+  PERSONAGEM.dados.tecnicasArmadas.splice(i,1);
+  renderCombate(); agendarSalvar();
+}
+function editarTecnicaArmada(i, campo, val) {
+  PERSONAGEM.dados.tecnicasArmadas[i][campo] = val; agendarSalvar();
+}
+
+function adicionarTecnicaDesarmada() {
+  PERSONAGEM.dados.tecnicasDesarmadas.push({ via:'', impulso:'', postura:'', sopro:'', efeito:'' });
+  renderCombate(); agendarSalvar();
+}
+function deletarTecnicaDesarmada(i) {
+  PERSONAGEM.dados.tecnicasDesarmadas.splice(i,1);
+  renderCombate(); agendarSalvar();
+}
+function editarTecnicaDesarmada(i, campo, val) {
+  PERSONAGEM.dados.tecnicasDesarmadas[i][campo] = val; agendarSalvar();
 }
 
 // =============================================================

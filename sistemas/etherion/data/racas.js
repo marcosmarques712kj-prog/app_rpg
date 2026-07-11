@@ -252,7 +252,7 @@ const RACAS_DB = {
         nome: 'Grotans Solares',
         aliases: ['orc solar'],
         citacao: 'A iluminação do Deus do Sol é uma provação física constante.',
-        attrBonus: { for: 2, con: 1 },
+        attrBonus: { for: 2, cos: 1 },
         // 'Sangue Frio' reduz deslocamento à metade apenas em frio extremo/escuridão —
         // é condicional, não um modificador fixo aplicável sempre. Não convertido em número.
         bonusCA: 0,

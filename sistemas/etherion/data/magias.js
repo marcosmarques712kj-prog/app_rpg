@@ -344,7 +344,7 @@ const sistemaMagia = {
   calcularLimiteSopro(nivel, modFoco) {
     const n = parseInt(nivel) || 1;
     const m = parseInt(modFoco) || 0;
-    return 3 + m + Math.floor(n / 2);
+    return 12 + m + Math.floor(n / 2);
   },
 
   /**
@@ -3802,7 +3802,7 @@ const sistemaMagia = {
    * @returns {number}
    */
   calcularLimiteSopro(nivel, modFoco) {
-    return 3 + modFoco + Math.floor(nivel / 2);
+    return 12 + modFoco + Math.floor(nivel / 2);
   },
 
   /**
