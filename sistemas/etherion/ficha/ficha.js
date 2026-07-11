@@ -2186,25 +2186,6 @@ function renderCombate() {
       <td><button class="atk-del" onclick="deletarAtaque(${i})">✕</button></td>
     </tr>`).join('');
 
-  const tecnicasArmadasRows = (d.tecnicasArmadas || []).map((t, i) => `
-    <tr class="ataque-row">
-      <td><input class="atk-input" value="${esc(t.arma)}" placeholder="Arma..." oninput="editarTecnicaArmada(${i},'arma',this.value)"></td>
-      <td><input class="atk-input" value="${esc(t.acao)}" placeholder="Ação..." oninput="editarTecnicaArmada(${i},'acao',this.value)"></td>
-      <td><input class="atk-input" value="${esc(t.postura)}" placeholder="Postura..." oninput="editarTecnicaArmada(${i},'postura',this.value)"></td>
-      <td><input class="atk-input" style="width:60px;text-align:center;" value="${esc(t.sopro)}" placeholder="Sopro" oninput="editarTecnicaArmada(${i},'sopro',this.value)"></td>
-      <td><input class="atk-input" value="${esc(t.efeito)}" placeholder="Dado/Efeito..." oninput="editarTecnicaArmada(${i},'efeito',this.value)"></td>
-      <td><button class="atk-del" onclick="deletarTecnicaArmada(${i})">✕</button></td>
-    </tr>`).join('');
-
-  const tecnicasDesarmadasRows = (d.tecnicasDesarmadas || []).map((t, i) => `
-    <tr class="ataque-row">
-      <td><input class="atk-input" value="${esc(t.via)}" placeholder="Via..." oninput="editarTecnicaDesarmada(${i},'via',this.value)"></td>
-      <td><input class="atk-input" value="${esc(t.impulso)}" placeholder="Impulso..." oninput="editarTecnicaDesarmada(${i},'impulso',this.value)"></td>
-      <td><input class="atk-input" value="${esc(t.postura)}" placeholder="Postura..." oninput="editarTecnicaDesarmada(${i},'postura',this.value)"></td>
-      <td><input class="atk-input" style="width:60px;text-align:center;" value="${esc(t.sopro)}" placeholder="Sopro" oninput="editarTecnicaDesarmada(${i},'sopro',this.value)"></td>
-      <td><input class="atk-input" value="${esc(t.efeito)}" placeholder="Dado/Efeito..." oninput="editarTecnicaDesarmada(${i},'efeito',this.value)"></td>
-      <td><button class="atk-del" onclick="deletarTecnicaDesarmada(${i})">✕</button></td>
-    </tr>`).join('');
 
   document.getElementById('panel-combate').innerHTML = `
     <!-- STATS DE COMBATE -->
@@ -2257,47 +2238,11 @@ function renderCombate() {
       </div>
     </div>
 
-    <!-- TÉCNICAS ARMADAS -->
-    <div class="box" style="margin-bottom:16px">
-      <div class="box-title">Técnicas Marciais (Combate Armado)</div>
-      <table class="ataque-table">
-        <thead>
-          <tr>
-            <th>Arma/Categoria</th>
-            <th>Ação</th>
-            <th>Postura</th>
-            <th>Custo (Sopro)</th>
-            <th>Dado / Efeito</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>${tecnicasArmadasRows}</tbody>
-      </table>
-      <div style="margin-top:10px">
-        <button class="add-row-btn" onclick="adicionarTecnicaArmada()">+ Adicionar Técnica</button>
-      </div>
-    </div>
+    <!-- TÉCNICAS ARMADAS APRENDIDAS -->
+    ${gerarHTMLListaTecnicasArmadas(d)}
 
-    <!-- TÉCNICAS DESARMADAS -->
-    <div class="box" style="margin-bottom:16px">
-      <div class="box-title">Técnicas Corporais (Combate Desarmado)</div>
-      <table class="ataque-table">
-        <thead>
-          <tr>
-            <th>Via</th>
-            <th>Impulso</th>
-            <th>Postura</th>
-            <th>Custo (Sopro)</th>
-            <th>Dado / Efeito</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>${tecnicasDesarmadasRows}</tbody>
-      </table>
-      <div style="margin-top:10px">
-        <button class="add-row-btn" onclick="adicionarTecnicaDesarmada()">+ Adicionar Técnica</button>
-      </div>
-    </div>
+    <!-- TÉCNICAS DESARMADAS APRENDIDAS -->
+    ${gerarHTMLListaTecnicasDesarmadas(d)}
 
     <!-- MAGIAS APRENDIDAS (Grimório) — movido do Grimório Arcano pra aqui:
          lá fica só a bancada de criação/composição, aqui é onde o jogador
@@ -2330,29 +2275,7 @@ function rolarAtaque(i) {
   rolarD20(bonus, a.nome || 'Ataque');
 }
 
-function adicionarTecnicaArmada() {
-  PERSONAGEM.dados.tecnicasArmadas.push({ arma:'', acao:'', postura:'', sopro:'', efeito:'' });
-  renderCombate(); agendarSalvar();
-}
-function deletarTecnicaArmada(i) {
-  PERSONAGEM.dados.tecnicasArmadas.splice(i,1);
-  renderCombate(); agendarSalvar();
-}
-function editarTecnicaArmada(i, campo, val) {
-  PERSONAGEM.dados.tecnicasArmadas[i][campo] = val; agendarSalvar();
-}
 
-function adicionarTecnicaDesarmada() {
-  PERSONAGEM.dados.tecnicasDesarmadas.push({ via:'', impulso:'', postura:'', sopro:'', efeito:'' });
-  renderCombate(); agendarSalvar();
-}
-function deletarTecnicaDesarmada(i) {
-  PERSONAGEM.dados.tecnicasDesarmadas.splice(i,1);
-  renderCombate(); agendarSalvar();
-}
-function editarTecnicaDesarmada(i, campo, val) {
-  PERSONAGEM.dados.tecnicasDesarmadas[i][campo] = val; agendarSalvar();
-}
 
 // =============================================================
 // RENDER: ABA INVENTÁRIO
@@ -2798,6 +2721,7 @@ function montarEstruturaAbas() {
     <section class="sheet-panel active" id="panel-principal"></section>
     <section class="sheet-panel" id="panel-pericias"></section>
     <section class="sheet-panel" id="panel-grimorio"></section>
+    <section class="sheet-panel" id="panel-arsenal"></section>
     <section class="sheet-panel" id="panel-combate"></section>
     <section class="sheet-panel" id="panel-inventario"></section>
     <section class="sheet-panel" id="panel-biografia"></section>
@@ -2829,6 +2753,7 @@ async function init() {
   renderPrincipal();
   renderPericias();
   renderGrimorio();
+  if (typeof renderArsenal === 'function') renderArsenal();
   renderCombate();
   renderInventario();
   renderBiografia();
